@@ -69,16 +69,9 @@ io.on('connection', (socket) => {
     });
 });
 
-<<<<<<< HEAD
 // Usar o server em vez do app para o listen
-server.listen(8687,() => {
+server.listen(8687,'0.0.0.0', () => {
     console.log("API ON com suporte a Socket.IO");
-=======
- 
-
-app.listen(8687,'0.0.0.0',() => {
-    console.log("API ON")
->>>>>>> b90b20c5d7e10754a12ab8351ead7e00ee080c84
 });
 
 
