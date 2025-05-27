@@ -19,8 +19,15 @@ class FornecedoresController {
   async create(req, res) {
     const fornecedor = req.body
     if (fornecedor) {
-      await Fornecedores.create(fornecedor)
-      res.status(200).send("Fornecedor inserido com sucesso")
+      const resultado = await Fornecedores.create(fornecedor)
+      if (resultado) {
+        res.status(200).json({
+          message: "Fornecedor inserido com sucesso",
+          data: resultado
+        })
+      } else {
+        res.status(400).json({ err: "Erro ao inserir fornecedor" })
+      }
     } else {
       res.status(400).json({ err: "Informações indefinidas" })
     }
@@ -31,7 +38,10 @@ class FornecedoresController {
     if (idFornecedor) {
       const result = await Fornecedores.update(idFornecedor, dados)
       if (result.status) {
-        res.status(200).send("Fornecedor atualizado com sucesso")
+        res.status(200).json({
+          message: "Fornecedor atualizado com sucesso",
+          data: result.data
+        })
       } else {
         res.status(406).send(result.err)
       }
@@ -44,7 +54,10 @@ class FornecedoresController {
     const id = req.params.idFornecedor
     const result = await Fornecedores.delete(id)
     if (result.status) {
-      res.status(200).send("Fornecedor excluído com sucesso")
+      res.status(200).json({
+        message: "Fornecedor excluído com sucesso",
+        data: result.data
+      })
     } else {
       res.status(406).send(result.err)
     }

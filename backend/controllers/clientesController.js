@@ -19,8 +19,15 @@ class ClientesController {
   async create(req, res) {
     const cliente = req.body
     if (cliente) {
-      await Clientes.create(cliente)
-      res.status(200).send("Cliente inserido com sucesso")
+      const resultado = await Clientes.create(cliente)
+      if (resultado) {
+        res.status(200).json({
+          message: "Cliente inserido com sucesso",
+          data: resultado
+        })
+      } else {
+        res.status(400).json({ err: "Erro ao inserir cliente" })
+      }
     } else {
       res.status(400).json({ err: "Informações indefinidas" })
     }
@@ -36,7 +43,10 @@ class ClientesController {
     if (idCliente) {
       const result = await Clientes.update(idCliente, dados)
       if (result.status) {
-        res.status(200).send("Cliente atualizado com sucesso")
+        res.status(200).json({
+          message: "Cliente atualizado com sucesso",
+          data: result.data
+        })
       } else {
         res.status(406).send(result.err)
       }
@@ -49,7 +59,10 @@ class ClientesController {
     const id = req.params.idCliente
     const result = await Clientes.delete(id)
     if (result.status) {
-      res.status(200).send("Cliente excluído com sucesso")
+      res.status(200).json({
+        message: "Cliente excluído com sucesso",
+        data: result.data
+      })
     } else {
       res.status(406).send(result.err)
     }
