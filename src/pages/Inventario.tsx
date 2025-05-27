@@ -1,9 +1,8 @@
-
 import { useState } from "react";
-import { Package, FileText, Download, Upload, Filter, Edit, Trash2, Plus, Search } from "lucide-react";
+import { Package, FileText, Download, Upload, Filter, Edit, Trash2, Plus, Search, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -245,67 +244,7 @@ export default function Inventario() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Inventário</h1>
-        
-        <div className="flex items-center gap-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Buscar produto ou SKU..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <ActionButton 
-              onClick={handleSearch} 
-              isLoading={isLoading} 
-              loadingText="Buscando..." 
-              size="sm"
-              startIcon={<Search className="h-4 w-4" />}
-            >
-              Buscar
-            </ActionButton>
-          </div>
-          
-          <ActionButton
-            variant="outline" 
-            size="sm"
-            startIcon={<Filter className="h-4 w-4" />}
-            onClick={() => toast.info("Filtros serão implementados")}
-          >
-            Filtros
-          </ActionButton>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <FileText className="w-4 h-4 mr-2" />
-                Exportar
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExport("excel")}>
-                <Download className="w-4 h-4 mr-2" />
-                Excel
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("pdf")}>
-                <Download className="w-4 h-4 mr-2" />
-                PDF
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("csv")}>
-                <Download className="w-4 h-4 mr-2" />
-                CSV
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <ActionButton
-            size="sm"
-            startIcon={<Plus className="h-4 w-4" />}
-            onClick={handleAddItem}
-          >
-            Novo Item
-          </ActionButton>
-        </div>
+                
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -335,15 +274,72 @@ export default function Inventario() {
         </Card>
       </div>
       
-      <DataTable
-        data={filteredData}
-        columns={columns}
-        actions={actions}
-        onRowClick={(row) => {
-          setSelectedRow(row);
-          toast.info(`Selecionado: ${row.produto}`);
-        }}
-      />
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <CardTitle>Itens em Estoque</CardTitle>
+            <div className="flex items-center space-x-2">
+              
+              
+              <ActionButton
+                variant="outline" 
+                size="sm"
+                startIcon={<Filter className="h-4 w-4" />}
+                onClick={() => toast.info("Filtros serão implementados")}
+              >
+                Filtros
+              </ActionButton>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <FileText className="w-4 h-4 mr-2" />
+                    Exportar
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => handleExport("excel")}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Excel
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                    <Download className="w-4 h-4 mr-2" />
+                    PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                    <Download className="w-4 h-4 mr-2" />
+                    CSV
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              <ActionButton
+                size="sm"
+                startIcon={<Plus className="h-4 w-4" />}
+                onClick={handleAddItem}
+              >
+                Novo Item
+              </ActionButton>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <DataTable
+              data={filteredData}
+              columns={columns}
+              actions={actions}
+              onRowClick={(row) => {
+                setSelectedRow(row);
+                toast.info(`Selecionado: ${row.produto}`);
+              }}
+            />
+          )}        </CardContent>
+      </Card>
       
       {/* Dialog de confirmação de exclusão */}
       <ConfirmDialog
@@ -351,7 +347,8 @@ export default function Inventario() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDelete}
         title="Confirmar exclusão"
-        description={`Tem certeza que deseja excluir o produto "${selectedRow?.produto}"? Esta ação não pode ser desfeita.`}
+        description={`Tem c
+erteza que deseja excluir o produto "${selectedRow?.produto}"? Esta ação não pode ser desfeita.`}
         confirmText="Excluir"
         cancelText="Cancelar"
         variant="destructive"
