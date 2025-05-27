@@ -12,6 +12,7 @@ import {
   Truck,
   FileText,
   Flame,
+  Radio,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -153,6 +154,12 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             <NavItem to="/relatorios" icon={FileText} label="Relatórios" open={open} />
             <NavItem to="/ordens" icon={ClipboardList} label="Ordens" open={open} />
             <NavItem to="/configuracoes" icon={Settings} label="Configurações" open={open} />
+            
+            <div className="py-2">
+              <div className="h-[1px] bg-sidebar-border/50 w-full"></div>
+            </div>
+            
+            <NavItem to="/socket-test" icon={Radio} label="Teste Socket" open={open} />
           </nav>
         </TooltipProvider>
       </aside>

@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
 import RedefinirSenha from "./pages/RedefinirSenha";
+import SocketTest from "./pages/SocketTest";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 const queryClient = new QueryClient();
@@ -48,6 +48,7 @@ const AppRoutes = () => (
     <Route path="/login" element={<Login />} />
     <Route path="/cadastro" element={<Cadastro />} />
     <Route path="/redefinir-senha" element={<RedefinirSenha />} />
+    <Route path="/socket-test" element={<SocketTest />} />
     
     <Route path="/" element={
       <ProtectedRoute>
@@ -64,6 +65,7 @@ const AppRoutes = () => (
       <Route path="relatorios" element={<Relatorios />} />
       <Route path="ordens" element={<Ordens />} />
       <Route path="configuracoes" element={<Configuracoes />} />
+      <Route path="socket-test" element={<SocketTest />} />
     </Route>
     
     <Route path="*" element={<NotFound />} />

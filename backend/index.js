@@ -8,11 +8,16 @@ var http = require('http');
 var server = http.createServer(app);
 var io = require('socket.io')(server, {
   cors: {
-    origin: "*",
+    origin: "*",  // Permitir conexões de qualquer origem
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["*"],
     credentials: true
-  }
+  },
+  transports: ['websocket', 'polling'],  // Usar WebSocket primeiro, depois polling
+  pingTimeout: 60000,    // Tempo para considerar cliente desconectado após último ping (60s)
+  pingInterval: 25000,   // Intervalo entre pings (25s)
+  connectTimeout: 30000, // Timeout para conexão inicial (30s)
+  allowEIO3: true        // Permitir Engine.IO versão 3 para compatibilidade
 });
 
 // Objeto global para armazenar as conexões de socket
@@ -27,54 +32,74 @@ app.use(bodyParser.json())
 // View engine
 app.set('view engine','ejs');
 
-
-// app.use(cors())
-/*
-app.use( (req,res,next) =>{
-    req.header('Origin','TRUE')
-    res.header("Access-Control-Allow-Origin",'http://127.0.0.1:3000'  )
-    res.header("Access-Control-Allow-Origin",'localhost:3000'  )
-    res.header("Access-Control-Allow-Origin","http://127.0.0.1:8687")
-    res.header("Access-Control-Allow-Methods","POST",'PUT','GET','DELETE')
-    app.use(cors())
-    next()
-})
-  */
+// Configuração de CORS
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 app.use(express.json())
-
 
 app.use((req, res, next) => {
 	//Qual site tem permissão de realizar a conexão, no exemplo abaixo está o "*" indicando que qualquer site pode fazer a conexão
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "*");
-    // res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-    // res.header("Access-Control-Allow-Origin", "http://127.0.0.1:3000");
 	//Quais são os métodos que a conexão pode realizar na API
     res.header("Access-Control-Allow-Methods", '*');
-    app.use(cors());
     next();
 });
 
-
 app.use("/",router);
-
 
 // Configuração do Socket.IO
 io.on('connection', (socket) => {
     console.log('Novo cliente conectado:', socket.id);
     
-    socket.on('disconnect', () => {
-        console.log('Cliente desconectado:', socket.id);
+    // Log de informações sobre o cliente conectado
+    const clientInfo = {
+      id: socket.id,
+      address: socket.handshake.address,
+      headers: socket.handshake.headers,
+      time: new Date().toISOString()
+    };
+    console.log('Informações do cliente:', JSON.stringify(clientInfo));
+    
+    // Enviar evento de boas-vindas para o cliente que acabou de conectar
+    socket.emit('welcome', { message: 'Conectado ao servidor com sucesso!', time: new Date().toISOString() });
+    
+    // Broadcast para todos os clientes que um novo cliente se conectou
+    socket.broadcast.emit('client_connected', { id: socket.id, time: new Date().toISOString() });
+    
+    // Monitorar desconexão
+    socket.on('disconnect', (reason) => {
+        console.log(`Cliente desconectado (${socket.id}): ${reason}`);
+        
+        // Notificar outros clientes sobre a desconexão
+        socket.broadcast.emit('client_disconnected', { id: socket.id, reason, time: new Date().toISOString() });
+    });
+    
+    // Endpoint para teste de ping/pong
+    socket.on('ping_server', (data) => {
+        console.log(`Ping recebido de ${socket.id}:`, data);
+        socket.emit('pong_server', { 
+            receivedAt: new Date().toISOString(),
+            clientTimestamp: data.timestamp,
+            message: 'Pong do servidor!' 
+        });
     });
 });
 
 // Usar o server em vez do app para o listen
-server.listen(8687,'0.0.0.0', () => {
-    console.log("API ON com suporte a Socket.IO");
+const PORT = process.env.PORT || 8687;
+const HOST = '0.0.0.0'; // Escutar em todas as interfaces de rede
+
+server.listen(PORT, HOST, () => {
+    const addressInfo = server.address();
+    console.log(`API ON com suporte a Socket.IO - Porta: ${addressInfo.port}, IP: ${addressInfo.address}`);
+    console.log(`Socket.IO disponível em: http://${HOST}:${PORT}`);
 });
 
-
- }catch(err){
+}catch(err){
     console.log('index err?: '+ err)
- } 
+} 
