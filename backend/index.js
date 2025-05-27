@@ -6,6 +6,28 @@ var router = require("./routes/routes")
 // Importando módulos de Socket.IO
 var http = require('http');
 var server = http.createServer(app);
+
+// Obter endereço IP local (útil para debug)
+const getLocalIpAddresses = () => {
+  const { networkInterfaces } = require('os');
+  const nets = networkInterfaces();
+  const results = {};
+
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      // Ignorar endereços de loopback e não IPv4
+      if (net.family === 'IPv4' && !net.internal) {
+        if (!results[name]) {
+          results[name] = [];
+        }
+        results[name].push(net.address);
+      }
+    }
+  }
+  return results;
+};
+
+// Configurações do Socket.IO
 var io = require('socket.io')(server, {
   cors: {
     origin: "*",  // Permitir conexões de qualquer origem
@@ -17,7 +39,8 @@ var io = require('socket.io')(server, {
   pingTimeout: 60000,    // Tempo para considerar cliente desconectado após último ping (60s)
   pingInterval: 25000,   // Intervalo entre pings (25s)
   connectTimeout: 30000, // Timeout para conexão inicial (30s)
-  allowEIO3: true        // Permitir Engine.IO versão 3 para compatibilidade
+  allowEIO3: true,       // Permitir Engine.IO versão 3 para compatibilidade
+  serveClient: false     // Não servir cliente Socket.IO
 });
 
 // Objeto global para armazenar as conexões de socket
@@ -32,7 +55,7 @@ app.use(bodyParser.json())
 // View engine
 app.set('view engine','ejs');
 
-// Configuração de CORS
+// Configuração de CORS - importante para conexões de outras máquinas
 app.use(cors({
   origin: '*',
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -51,6 +74,18 @@ app.use((req, res, next) => {
 });
 
 app.use("/",router);
+
+// Rota para verificar o status do servidor
+app.get('/api/server-status', (req, res) => {
+  const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  
+  res.json({
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    socketConnections: Object.keys(io.sockets.sockets).length,
+    clientIp: clientIp
+  });
+});
 
 // Configuração do Socket.IO
 io.on('connection', (socket) => {
@@ -96,8 +131,13 @@ const HOST = '0.0.0.0'; // Escutar em todas as interfaces de rede
 
 server.listen(PORT, HOST, () => {
     const addressInfo = server.address();
-    console.log(`API ON com suporte a Socket.IO - Porta: ${addressInfo.port}, IP: ${addressInfo.address}`);
+    const localIps = getLocalIpAddresses();
+    
+    console.log(`===== API ON com suporte a Socket.IO =====`);
+    console.log(`Porta: ${addressInfo.port}, Bind IP: ${addressInfo.address}`);
+    console.log(`Endereços IP disponíveis na rede:`, JSON.stringify(localIps, null, 2));
     console.log(`Socket.IO disponível em: http://${HOST}:${PORT}`);
+    console.log('=======================================');
 });
 
 }catch(err){
