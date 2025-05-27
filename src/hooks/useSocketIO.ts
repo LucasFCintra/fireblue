@@ -4,6 +4,10 @@ import { io, Socket } from 'socket.io-client';
 // Obtém o endereço do servidor a partir de variáveis de ambiente ou usa um IP específico
 // Para redes locais ou VPN (como Radmin), use um IP fixo que seja acessível por todas as máquinas
 const getServerUrl = () => {
+  // Verificar se estamos em produção (Vercel)
+  const isProduction = window.location.hostname.includes('vercel.app') || 
+                       window.location.hostname.includes('fireblue.vercel.app');
+  
   // Usar IP fixo do servidor (substituir pelo IP real da máquina que está rodando o backend)
   // Se o IP estiver armazenado no localStorage, use-o em vez do valor padrão
   const storedServerIp = localStorage.getItem('serverIp');
@@ -19,19 +23,41 @@ const getServerUrl = () => {
     return `http://${storedServerIp}:8687`;
   }
   
+  // Se estamos em produção (Vercel), usamos o IP do servidor externo
+  if (isProduction) {
+    // Se não houver IP armazenado para produção, usar o fallback
+    const productionServerIp = localStorage.getItem('productionServerIp') || '26.30.247.237';
+    return `http://${productionServerIp}:8687`;
+  }
+  
   // Use o hostname atual como fallback
   return `http://${hostname}:8687`;
 };
 
 // Função para salvar o IP do servidor no localStorage
 export const setServerIp = (ip: string) => {
-  localStorage.setItem('serverIp', ip);
+  // Verifica se estamos em produção (Vercel)
+  const isProduction = window.location.hostname.includes('vercel.app');
+  
+  if (isProduction) {
+    localStorage.setItem('productionServerIp', ip);
+  } else {
+    localStorage.setItem('serverIp', ip);
+  }
+  
   // Recarregar a página para aplicar a nova configuração
   window.location.reload();
 };
 
 // Função para obter o IP do servidor atual
 export const getServerIp = () => {
+  // Verifica se estamos em produção (Vercel)
+  const isProduction = window.location.hostname.includes('vercel.app');
+  
+  if (isProduction) {
+    return localStorage.getItem('productionServerIp') || '';
+  }
+  
   return localStorage.getItem('serverIp') || window.location.hostname;
 };
 
