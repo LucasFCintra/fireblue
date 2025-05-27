@@ -25,7 +25,14 @@ class ClientesModel {
 
   async create(cliente) {
     try {
-      await knex.insert(cliente).table("clientes")
+      const ids = await knex.insert(cliente).table("clientes")
+      // Após criar, buscar o cliente completo para enviar via Socket
+      const novoCliente = await this.findById(ids[0])
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('cliente_criado', novoCliente)
+      }
+      return novoCliente
     } catch (err) {
       console.log(err)
     }
@@ -34,8 +41,17 @@ class ClientesModel {
   async update(idCliente, cliente) {
     try {
       console.log('Model: '+JSON.stringify(cliente) + ' \n ' + idCliente)
-      await knex.update(cliente).where({ idCliente }).table("clientes")
-      return { status: true }
+      var result = await knex.update(cliente).where({ idCliente }).table("clientes")
+      console.log('Result: '+ JSON.stringify(result))
+      
+      // Após atualizar, buscar o cliente completo para enviar via Socket
+      const clienteAtualizado = await this.findById(idCliente)
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('cliente_atualizado', clienteAtualizado)
+      }
+      
+      return { status: true, data: clienteAtualizado }
     } catch (err) {
       console.log(err)
       return { status: false, err }
@@ -44,8 +60,17 @@ class ClientesModel {
 
   async delete(idCliente) {
     try {
+      // Buscar o cliente antes de excluir para poder enviar os dados via Socket
+      const clienteExcluido = await this.findById(idCliente)
+      
       await knex.delete().where({ idCliente }).table("clientes")
-      return { status: true }
+      
+      // Emitir evento para todos os clientes conectados
+      if (global.io && clienteExcluido) {
+        global.io.emit('cliente_excluido', clienteExcluido)
+      }
+      
+      return { status: true, data: clienteExcluido }
     } catch (err) {
       return { status: false, err }
     }

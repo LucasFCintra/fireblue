@@ -19,8 +19,15 @@ class ProdutosController {
   async create(req, res) {
     const produto = req.body
     if (produto) {
-      await Produtos.create(produto)
-      res.status(200).send("Produto inserido com sucesso")
+      const resultado = await Produtos.create(produto)
+      if (resultado) {
+        res.status(200).json({
+          message: "Produto inserido com sucesso",
+          data: resultado
+        })
+      } else {
+        res.status(400).json({ err: "Erro ao inserir produto" })
+      }
     } else {
       res.status(400).json({ err: "Informações indefinidas" })
     }
@@ -31,7 +38,10 @@ class ProdutosController {
     if (idProduto) {
       const result = await Produtos.update(idProduto, dados)
       if (result.status) {
-        res.status(200).send("Produto atualizado com sucesso")
+        res.status(200).json({
+          message: "Produto atualizado com sucesso",
+          data: result.data
+        })
       } else {
         res.status(406).send(result.err)
       }
@@ -44,7 +54,10 @@ class ProdutosController {
     const id = req.params.idProduto
     const result = await Produtos.delete(id)
     if (result.status) {
-      res.status(200).send("Produto excluído com sucesso")
+      res.status(200).json({
+        message: "Produto excluído com sucesso",
+        data: result.data
+      })
     } else {
       res.status(406).send(result.err)
     }

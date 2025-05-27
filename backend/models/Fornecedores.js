@@ -25,7 +25,14 @@ class FornecedoresModel {
 
   async create(fornecedor) {
     try {
-      await knex.insert(fornecedor).table("fornecedores")
+      const ids = await knex.insert(fornecedor).table("fornecedores")
+      // Após criar, buscar o fornecedor completo para enviar via Socket
+      const novoFornecedor = await this.findById(ids[0])
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('fornecedor_criado', novoFornecedor)
+      }
+      return novoFornecedor
     } catch (err) {
       console.log(err)
     }
@@ -34,7 +41,15 @@ class FornecedoresModel {
   async update(idFornecedor, fornecedor) {
     try {
       await knex.update(fornecedor).where({ idFornecedor }).table("fornecedores")
-      return { status: true }
+      
+      // Após atualizar, buscar o fornecedor completo para enviar via Socket
+      const fornecedorAtualizado = await this.findById(idFornecedor)
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('fornecedor_atualizado', fornecedorAtualizado)
+      }
+      
+      return { status: true, data: fornecedorAtualizado }
     } catch (err) {
       return { status: false, err }
     }
@@ -42,8 +57,17 @@ class FornecedoresModel {
 
   async delete(idFornecedor) {
     try {
+      // Buscar o fornecedor antes de excluir para poder enviar os dados via Socket
+      const fornecedorExcluido = await this.findById(idFornecedor)
+      
       await knex.delete().where({ idFornecedor }).table("fornecedores")
-      return { status: true }
+      
+      // Emitir evento para todos os clientes conectados
+      if (global.io && fornecedorExcluido) {
+        global.io.emit('fornecedor_excluido', fornecedorExcluido)
+      }
+      
+      return { status: true, data: fornecedorExcluido }
     } catch (err) {
       return { status: false, err }
     }

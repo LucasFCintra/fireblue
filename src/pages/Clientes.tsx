@@ -1,30 +1,36 @@
-import { useState, useEffect } from "react";
-import { FileText, Download, Filter, Trash2, Plus, Search, Pencil } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Pencil, Trash2, Filter, Plus, Search, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import DataTable from "@/components/DataTable";
+import { DataTable } from "@/components/custom/DataTable";
 import { useToast } from "@/hooks/use-toast";
-import { ActionButton } from "@/components/ActionButton";
-import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { toast } from "@/components/ui/sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import axios from "axios";
+import ActionButton from "@/components/custom/ActionButton";
+import { ConfirmDialog } from "@/components/custom/ConfirmDialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useClientes, Cliente } from "@/hooks/use-clientes";
 
 export default function Clientes() {
+  const { toast } = useToast();
+  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<any>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [newItem, setNewItem] = useState({
+  const [selectedRow, setSelectedRow] = useState<any>(null);
+  const [newItem, setNewItem] = useState<Cliente>({
     nome: "",
     cnpj: "",
     email: "",
@@ -36,33 +42,49 @@ export default function Clientes() {
   });
   const [editItem, setEditItem] = useState<any>(null);
   const api = 'http://localhost:8687';
+  
+  const { 
+    clientes, 
+    isLoading: clientesLoading, 
+    error: clientesError, 
+    adicionarCliente, 
+    atualizarCliente, 
+    excluirCliente,
+    socketConnected
+  } = useClientes();
 
   useEffect(() => {
-    const fetchClientes = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axios.get(`${api}/api/clientes`);
-        const data = Array.isArray(response.data) ? response.data : (response.data.items || []);
-        setFilteredData(data);
-      } catch (err) {
-        setFilteredData([]);
-        toast.error("Erro ao buscar clientes");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchClientes();
-  }, []);
+    setFilteredData(clientes);
+    if (socketConnected) {
+      toast({
+        title: "Conectado!",
+        description: "Conectado em tempo real! Atualizações serão mostradas automaticamente."
+      });
+    }
+  }, [clientes, socketConnected, toast]);
+
+  useEffect(() => {
+    if (clientesError) {
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: clientesError
+      });
+    }
+  }, [clientesError, toast]);
 
   const handleSearch = () => {
     setIsLoading(true);
     setTimeout(() => {
-      setFilteredData((prev) => prev.filter(item =>
+      setFilteredData(clientes.filter(item =>
         item.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (item.email && item.email.toLowerCase().includes(searchQuery.toLowerCase()))
       ));
       setIsLoading(false);
-      toast.success(`Busca realizada!`);
+      toast({
+        title: "Busca concluída",
+        description: "Busca realizada com sucesso!"
+      });
     }, 500);
   };
 
@@ -73,23 +95,31 @@ export default function Clientes() {
   const handleInsertItem = async () => {
     try {
       setIsLoading(true);
-      const response = await axios.post(api+"/api/clientes", newItem);
-      const saved = response.data;
-      setFilteredData((prev: any) => [...prev, { ...newItem, idCliente: saved.idCliente || Math.random().toString() }]);
-      setIsAddModalOpen(false);
-      setNewItem({
-        nome: "",
-        cnpj: "",
-        email: "",
-        telefone: "",
-        endereco: "",
-        cidade: "",
-        estado: "",
-        cep: ""
-      });
-      toast.success("Cliente inserido com sucesso!");
-    } catch (err) {
-      toast.error("Erro ao inserir cliente");
+      const resposta = await adicionarCliente(newItem);
+      
+      if (resposta) {
+        setIsAddModalOpen(false);
+        setNewItem({
+          nome: "",
+          cnpj: "",
+          email: "",
+          telefone: "",
+          endereco: "",
+          cidade: "",
+          estado: "",
+          cep: ""
+        });
+        toast({
+          title: "Sucesso",
+          description: "Cliente inserido com sucesso!"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao inserir cliente"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -99,13 +129,21 @@ export default function Clientes() {
     setIsLoading(true);
     try {
       const id = selectedRow?.idCliente || selectedRow?.id;
-      await axios.delete(`${api}/api/clientes/${id}`);
-      setFilteredData((prev: any[]) => prev.filter(item => (item.idCliente || item.id) !== id));
-      setIsDeleteDialogOpen(false);
-      toast.success(`Cliente removido com sucesso`);
-    } catch (err) {
-      toast.error("Erro ao remover cliente");
-      console.log(err);
+      const resposta = await excluirCliente(id);
+      
+      if (resposta) {
+        setIsDeleteDialogOpen(false);
+        toast({
+          title: "Sucesso",
+          description: "Cliente removido com sucesso"
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Erro",
+          description: "Erro ao remover cliente"
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +153,10 @@ export default function Clientes() {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      toast.success(`Dados exportados com sucesso em formato ${format}`);
+      toast({
+        title: "Exportação concluída",
+        description: `Dados exportados com sucesso em formato ${format}`
+      });
     }, 1000);
   };
 
@@ -170,7 +211,10 @@ export default function Clientes() {
             variant="outline" 
             size="sm"
             startIcon={<Filter className="h-4 w-4" />}
-            onClick={() => toast.info("Filtros serão implementados")}
+            onClick={() => toast({
+              title: "Filtros",
+              description: "Filtros serão implementados"
+            })}
           >
             Filtros
           </ActionButton>
@@ -201,7 +245,10 @@ export default function Clientes() {
         columns={columns}
         onRowClick={(row) => {
           setSelectedRow(row);
-          toast.info(`Selecionado: ${row.nome}`);
+          toast({
+            title: "Cliente selecionado",
+            description: `Selecionado: ${row.nome}`
+          });
         }}
       />
       <ConfirmDialog
@@ -235,14 +282,23 @@ export default function Clientes() {
               setIsLoading(true);
               try {
                 const { criado_em, idCliente, id, ...itemParaUpdate } = editItem;
-                await axios.put(`${api}/api/clientes`, { ...itemParaUpdate, idCliente: idCliente || id });
-                setFilteredData((prev: any[]) => prev.map(item => (item.idCliente || item.id) === (idCliente || id) ? { ...editItem, criado_em: item.criado_em } : item));
-                setIsEditDialogOpen(false);
-                setEditItem(null);
-                toast.success("Cliente atualizado com sucesso!");
-              } catch (err) {
-                toast.error("Erro ao atualizar cliente");
-                console.log(err)
+                const idClienteAtual = idCliente || id;
+                const resposta = await atualizarCliente(idClienteAtual, itemParaUpdate);
+                
+                if (resposta) {
+                  setIsEditDialogOpen(false);
+                  setEditItem(null);
+                  toast({
+                    title: "Sucesso",
+                    description: "Cliente atualizado com sucesso!"
+                  });
+                } else {
+                  toast({
+                    variant: "destructive",
+                    title: "Erro",
+                    description: "Erro ao atualizar cliente"
+                  });
+                }
               } finally {
                 setIsLoading(false);
               }

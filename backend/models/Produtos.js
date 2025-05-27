@@ -25,7 +25,14 @@ class ProdutosModel {
 
   async create(produto) {
     try {
-      await knex.insert(produto).table("produtos")
+      const ids = await knex.insert(produto).table("produtos")
+      // Após criar, buscar o produto completo para enviar via Socket
+      const novoProduto = await this.findById(ids[0])
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('produto_criado', novoProduto)
+      }
+      return novoProduto
     } catch (err) {
       console.log(err)
     }
@@ -34,7 +41,15 @@ class ProdutosModel {
   async update(idProduto, produto) {
     try {
       await knex.update(produto).where({ idProduto }).table("produtos")
-      return { status: true }
+      
+      // Após atualizar, buscar o produto completo para enviar via Socket
+      const produtoAtualizado = await this.findById(idProduto)
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('produto_atualizado', produtoAtualizado)
+      }
+      
+      return { status: true, data: produtoAtualizado }
     } catch (err) {
       return { status: false, err }
     }
@@ -42,8 +57,17 @@ class ProdutosModel {
 
   async delete(idProduto) {
     try {
+      // Buscar o produto antes de excluir para poder enviar os dados via Socket
+      const produtoExcluido = await this.findById(idProduto)
+      
       await knex.delete().where({ idProduto }).table("produtos")
-      return { status: true }
+      
+      // Emitir evento para todos os clientes conectados
+      if (global.io && produtoExcluido) {
+        global.io.emit('produto_excluido', produtoExcluido)
+      }
+      
+      return { status: true, data: produtoExcluido }
     } catch (err) {
       return { status: false, err }
     }

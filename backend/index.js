@@ -3,7 +3,22 @@ var express = require("express");
 var cors = require('cors')
 var app = express()
 var router = require("./routes/routes")
- try{
+// Importando módulos de Socket.IO
+var http = require('http');
+var server = http.createServer(app);
+var io = require('socket.io')(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["*"],
+    credentials: true
+  }
+});
+
+// Objeto global para armazenar as conexões de socket
+global.io = io;
+
+try{
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
@@ -45,11 +60,18 @@ app.use((req, res, next) => {
 app.use("/",router);
 
 
+// Configuração do Socket.IO
+io.on('connection', (socket) => {
+    console.log('Novo cliente conectado:', socket.id);
+    
+    socket.on('disconnect', () => {
+        console.log('Cliente desconectado:', socket.id);
+    });
+});
 
- 
-
-app.listen(8687,() => {
-    console.log("API ON")
+// Usar o server em vez do app para o listen
+server.listen(8687,() => {
+    console.log("API ON com suporte a Socket.IO");
 });
 
 
