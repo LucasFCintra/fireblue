@@ -3,9 +3,10 @@ import { useSocketIO, setServerIp, getServerIp } from '@/hooks/useSocketIO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader, Clock, Send, Wifi, WifiOff, MessageSquare, AlertCircle, Save } from 'lucide-react';
+import { Loader, Clock, Send, Wifi, WifiOff, MessageSquare, AlertCircle, Save, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface SocketMessage {
   id: string;
@@ -21,6 +22,18 @@ export default function SocketTest() {
   const [serverTime, setServerTime] = useState<string | null>(null);
   const [clientCount, setClientCount] = useState<number>(0);
   const [serverIp, setServerIpState] = useState(getServerIp() || '');
+  const [isVercel, setIsVercel] = useState(false);
+
+  useEffect(() => {
+    // Verificar se estamos em produção (Vercel)
+    const vercelDomain = window.location.hostname.includes('vercel.app');
+    setIsVercel(vercelDomain);
+    
+    // Adicionar mensagem de diagnóstico no carregamento da página
+    addMessage(`Ambiente: ${vercelDomain ? 'Vercel (Produção)' : 'Desenvolvimento Local'}`, 'system');
+    addMessage(`Hostname: ${window.location.hostname}`, 'system');
+    addMessage(`Tentando conectar em: ${connectionUrl}`, 'system');
+  }, [connectionUrl]);
 
   // Função para adicionar mensagem ao histórico
   const addMessage = (message: string, type: 'received' | 'sent' | 'system') => {
@@ -112,6 +125,11 @@ export default function SocketTest() {
       addMessage(`Produto excluído: ${data.nome}`, 'received');
     });
 
+    // Registrar erros de conexão
+    socket.on('connect_error', (err) => {
+      addMessage(`Erro de conexão: ${err.message}`, 'system');
+    });
+
     // Limpar todos os listeners ao desmontar
     return () => {
       socket.off('welcome');
@@ -127,6 +145,7 @@ export default function SocketTest() {
       socket.off('produto_criado');
       socket.off('produto_atualizado');
       socket.off('produto_excluido');
+      socket.off('connect_error');
     };
   }, [socket]);
 
@@ -161,6 +180,21 @@ export default function SocketTest() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {isVercel && (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Ambiente Vercel Detectado</AlertTitle>
+              <AlertDescription>
+                Você está acessando pelo Vercel. Para conexões Socket.IO funcionarem, você precisa:
+                <ol className="list-decimal pl-5 mt-2 space-y-1">
+                  <li>Certificar-se de que o servidor backend está rodando em uma máquina acessível</li>
+                  <li>Configurar o endereço IP correto do servidor no campo abaixo</li>
+                  <li>Verificar se as portas estão abertas no firewall</li>
+                </ol>
+              </AlertDescription>
+            </Alert>
+          )}
+          
           {/* Configuração do Servidor */}
           <Card>
             <CardHeader className="py-2">
@@ -191,6 +225,9 @@ export default function SocketTest() {
                 <div className="text-xs text-muted-foreground mt-1">
                   <p>URL de conexão atual: <code className="bg-muted px-1 rounded">{connectionUrl}</code></p>
                   <p className="mt-1">Para usar conexões em rede, digite o IP da máquina onde o servidor está rodando.</p>
+                  {isVercel && (
+                    <p className="mt-1 text-yellow-600">Em produção (Vercel), você precisa usar o IP da sua máquina na rede Radmin VPN.</p>
+                  )}
                 </div>
               </div>
             </CardContent>
@@ -210,6 +247,10 @@ export default function SocketTest() {
                   <div className="flex justify-between">
                     <span className="font-medium">Socket ID:</span>
                     <span>{socket?.id || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="font-medium">Ambiente:</span>
+                    <span>{isVercel ? 'Vercel (Produção)' : 'Desenvolvimento Local'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Servidor:</span>
