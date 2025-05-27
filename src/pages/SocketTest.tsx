@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useSocketIO } from '@/hooks/useSocketIO';
+import { useSocketIO, setServerIp, getServerIp } from '@/hooks/useSocketIO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader, Clock, Send, Wifi, WifiOff, MessageSquare, AlertCircle } from 'lucide-react';
+import { Loader, Clock, Send, Wifi, WifiOff, MessageSquare, AlertCircle, Save } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface SocketMessage {
   id: string;
@@ -13,11 +15,12 @@ interface SocketMessage {
 }
 
 export default function SocketTest() {
-  const { socket, connected } = useSocketIO();
+  const { socket, connected, connectionUrl } = useSocketIO();
   const [messages, setMessages] = useState<SocketMessage[]>([]);
   const [pingResults, setPingResults] = useState<{ sent: string; received: string; latency: number }[]>([]);
   const [serverTime, setServerTime] = useState<string | null>(null);
   const [clientCount, setClientCount] = useState<number>(0);
+  const [serverIp, setServerIpState] = useState(getServerIp() || '');
 
   // Função para adicionar mensagem ao histórico
   const addMessage = (message: string, type: 'received' | 'sent' | 'system') => {
@@ -136,6 +139,12 @@ export default function SocketTest() {
     addMessage('Ping enviado para o servidor', 'sent');
   };
 
+  // Salvar o IP do servidor
+  const handleSaveServerIp = () => {
+    setServerIp(serverIp);
+    addMessage(`Configuração de servidor alterada para: ${serverIp}`, 'system');
+  };
+
   return (
     <div className="container mx-auto py-6 max-w-4xl">
       <Card>
@@ -152,6 +161,41 @@ export default function SocketTest() {
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Configuração do Servidor */}
+          <Card>
+            <CardHeader className="py-2">
+              <CardTitle className="text-sm">Configuração do Servidor</CardTitle>
+            </CardHeader>
+            <CardContent className="py-2">
+              <div className="space-y-2">
+                <div className="space-y-1">
+                  <Label htmlFor="server-ip">Endereço IP do Servidor</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      id="server-ip" 
+                      value={serverIp} 
+                      onChange={(e) => setServerIpState(e.target.value)}
+                      placeholder="Exemplo: 192.168.0.10"
+                    />
+                    <Button 
+                      variant="secondary" 
+                      size="sm"
+                      onClick={handleSaveServerIp}
+                      className="shrink-0"
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      Salvar
+                    </Button>
+                  </div>
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  <p>URL de conexão atual: <code className="bg-muted px-1 rounded">{connectionUrl}</code></p>
+                  <p className="mt-1">Para usar conexões em rede, digite o IP da máquina onde o servidor está rodando.</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="py-2">
@@ -169,7 +213,7 @@ export default function SocketTest() {
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Servidor:</span>
-                    <span>{window.location.hostname}:8687</span>
+                    <span>{serverIp || window.location.hostname}:8687</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Hora do servidor:</span>
