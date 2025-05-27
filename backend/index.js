@@ -48,7 +48,7 @@ app.use("/",router);
 
  
 
-app.listen(8687,() => {
+app.listen(8687,'0.0.0.0',() => {
     console.log("API ON")
 });
 
