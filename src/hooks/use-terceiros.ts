@@ -15,6 +15,8 @@ export interface Terceiro {
   cep?: string;
   tipo: 'fornecedor' | 'banca';
   observacoes?: string;
+  numero?: string;
+  complemento?: string;
 }
 
 const api = 'http://localhost:8687';

@@ -26,6 +26,13 @@ import {
   Search,
   Loader2,
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DataTableProps<T> {
   data: T[];
@@ -44,7 +51,7 @@ interface DataTableProps<T> {
   isLoading?: boolean;
 }
 
-export function DataTable<T>({
+export default function DataTable<T>({
   data,
   columns,
   actions,
@@ -55,7 +62,7 @@ export function DataTable<T>({
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 10;
+  const [pageSize, setPageSize] = useState(10);
 
   // Filter data based on search query
   const filteredData = searchable
@@ -75,6 +82,11 @@ export function DataTable<T>({
 
   const totalPages = pagination ? Math.ceil(filteredData.length / pageSize) : 1;
 
+  const handlePageSizeChange = (value: string) => {
+    setPageSize(Number(value));
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
+
   if (isLoading) {
     return (
       <div className="w-full flex items-center justify-center py-8">
@@ -86,20 +98,41 @@ export function DataTable<T>({
 
   return (
     <div className="space-y-4">
-      {searchable && (
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar..."
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-      )}
+      <div className="flex items-center justify-between">
+        {searchable && (
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar..."
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
+        )}
+        {pagination && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Registros por página:</span>
+            <Select
+              value={pageSize.toString()}
+              onValueChange={handlePageSizeChange}
+            >
+              <SelectTrigger className="w-[100px]">
+                <SelectValue placeholder="10" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100">100</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
 
       <div className="rounded-md border">
         <Table>
@@ -197,21 +230,16 @@ export function DataTable<T>({
               variant="outline"
               size="icon"
               disabled={currentPage === 1}
-              onClick={() => setCurrentPage((prev) => prev - 1)}
+              onClick={() => setCurrentPage(currentPage - 1)}
             >
               <ChevronLeft className="h-4 w-4" />
               <span className="sr-only">Página anterior</span>
             </Button>
-
-            <span className="text-sm font-medium">
-              Página {currentPage} de {totalPages}
-            </span>
-
             <Button
               variant="outline"
               size="icon"
               disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage((prev) => prev + 1)}
+              onClick={() => setCurrentPage(currentPage + 1)}
             >
               <ChevronRight className="h-4 w-4" />
               <span className="sr-only">Próxima página</span>
