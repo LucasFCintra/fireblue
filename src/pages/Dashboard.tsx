@@ -6,6 +6,9 @@ import {
   Tooltip, ResponsiveContainer, Legend 
 } from "recharts";
 import { useState, useEffect } from "react";
+import { StatusTrackingCard } from "@/components/StatusTrackingCard";
+import { FichasStatusModal, Ficha } from "@/components/FichasStatusModal";
+import { fichasAguardandoRetirada, fichasEmProducao, fichasRecebidas } from "@/data/fichasMock";
 
 // Dados fictícios para os gráficos
 const productionData = [
@@ -65,9 +68,30 @@ function AnimatedCounter({ endValue, duration = 1500 }) {
 
 export default function Dashboard() {
   // Dados para o rastreamento geral
-  const aguardandoRetirada = 24;
-  const emProducao = 48;
-  const recebidos = 35;
+  const aguardandoRetirada = fichasAguardandoRetirada.length;
+  const emProducao = fichasEmProducao.length;
+  const recebidos = fichasRecebidas.length;
+  
+  // Estado para controlar o modal de detalhes
+  const [modalOpen, setModalOpen] = useState(false);
+  const [statusSelecionado, setStatusSelecionado] = useState<"aguardando-retirada" | "em-producao" | "recebido" | null>(null);
+  const [fichasFiltradas, setFichasFiltradas] = useState<Ficha[]>([]);
+  
+  // Função para abrir o modal com as fichas de um determinado status
+  const handleOpenModal = (status: "aguardando-retirada" | "em-producao" | "recebido") => {
+    setStatusSelecionado(status);
+    
+    // Seleciona as fichas de acordo com o status
+    if (status === "aguardando-retirada") {
+      setFichasFiltradas(fichasAguardandoRetirada);
+    } else if (status === "em-producao") {
+      setFichasFiltradas(fichasEmProducao);
+    } else if (status === "recebido") {
+      setFichasFiltradas(fichasRecebidas);
+    }
+    
+    setModalOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -113,36 +137,42 @@ export default function Dashboard() {
         <CardHeader>
           <CardTitle>Rastreamento Geral</CardTitle>
           <CardDescription>
-            Fluxo de trabalho e situação atual dos itens
+            Fluxo de trabalho e situação atual das fichas. Clique em um status para ver detalhes.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
-            <div className="flex flex-col items-center p-4 rounded-lg bg-amber-50 border border-amber-200 mb-4 md:mb-0 w-full md:w-1/4">
-              <Clock className="h-10 w-10 text-amber-500 mb-2" />
-              <AnimatedCounter endValue={aguardandoRetirada} />
-              <span className="text-sm font-bold text-gray-600">Aguardando Retirada</span>
-            </div>
+            <StatusTrackingCard 
+              icon={<Clock className="h-10 w-10 text-amber-500" />}
+              count={aguardandoRetirada}
+              label="Aguardando Retirada"
+              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4"
+              onClick={() => handleOpenModal("aguardando-retirada")}
+            />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
               <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
             </div>
             
-            <div className="flex flex-col items-center p-4 rounded-lg bg-blue-50 border border-blue-200 mb-4 md:mb-0 w-full md:w-1/4">
-              <CircleDot className="h-10 w-10 text-blue-500 mb-2" />
-              <AnimatedCounter endValue={emProducao} />
-              <span className="text-sm font-bold text-gray-600">Em Produção</span>
-            </div>
+            <StatusTrackingCard 
+              icon={<CircleDot className="h-10 w-10 text-blue-500" />}
+              count={emProducao}
+              label="Em Produção"
+              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4"
+              onClick={() => handleOpenModal("em-producao")}
+            />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
               <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
             </div>
             
-            <div className="flex flex-col items-center p-4 rounded-lg bg-green-50 border border-green-200 w-full md:w-1/4">
-              <Truck className="h-10 w-10 text-green-500 mb-2" />
-              <AnimatedCounter endValue={recebidos} />
-              <span className="text-sm font-bold text-gray-600">Itens Recebidos</span>
-            </div>
+            <StatusTrackingCard 
+              icon={<Truck className="h-10 w-10 text-green-500" />}
+              count={recebidos}
+              label="Itens Recebidos"
+              className="bg-green-50 border-green-200 w-full md:w-1/4"
+              onClick={() => handleOpenModal("recebido")}
+            />
           </div>
         </CardContent>
       </Card>
@@ -255,6 +285,16 @@ export default function Dashboard() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Modal para exibir os detalhes das fichas */}
+      {statusSelecionado && (
+        <FichasStatusModal 
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          status={statusSelecionado}
+          fichas={fichasFiltradas}
+        />
+      )}
     </div>
   );
 }

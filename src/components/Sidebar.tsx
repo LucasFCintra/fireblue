@@ -13,6 +13,10 @@ import {
   FileText,
   Flame,
   Radio,
+  Building,
+  User,
+  Group,
+  CalendarCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -150,9 +154,10 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             <NavItem to="/vendas" icon={ShoppingCart} label="Vendas" open={open} />
             <NavItem to="/compras" icon={Truck} label="Compras" open={open} />
             <NavItem to="/clientes" icon={Users} label="Clientes" open={open} />
-            <NavItem to="/fornecedores" icon={Store} label="Fornecedores" open={open} />
+            <NavItem to="/terceiros" icon={Building} label="Terceiros" open={open} />
             <NavItem to="/relatorios" icon={FileText} label="Relatórios" open={open} />
             <NavItem to="/ordens" icon={ClipboardList} label="Ordens" open={open} />
+            <NavItem to="/fechamento-semanal" icon={CalendarCheck} label="Fechamento Semanal" open={open} />
             <NavItem to="/configuracoes" icon={Settings} label="Configurações" open={open} />
             
             <div className="py-2">

@@ -6,6 +6,7 @@ var router = express.Router();
 const produtosController = require("../controllers/produtosController");
 const clientesController = require("../controllers/clientesController");
 const fornecedoresController = require("../controllers/fornecedoresController");
+const terceirosController = require("../controllers/terceirosController");
 const ordensController = require("../controllers/ordensController");
 const comprasController = require("../controllers/comprasController");
 const inventarioController = require("../controllers/inventarioController");
@@ -38,6 +39,14 @@ router.get('/api/fornecedores/:idFornecedor', fornecedoresController.indexOne);
 router.post('/api/fornecedores', fornecedoresController.create);
 router.put('/api/fornecedores', fornecedoresController.update);
 router.delete('/api/fornecedores/:idFornecedor', fornecedoresController.delete);
+
+// ROTAS TERCEIROS
+router.get('/api/terceiros', terceirosController.index);
+router.get('/api/terceiros/:idTerceiro', terceirosController.indexOne);
+router.get('/api/terceiros/tipo/:tipo', terceirosController.indexByTipo);
+router.post('/api/terceiros', terceirosController.create);
+router.put('/api/terceiros', terceirosController.update);
+router.delete('/api/terceiros/:idTerceiro', terceirosController.delete);
 
 // ROTAS ORDENS
 router.get('/api/ordens', ordensController.index);
