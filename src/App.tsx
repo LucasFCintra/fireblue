@@ -11,9 +11,11 @@ import Vendas from "./pages/Vendas";
 import Compras from "./pages/Compras";
 import Clientes from "./pages/Clientes";
 import Fornecedores from "./pages/Fornecedores";
+import Terceiros from "./pages/Terceiros";
 import Relatorios from "./pages/Relatorios";
 import Ordens from "./pages/Ordens";
 import Configuracoes from "./pages/Configuracoes";
+import FechamentoSemanal from "./pages/FechamentoSemanal";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
@@ -62,9 +64,11 @@ const AppRoutes = () => (
       <Route path="compras" element={<Compras />} />
       <Route path="clientes" element={<Clientes />} />
       <Route path="fornecedores" element={<Fornecedores />} />
+      <Route path="terceiros" element={<Terceiros />} />
       <Route path="relatorios" element={<Relatorios />} />
       <Route path="ordens" element={<Ordens />} />
       <Route path="configuracoes" element={<Configuracoes />} />
+      <Route path="fechamento-semanal" element={<FechamentoSemanal />} />
       <Route path="socket-test" element={<SocketTest />} />
     </Route>
     
