@@ -1,24 +1,19 @@
 {
-  "name": "user-api",
+  "name": "sge-fire-blue-backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Backend do sistema SGE Fire Blue",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "axios": "^0.21.1",
-    "body-parser": "^1.19.0",
     "cors": "^2.8.5",
-    "ejs": "^3.1.6",
-    "express": "^4.17.1",
-    "git": "^0.1.5",
-    "knex": "^0.21.2",
-    "mysql2": "^2.1.0",
-    "nodemon": "^2.0.22",
-    "socket.io": "^4.8.1"
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "mysql2": "^3.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }

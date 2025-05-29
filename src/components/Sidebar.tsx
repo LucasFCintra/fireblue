@@ -16,7 +16,8 @@ import {
   Building,
   User,
   Group,
-  CalendarCheck
+  CalendarCheck,
+  Cylinder
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -150,6 +151,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
           <nav className="flex-1 overflow-y-auto scrollbar-thin p-2 space-y-1">
             <NavItem to="/" icon={BarChart3} label="Dashboard" end open={open} />
             <NavItem to="/inventario" icon={Warehouse} label="Inventário" open={open} />
+            <NavItem to="/materia-prima" icon={Cylinder} label="Materia Prima" open={open} />
             <NavItem to="/produtos" icon={Package} label="Produtos" open={open} />
             <NavItem to="/vendas" icon={ShoppingCart} label="Vendas" open={open} />
             <NavItem to="/compras" icon={Truck} label="Compras" open={open} />

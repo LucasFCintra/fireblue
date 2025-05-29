@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-route
 import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Inventario from "./pages/Inventario";
+import MateriaPrima from "./pages/MateriaPrima";
 import Produtos from "./pages/Produtos";
 import Vendas from "./pages/Vendas";
 import Compras from "./pages/Compras";
@@ -59,6 +60,7 @@ const AppRoutes = () => (
     }>
       <Route index element={<Dashboard />} />
       <Route path="inventario" element={<Inventario />} />
+      <Route path="materia-prima" element={<MateriaPrima />} />
       <Route path="produtos" element={<Produtos />} />
       <Route path="vendas" element={<Vendas />} />
       <Route path="compras" element={<Compras />} />

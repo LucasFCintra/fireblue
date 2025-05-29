@@ -17,7 +17,19 @@ const cadastroController = require("../controllers/cadastroController");
 const redefinirSenhaController = require("../controllers/redefinirSenhaController");
 const loginController = require("../controllers/loginController");
 const dashboardController = require("../controllers/dashboardController");
+ const materiaPrimaController = require('../controllers/materiaPrimaController');
 
+// Rotas básicas CRUD
+router.get('/api/materia-prima', materiaPrimaController.index);
+router.get('/api/materia-prima/:id', materiaPrimaController.indexOne);
+router.post('/api/materia-prima', materiaPrimaController.create);
+router.put('/api/materia-prima', materiaPrimaController.update);
+router.delete('/api/materia-prima/:id', materiaPrimaController.delete);
+
+// // Rotas específicas
+// router.get('/api/materia-prima/buscar/filtros', materiaPrimaController.buscarComFiltros);
+// router.post('/api/materia-prima/:id/corte', materiaPrimaController.registrarCorte);
+// router.get('/api/materia-prima/:id/historico', materiaPrimaController.buscarHistorico);
 
 // ROTAS PRODUTOS
 router.get('/api/produtos', produtosController.index);

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Pencil, Trash2, Filter, Plus, Search, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { DataTable } from "@/components/custom/DataTable";
+import DataTable from "@/components/custom/DataTable";
 import { useToast } from "@/hooks/use-toast";
 import ActionButton from "@/components/custom/ActionButton";
 import { ConfirmDialog } from "@/components/custom/ConfirmDialog";
