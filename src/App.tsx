@@ -17,6 +17,7 @@ import Relatorios from "./pages/Relatorios";
 import Ordens from "./pages/Ordens";
 import Configuracoes from "./pages/Configuracoes";
 import FechamentoSemanal from "./pages/FechamentoSemanal";
+import Fichas from "./pages/Fichas";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Cadastro from "./pages/Cadastro";
@@ -67,6 +68,7 @@ const AppRoutes = () => (
       <Route path="clientes" element={<Clientes />} />
       <Route path="fornecedores" element={<Fornecedores />} />
       <Route path="terceiros" element={<Terceiros />} />
+      <Route path="fichas" element={<Fichas />} />
       <Route path="relatorios" element={<Relatorios />} />
       <Route path="ordens" element={<Ordens />} />
       <Route path="configuracoes" element={<Configuracoes />} />

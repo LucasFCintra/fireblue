@@ -187,7 +187,9 @@ export default function Terceiros() {
       toast.success("Dados exportados com sucesso!");
     } else if (format === "pdf") {
       // Cria um novo documento PDF
-      const doc = new jsPDF();
+      const doc = new jsPDF({
+        orientation: 'landscape',
+      });
       
       // Adiciona o título
       doc.setFontSize(16);
@@ -207,19 +209,17 @@ export default function Terceiros() {
         item.tipo === 'fornecedor' ? 'Fornecedor' : 'Banca',
         item.endereco || '-',
         item.numero || '-',
-        item.complemento || '-',
         item.cidade || '-',
-        item.estado || '-',
-        item.cep || '-'
+        item.estado || '-'
       ]);
 
       // Configura a tabela
       autoTable(doc, {
-        head: [['Nome', 'CNPJ', 'Email', 'Telefone', 'Tipo', 'Endereço', 'Número', 'Complemento', 'Cidade', 'Estado', 'CEP']],
+        head: [['Nome', 'CNPJ', 'Email', 'Telefone', 'Tipo', 'Endereço', 'Número', 'Cidade', 'Estado']],
         body: dadosParaExportar,
         startY: 30,
         styles: {
-          fontSize: 8,
+          fontSize: 10,
           cellPadding: 2,
         },
         headStyles: {
@@ -233,23 +233,21 @@ export default function Terceiros() {
         },
         columnStyles: {
           0: { cellWidth: 30 }, // Nome
-          1: { cellWidth: 18 }, // CNPJ
-          2: { cellWidth: 30 }, // Email
-          3: { cellWidth: 15 }, // Telefone
-          4: { cellWidth: 15 }, // Tipo
+          1: { cellWidth: 35 }, // CNPJ
+          2: { cellWidth: 45 }, // Email
+          3: { cellWidth: 30 }, // Telefone
+          4: { cellWidth: 25 }, // Tipo
           5: { cellWidth: 40 }, // Endereço
-          6: { cellWidth: 10 }, // Número
-          7: { cellWidth: 20 }, // Complemento
-          8: { cellWidth: 20 }, // Cidade
-          9: { cellWidth: 10 }, // Estado
-          10: { cellWidth: 10 }  // CEP
+          6: { cellWidth: 25 }, // Número
+          7: { cellWidth: 30 }, // Cidade
+          8: { cellWidth: 20 }, // Estado
         },
         margin: { top: 30 },
         didDrawPage: function(data: any) {
           // Adiciona o número da página
-          doc.setFontSize(8);
+          doc.setFontSize(9);
           doc.text(
-            `Página ${data.pageCount}`,
+            `Página ${data.pageNumber}`,
             data.settings.margin.left,
             doc.internal.pageSize.height - 10
           );

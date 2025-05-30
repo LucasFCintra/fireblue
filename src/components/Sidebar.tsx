@@ -17,7 +17,8 @@ import {
   User,
   Group,
   CalendarCheck,
-  Cylinder
+  Cylinder,
+  ArrowUpDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -157,6 +158,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             <NavItem to="/compras" icon={Truck} label="Compras" open={open} />
             <NavItem to="/clientes" icon={Users} label="Clientes" open={open} />
             <NavItem to="/terceiros" icon={Building} label="Terceiros" open={open} />
+            <NavItem to="/fichas" icon={ArrowUpDown} label="Fichas" open={open} />
             <NavItem to="/relatorios" icon={FileText} label="Relatórios" open={open} />
             <NavItem to="/ordens" icon={ClipboardList} label="Ordens" open={open} />
             <NavItem to="/fechamento-semanal" icon={CalendarCheck} label="Fechamento Semanal" open={open} />
