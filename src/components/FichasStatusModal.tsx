@@ -86,7 +86,6 @@ export const FichasStatusModal: React.FC<FichasStatusModalProps> = ({
                 <TableHead>Previsão</TableHead>
                 <TableHead>Quantidade</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Descrição</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -101,12 +100,11 @@ export const FichasStatusModal: React.FC<FichasStatusModalProps> = ({
                     <TableCell>
                       <Badge className={config.badgeColor}>{config.label}</Badge>
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">{ficha.descricao}</TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={6} className="text-center py-4">
                     Nenhuma ficha encontrada com este status.
                   </TableCell>
                 </TableRow>
