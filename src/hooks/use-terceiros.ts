@@ -19,7 +19,7 @@ export interface Terceiro {
   complemento?: string;
 }
 
-const api = 'http://localhost:8687';
+const api = 'http://26.203.75.236:8687';
 
 export function useTerceiros() {
   const [terceiros, setTerceiros] = useState<Terceiro[]>([]);

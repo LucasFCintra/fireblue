@@ -1,6 +1,13 @@
-const MateriasPrimas = require("../models/MateriaPrima");
+const MateriasPrimas = require("../models/materiaPrima");
 
 class MateriasPrimasController {
+
+  async retornaEstoque(req, res) {
+    console.log('Retornando estoque');
+    const estoque = await MateriasPrimas.retornaEstoque();
+    res.json(estoque);
+  }
+
   async index(req, res) {
     const materiasPrimas = await MateriasPrimas.findAll();
     res.json(materiasPrimas);

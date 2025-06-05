@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8687/api';
+const API_URL = 'http://26.203.75.236:8687/api';
 
 export interface Ficha {
   id: string;
