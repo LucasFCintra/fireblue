@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Table,
   TableBody,
@@ -26,7 +25,14 @@ import {
   MoreHorizontal,
   Search,
   Loader2,
+  Filter,
+  ChevronDown,
+  X,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface DataTableProps<T> {
   data: T[];
@@ -34,6 +40,7 @@ interface DataTableProps<T> {
     accessor: keyof T | ((row: T) => React.ReactNode);
     header: string;
     cell?: (row: T) => React.ReactNode;
+    filterable?: boolean;
   }[];
   actions?: {
     label: string;
@@ -43,6 +50,7 @@ interface DataTableProps<T> {
   searchable?: boolean;
   pagination?: boolean;
   isLoading?: boolean;
+  onFilterChange?: (filteredData: T[]) => void;
 }
 
 export default function DataTable<T>({
@@ -53,21 +61,110 @@ export default function DataTable<T>({
   searchable = true,
   pagination = true,
   isLoading = false,
+  onFilterChange,
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
+  const [columnFilters, setColumnFilters] = useState<Record<string, string[]>>({});
+  const [isColumnFilterOpen, setIsColumnFilterOpen] = useState<Record<string, boolean>>({});
 
-  // Filter data based on search query
-  const filteredData = searchable
-    ? data.filter((item) =>
+  // Extrair valores únicos para cada coluna para os filtros
+  const uniqueColumnValues = useMemo(() => {
+    const result: Record<string, Set<string>> = {};
+    
+    columns.forEach(column => {
+      if (typeof column.accessor === 'string' || column.accessor instanceof String) {
+        const accessor = column.accessor as keyof T;
+        const values = new Set<string>();
+        
+        data.forEach(row => {
+          const value = row[accessor];
+          if (value !== undefined && value !== null) {
+            values.add(String(value));
+          }
+        });
+        
+        result[accessor as string] = values;
+      }
+    });
+    
+    return result;
+  }, [data, columns]);
+
+  // Função para alternar um valor no filtro de coluna
+  const toggleColumnFilterValue = (column: string, value: string) => {
+    setColumnFilters(prev => {
+      const currentValues = prev[column] || [];
+      const valueExists = currentValues.includes(value);
+      
+      let newValues: string[];
+      if (valueExists) {
+        newValues = currentValues.filter(v => v !== value);
+      } else {
+        newValues = [...currentValues, value];
+      }
+      
+      return {
+        ...prev,
+        [column]: newValues.length > 0 ? newValues : []
+      };
+    });
+  };
+
+  // Função para limpar todos os filtros de uma coluna
+  const clearColumnFilter = (column: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[column];
+      return newFilters;
+    });
+  };
+
+  // Calcular o número de filtros ativos
+  const activeFiltersCount = Object.values(columnFilters).reduce(
+    (count, filters) => count + (filters.length > 0 ? 1 : 0), 
+    0
+  );
+
+  // Aplicar filtros de pesquisa e de coluna
+  const filteredData = useMemo(() => {
+    let filtered = data;
+    
+    // Aplicar filtro de pesquisa global
+    if (searchable && searchQuery) {
+      filtered = filtered.filter((item) =>
         Object.values(item as Record<string, any>).some(
           (value) =>
             value &&
             value.toString().toLowerCase().includes(searchQuery.toLowerCase())
         )
-      )
-    : data;
+      );
+    }
+    
+    // Aplicar filtros de coluna
+    if (Object.keys(columnFilters).length > 0) {
+      filtered = filtered.filter(item => {
+        return Object.entries(columnFilters).every(([column, allowedValues]) => {
+          if (allowedValues.length === 0) return true;
+          
+          const value = (item as Record<string, any>)[column];
+          if (value === undefined || value === null) return false;
+          
+          return allowedValues.includes(String(value));
+        });
+      });
+    }
+    
+    return filtered;
+  }, [data, searchable, searchQuery, columnFilters]);
+
+  // Notificar o componente pai quando os dados filtrados mudarem
+  useEffect(() => {
+    if (onFilterChange) {
+      onFilterChange(filteredData);
+    }
+  }, [filteredData, onFilterChange]);
 
   // Paginate data
   const paginatedData = pagination
@@ -106,11 +203,86 @@ export default function DataTable<T>({
         <Table>
           <TableHeader>
             <TableRow>
-              {columns.map((column, index) => (
-                <TableHead key={index}>
-                  {column.header}
-                </TableHead>
-              ))}
+              {columns.map((column, index) => {
+                const accessor = typeof column.accessor === 'function' 
+                  ? `column-${index}` 
+                  : column.accessor as string;
+                
+                const hasFilter = columnFilters[accessor]?.length > 0;
+                
+                return (
+                  <TableHead key={index} className="relative">
+                    <div className="flex items-center gap-2">
+                      {column.header}
+                      
+                      {column.filterable !== false && typeof column.accessor !== 'function' && (
+                        <Popover 
+                          open={isColumnFilterOpen[accessor]} 
+                          onOpenChange={(open) => {
+                            setIsColumnFilterOpen(prev => ({ ...prev, [accessor]: open }));
+                          }}
+                        >
+                          <PopoverTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className={`p-0 h-7 w-7 rounded-full ${hasFilter ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}
+                            >
+                              <Filter className="h-3.5 w-3.5" />
+                              <span className="sr-only">Filtrar {column.header}</span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-60 p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder={`Buscar em ${column.header}`} />
+                              <CommandList>
+                                <CommandEmpty>Nenhum resultado encontrado.</CommandEmpty>
+                                <CommandGroup>
+                                  {Array.from(uniqueColumnValues[accessor] || []).map((value, valueIndex) => (
+                                    <CommandItem 
+                                      key={valueIndex} 
+                                      onSelect={() => toggleColumnFilterValue(accessor, value)}
+                                      className="flex items-center gap-2"
+                                      aria-selected={columnFilters[accessor]?.includes(value)}
+                                    >
+                                      <div className="flex items-center gap-2 w-full">
+                                        <div className="flex-shrink-0">
+                                          <Checkbox 
+                                            checked={columnFilters[accessor]?.includes(value)} 
+                                            className="pointer-events-none"
+                                          />
+                                        </div>
+                                        <span>{value}</span>
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                              <div className="border-t p-2 flex justify-between">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => clearColumnFilter(accessor)}
+                                  disabled={!hasFilter}
+                                >
+                                  Limpar
+                                </Button>
+                                <Button 
+                                  variant="default" 
+                                  size="sm" 
+                                  onClick={() => setIsColumnFilterOpen(prev => ({ ...prev, [accessor]: false }))}
+                                >
+                                  Fechar
+                                </Button>
+                              </div>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      )}
+                    </div>
+                  </TableHead>
+                );
+              })}
               {actions && <TableHead className="w-[80px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>
@@ -178,12 +350,29 @@ export default function DataTable<T>({
         </Table>
       </div>
 
-      {pagination && totalPages > 1 && (
-        <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mt-4">
+        <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            Mostrando {(currentPage - 1) * pageSize + 1} a{" "}
-            {Math.min(currentPage * pageSize, filteredData.length)} de {filteredData.length} registros
+            {filteredData.length !== data.length ? (
+              <span>Exibindo {filteredData.length} de {data.length} registros</span>
+            ) : (
+              <span>Total de {data.length} registros</span>
+            )}
           </p>
+          {Object.keys(columnFilters).length > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-8 gap-1"
+              onClick={() => setColumnFilters({})}
+            >
+              <X className="h-3.5 w-3.5" />
+              Limpar filtros
+            </Button>
+          )}
+        </div>
+        
+        {pagination && totalPages > 1 && (
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
@@ -227,8 +416,8 @@ export default function DataTable<T>({
               <span className="sr-only">Última página</span>
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

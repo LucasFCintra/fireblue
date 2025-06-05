@@ -80,20 +80,11 @@ export default function Terceiros() {
     });
   };
 
+  // Inicializa os dados filtrados apenas quando terceiros muda e não há filtros aplicados
   useEffect(() => {
+    // Definir os dados filtrados apenas na inicialização ou quando os dados base mudarem
     setFilteredData(terceiros);
   }, [terceiros]);
-
-  const handleSearch = () => {
-    const query = searchQuery.toLowerCase();
-    const filtered = terceiros.filter(item =>
-      item.nome.toLowerCase().includes(query) ||
-      (item.cnpj && item.cnpj.toLowerCase().includes(query))
-    );
-    
-    setFilteredData(filtered);
-    toast.success(`Busca realizada!`);
-  };
 
   const handleAddItem = () => {
     setIsAddModalOpen(true);
@@ -141,6 +132,9 @@ export default function Terceiros() {
   };
 
   const handleExport = (format: string) => {
+    // Log para debug
+    console.log(`Exportando ${filteredData.length} de ${terceiros.length} registros`);
+    
     if (format === "excel") {
       // Prepara os dados para exportação
       const dadosParaExportar = filteredData.map(item => ({
@@ -182,9 +176,16 @@ export default function Terceiros() {
 
       // Gera o arquivo Excel
       const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      XLSX.writeFile(wb, `terceiros_${dataAtual}.xlsx`);
+      let fileName = `terceiros_${dataAtual}`;
+      
+      // Adiciona indicação de filtro no nome do arquivo se aplicável
+      if (filteredData.length !== terceiros.length) {
+        fileName += `_filtrado_${filteredData.length}_de_${terceiros.length}`;
+      }
+      
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
 
-      toast.success("Dados exportados com sucesso!");
+      toast.success(`${filteredData.length} registros exportados com sucesso!`);
     } else if (format === "pdf") {
       // Cria um novo documento PDF
       const doc = new jsPDF({
@@ -195,10 +196,15 @@ export default function Terceiros() {
       doc.setFontSize(16);
       doc.text("Relatório de Terceiros", 14, 15);
       
-      // Adiciona a data
+      // Adiciona a data e informações de filtro
       doc.setFontSize(10);
       const dataAtual = new Date().toLocaleDateString('pt-BR');
       doc.text(`Data: ${dataAtual}`, 14, 22);
+      
+      // Adiciona informação sobre os dados filtrados
+      if (filteredData.length !== terceiros.length) {
+        doc.text(`Relatório com dados filtrados: ${filteredData.length} de ${terceiros.length} registros`, 14, 28);
+      }
       
       // Prepara os dados para a tabela
       const dadosParaExportar = filteredData.map(item => [
@@ -217,7 +223,7 @@ export default function Terceiros() {
       autoTable(doc, {
         head: [['Nome', 'CNPJ', 'Email', 'Telefone', 'Tipo', 'Endereço', 'Número', 'Cidade', 'Estado']],
         body: dadosParaExportar,
-        startY: 30,
+        startY: filteredData.length !== terceiros.length ? 35 : 30,
         styles: {
           fontSize: 10,
           cellPadding: 2,
@@ -256,9 +262,16 @@ export default function Terceiros() {
 
       // Salva o PDF
       const dataAtualFormatada = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      doc.save(`terceiros_${dataAtualFormatada}.pdf`);
+      let fileName = `terceiros_${dataAtualFormatada}`;
       
-      toast.success("PDF gerado com sucesso!");
+      // Adiciona indicação de filtro no nome do arquivo se aplicável
+      if (filteredData.length !== terceiros.length) {
+        fileName += `_filtrado_${filteredData.length}_de_${terceiros.length}`;
+      }
+      
+      doc.save(`${fileName}.pdf`);
+      
+      toast.success(`${filteredData.length} registros exportados em PDF com sucesso!`);
     } else {
       toast.info("Exportação em outros formatos será implementada em breve");
     }
@@ -300,13 +313,14 @@ export default function Terceiros() {
   };
 
   const columns = [
-    { accessor: "nome", header: "Nome" },
-    { accessor: "cnpj", header: "CNPJ" },
-    { accessor: "email", header: "Email" },
-    { accessor: "telefone", header: "Telefone" },
+    { accessor: "nome", header: "Nome", filterable: true },
+    { accessor: "cnpj", header: "CNPJ", filterable: true },
+    { accessor: "email", header: "Email", filterable: true },
+    { accessor: "telefone", header: "Telefone", filterable: true },
     { 
       accessor: "tipo", 
       header: "Tipo", 
+      filterable: true,
       cell: (row: Terceiro) => {
         const tipo = row.tipo?.toLowerCase();
         return (
@@ -318,10 +332,10 @@ export default function Terceiros() {
         );
       }
     },
-    { accessor: "endereco", header: "Endereço" },
-    { accessor: "cidade", header: "Cidade" },
-    { accessor: "estado", header: "Estado" },
-    { accessor: "cep", header: "CEP" },
+    { accessor: "endereco", header: "Endereço", filterable: true },
+    { accessor: "cidade", header: "Cidade", filterable: true },
+    { accessor: "estado", header: "Estado", filterable: true },
+    { accessor: "cep", header: "CEP", filterable: true },
     {
       accessor: (row: any) => (
         <div className="flex gap-2">
@@ -333,7 +347,8 @@ export default function Terceiros() {
           </Button>
         </div>
       ),
-      header: "Ações"
+      header: "Ações",
+      filterable: false
     }
   ];
 
@@ -342,32 +357,6 @@ export default function Terceiros() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Terceiros</h1>
         <div className="flex items-center gap-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Buscar nome ou CNPJ..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <ActionButton 
-              onClick={handleSearch} 
-              isLoading={isLoading} 
-              loadingText="Buscando..." 
-              size="sm"
-              startIcon={<Search className="h-4 w-4" />}
-            >
-              Buscar
-            </ActionButton>
-          </div>
-          <ActionButton
-            variant="outline" 
-            size="sm"
-            startIcon={<Filter className="h-4 w-4" />}
-            onClick={() => toast.info("Filtros serão implementados")}
-          >
-            Filtros
-          </ActionButton>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -400,13 +389,14 @@ export default function Terceiros() {
       </Tabs>
 
       <DataTable
-        data={filteredData}
+        data={terceiros}
         columns={columns}
         onRowClick={(row) => {
           setSelectedRow(row);
           toast.info(`Selecionado: ${row.nome}`);
         }}
         isLoading={isLoading}
+        onFilterChange={(filtered) => setFilteredData(filtered)}
       />
       
       <ConfirmDialog
@@ -426,12 +416,12 @@ export default function Terceiros() {
           limparFormulario();
         }
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Novo Terceiro</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="tipo">Tipo</Label>
               <Select 
                 value={newItem.tipo} 
@@ -446,14 +436,32 @@ export default function Terceiros() {
                 </SelectContent>
               </Select>
             </div>
-            <Input placeholder="Nome" value={newItem.nome} onChange={e => setNewItem({...newItem, nome: e.target.value})} />
-            <Input placeholder="CNPJ" value={newItem.cnpj} onChange={e => setNewItem({...newItem, cnpj: e.target.value})} />
-            <Input placeholder="Email" value={newItem.email} onChange={e => setNewItem({...newItem, email: e.target.value})} />
-            <Input placeholder="Telefone" value={newItem.telefone} onChange={e => setNewItem({...newItem, telefone: e.target.value})} />
+            
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome</Label>
+              <Input id="nome" placeholder="Nome" value={newItem.nome} onChange={e => setNewItem({...newItem, nome: e.target.value})} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="cnpj">CNPJ</Label>
+              <Input id="cnpj" placeholder="CNPJ" value={newItem.cnpj} onChange={e => setNewItem({...newItem, cnpj: e.target.value})} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" placeholder="Email" value={newItem.email} onChange={e => setNewItem({...newItem, email: e.target.value})} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="telefone">Telefone</Label>
+              <Input id="telefone" placeholder="Telefone" value={newItem.telefone} onChange={e => setNewItem({...newItem, telefone: e.target.value})} />
+            </div>
+            
             <div className="space-y-2">
               <Label htmlFor="cep">CEP</Label>
               <div className="flex gap-2">
                 <Input 
+                  id="cep"
                   placeholder="CEP" 
                   value={newItem.cep} 
                   onChange={e => setNewItem({...newItem, cep: e.target.value})}
@@ -463,15 +471,33 @@ export default function Terceiros() {
               </div>
               {errorCep && <p className="text-sm text-destructive">{errorCep}</p>}
             </div>
-            <Input placeholder="Endereço" value={newItem.endereco} onChange={e => setNewItem({...newItem, endereco: e.target.value})} />
-            <div className="grid grid-cols-2 gap-4">
-              <Input placeholder="Número" value={newItem.numero} onChange={e => setNewItem({...newItem, numero: e.target.value})} />
-              <Input placeholder="Complemento" value={newItem.complemento} onChange={e => setNewItem({...newItem, complemento: e.target.value})} />
+            
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="endereco">Endereço</Label>
+              <Input id="endereco" placeholder="Endereço" value={newItem.endereco} onChange={e => setNewItem({...newItem, endereco: e.target.value})} />
             </div>
-            <Input placeholder="Cidade" value={newItem.cidade} onChange={e => setNewItem({...newItem, cidade: e.target.value})} />
-            <Input placeholder="Estado" value={newItem.estado} onChange={e => setNewItem({...newItem, estado: e.target.value})} />
+            
+            <div className="space-y-2">
+              <Label htmlFor="numero">Número</Label>
+              <Input id="numero" placeholder="Número" value={newItem.numero} onChange={e => setNewItem({...newItem, numero: e.target.value})} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="complemento">Complemento</Label>
+              <Input id="complemento" placeholder="Complemento" value={newItem.complemento} onChange={e => setNewItem({...newItem, complemento: e.target.value})} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade</Label>
+              <Input id="cidade" placeholder="Cidade" value={newItem.cidade} onChange={e => setNewItem({...newItem, cidade: e.target.value})} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="estado">Estado</Label>
+              <Input id="estado" placeholder="Estado" value={newItem.estado} onChange={e => setNewItem({...newItem, estado: e.target.value})} />
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setIsAddModalOpen(false)}>Cancelar</Button>
             <Button onClick={handleInsertItem} disabled={isLoading}>Salvar</Button>
           </DialogFooter>
@@ -485,12 +511,12 @@ export default function Terceiros() {
           limparFormulario();
         }
       }}>
-        <DialogContent>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Terceiro</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="tipo">Tipo</Label>
               <Select 
                 value={editItem?.tipo || "fornecedor"} 
@@ -505,14 +531,32 @@ export default function Terceiros() {
                 </SelectContent>
               </Select>
             </div>
-            <Input placeholder="Nome" value={editItem?.nome || ""} onChange={e => setEditItem(prev => prev ? { ...prev, nome: e.target.value } : null)} />
-            <Input placeholder="CNPJ" value={editItem?.cnpj || ""} onChange={e => setEditItem(prev => prev ? { ...prev, cnpj: e.target.value } : null)} />
-            <Input placeholder="Email" value={editItem?.email || ""} onChange={e => setEditItem(prev => prev ? { ...prev, email: e.target.value } : null)} />
-            <Input placeholder="Telefone" value={editItem?.telefone || ""} onChange={e => setEditItem(prev => prev ? { ...prev, telefone: e.target.value } : null)} />
+            
             <div className="space-y-2">
-              <Label htmlFor="cep">CEP</Label>
+              <Label htmlFor="edit-nome">Nome</Label>
+              <Input id="edit-nome" placeholder="Nome" value={editItem?.nome || ""} onChange={e => setEditItem(prev => prev ? { ...prev, nome: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-cnpj">CNPJ</Label>
+              <Input id="edit-cnpj" placeholder="CNPJ" value={editItem?.cnpj || ""} onChange={e => setEditItem(prev => prev ? { ...prev, cnpj: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" placeholder="Email" value={editItem?.email || ""} onChange={e => setEditItem(prev => prev ? { ...prev, email: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-telefone">Telefone</Label>
+              <Input id="edit-telefone" placeholder="Telefone" value={editItem?.telefone || ""} onChange={e => setEditItem(prev => prev ? { ...prev, telefone: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-cep">CEP</Label>
               <div className="flex gap-2">
                 <Input 
+                  id="edit-cep"
                   placeholder="CEP" 
                   value={editItem?.cep || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, cep: e.target.value } : null)}
@@ -522,15 +566,33 @@ export default function Terceiros() {
               </div>
               {errorCep && <p className="text-sm text-destructive">{errorCep}</p>}
             </div>
-            <Input placeholder="Endereço" value={editItem?.endereco || ""} onChange={e => setEditItem(prev => prev ? { ...prev, endereco: e.target.value } : null)} />
-            <div className="grid grid-cols-2 gap-4">
-              <Input placeholder="Número" value={editItem?.numero || ""} onChange={e => setEditItem(prev => prev ? { ...prev, numero: e.target.value } : null)} />
-              <Input placeholder="Complemento" value={editItem?.complemento || ""} onChange={e => setEditItem(prev => prev ? { ...prev, complemento: e.target.value } : null)} />
+            
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="edit-endereco">Endereço</Label>
+              <Input id="edit-endereco" placeholder="Endereço" value={editItem?.endereco || ""} onChange={e => setEditItem(prev => prev ? { ...prev, endereco: e.target.value } : null)} />
             </div>
-            <Input placeholder="Cidade" value={editItem?.cidade || ""} onChange={e => setEditItem(prev => prev ? { ...prev, cidade: e.target.value } : null)} />
-            <Input placeholder="Estado" value={editItem?.estado || ""} onChange={e => setEditItem(prev => prev ? { ...prev, estado: e.target.value } : null)} />
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-numero">Número</Label>
+              <Input id="edit-numero" placeholder="Número" value={editItem?.numero || ""} onChange={e => setEditItem(prev => prev ? { ...prev, numero: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-complemento">Complemento</Label>
+              <Input id="edit-complemento" placeholder="Complemento" value={editItem?.complemento || ""} onChange={e => setEditItem(prev => prev ? { ...prev, complemento: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-cidade">Cidade</Label>
+              <Input id="edit-cidade" placeholder="Cidade" value={editItem?.cidade || ""} onChange={e => setEditItem(prev => prev ? { ...prev, cidade: e.target.value } : null)} />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-estado">Estado</Label>
+              <Input id="edit-estado" placeholder="Estado" value={editItem?.estado || ""} onChange={e => setEditItem(prev => prev ? { ...prev, estado: e.target.value } : null)} />
+            </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancelar</Button>
             <Button onClick={handleEditItem} disabled={isLoading}>Salvar</Button>
           </DialogFooter>
