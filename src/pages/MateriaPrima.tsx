@@ -31,8 +31,9 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { toast } from "@/components/ui/sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { materiaPrimaService, Bobina, Movimentacao } from "@/services/materiaPrimaService";
+import { materiaPrimaService, Bobina, Movimentacao, Estoque } from "@/services/materiaPrimaService";
 import { ReactNode } from "react";
+import { io } from 'socket.io-client';
 
 const API_URL = 'http://localhost:8687/api';
 
@@ -49,6 +50,12 @@ export default function MateriaPrima() {
   const [ordemProducao, setOrdemProducao] = useState("");
   const [filteredData, setFilteredData] = useState<Bobina[]>([]);
   const [historico, setHistorico] = useState<Movimentacao[]>([]);
+  const [socket, setSocket] = useState<any>(null);
+  const [estoque, setEstoque] = useState<Estoque>({
+    semEstoque: [],
+    baixoEstoque: [],
+    emEstoque: []
+  });
   
   // Estado para o formulário de nova bobina
   const [novaBobina, setNovaBobina] = useState<Omit<Bobina, 'id'>>({
@@ -90,10 +97,27 @@ export default function MateriaPrima() {
     }
   };
   
+  // Função para carregar o estoque
+  const carregarEstoque = async () => {
+    try {
+      const estoqueData = await materiaPrimaService.retornaEstoque();
+      setEstoque(estoqueData);
+    } catch (error) {
+      toast.error("Erro ao carregar dados do estoque");
+      console.error(error);
+    }
+  };
+  
   // Carregar dados iniciais
   useEffect(() => {
     void carregarBobinas();
+    void carregarEstoque();
   }, []);
+  
+  // Atualizar o estoque quando houver mudanças nas bobinas
+  useEffect(() => {
+    void carregarEstoque();
+  }, [filteredData]);
   
   // Função para lidar com a pesquisa
   const handleSearch = async () => {
@@ -237,8 +261,13 @@ export default function MateriaPrima() {
       setIsLoading(false);
     }
   };
+  const retornaEstoque = async () => {
+    const estoque = await materiaPrimaService.retornaEstoque();
+    
 
-  // Função para carregar histórico
+    console.log(estoque);
+  };  
+  // Função para carregar histórico 
   const carregarHistorico = async (id: string) => {
     try {
       setIsLoading(true);
@@ -428,8 +457,39 @@ export default function MateriaPrima() {
     },
   ];
   
+  // Configurar Socket.IO
+  useEffect(() => {
+    const newSocket = io('http://26.203.75.236:8687');
+    setSocket(newSocket);
+
+    // Escutar eventos de atualização
+    newSocket.on('bobina_status_atualizado', (data) => {
+      setFilteredData(prevData => 
+        prevData.map(bobina => 
+          bobina.id === data.id 
+            ? { ...bobina, status: data.status, quantidade_disponivel: data.quantidade_disponivel }
+            : bobina
+        )
+      );
+    });
+
+    newSocket.on('nova_bobina', (bobina) => {
+      setFilteredData(prevData => [...prevData, bobina]);
+    });
+
+    newSocket.on('bobina_atualizada', (bobina) => {
+      setFilteredData(prevData => 
+        prevData.map(b => b.id === bobina.id ? bobina : b)
+      );
+    });
+
+    return () => {
+      newSocket.disconnect();
+    };
+  }, []);
+  
   return (
-    <div className="space-y-6">
+    <div className="container mx-auto p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Controle de Bobinas</h1>
         <div className="flex items-center gap-4">
@@ -497,29 +557,29 @@ export default function MateriaPrima() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bobinas com Baixo Estoque</CardTitle>
+            <CardTitle className="text-sm font-medium">Bobinas com Estoque</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {filteredData.filter(item => item.status === "Baixo Estoque").length}
+            <div className="text-2xl font-bold text-green-600">
+              {estoque.emEstoque.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Bobinas que precisam de reposição
+              Bobinas disponíveis para uso
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bobinas Sem Estoque</CardTitle>
+            <CardTitle className="text-sm font-medium">Bobinas sem Estoque</CardTitle>
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {filteredData.filter(item => item.status === "Sem Estoque").length}
+            <div className="text-2xl font-bold text-red-600">
+              {estoque.semEstoque.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Bobinas que precisam ser repostas urgentemente
+              Bobinas que precisam de reposição
             </p>
           </CardContent>
         </Card>

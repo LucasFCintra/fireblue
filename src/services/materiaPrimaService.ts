@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8687/api';
+const API_URL = 'http://26.203.75.236:8687/api';
 
 export interface Bobina {
   id: string;
@@ -26,10 +26,20 @@ export interface Movimentacao {
   ordemProducao?: string;
   responsavel: string;
 }
+export interface Estoque {
+  semEstoque: Bobina[];
+  baixoEstoque: Bobina[];
+  emEstoque: Bobina[];
+} 
 
 export const materiaPrimaService = {
   async listarBobinas(): Promise<Bobina[]> {
     const response = await axios.get(`${API_URL}/materia-prima`);
+    return response.data;
+  },
+
+  async retornaEstoque(): Promise<Estoque> {
+    const response = await axios.get(`${API_URL}/materia-prima/estoque`);
     return response.data;
   },
 
