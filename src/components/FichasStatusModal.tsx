@@ -19,7 +19,7 @@ export interface Ficha {
   banca: string;
   dataEntrada: string;
   dataPrevisao: string;
-  status: "aguardando-retirada" | "em-producao" | "recebido";
+  status: "aguardando_retirada" | "em_producao" | "concluido";
   quantidade: number;
   descricao: string;
 }
@@ -27,31 +27,31 @@ export interface Ficha {
 interface FichasStatusModalProps {
   isOpen: boolean;
   onClose: () => void;
-  status: "aguardando-retirada" | "em-producao" | "recebido";
+  status: "aguardando_retirada" | "em_producao" | "concluido";
   fichas: Ficha[];
 }
 
 const statusConfig = {
-  "aguardando-retirada": {
+  "aguardando_retirada": {
     title: "Fichas Aguardando Retirada",
     description: "Lista de todas as fichas que aguardam retirada pelas bancas",
     icon: <Clock className="h-5 w-5 text-amber-500" />,
     badgeColor: "bg-amber-100 text-amber-800 hover:bg-amber-100",
     label: "Aguardando Retirada"
   },
-  "em-producao": {
+  "em_producao": {
     title: "Fichas em Produção",
     description: "Lista de todas as fichas que estão em produção nas bancas",
     icon: <CircleDot className="h-5 w-5 text-blue-500" />,
     badgeColor: "bg-blue-100 text-blue-800 hover:bg-blue-100",
     label: "Em Produção"
   },
-  "recebido": {
-    title: "Fichas Recebidas",
-    description: "Lista de todas as fichas que foram recebidas das bancas",
+  "concluido": {
+    title: "Fichas Concluídas",
+    description: "Lista de todas as fichas que foram concluídas",
     icon: <Truck className="h-5 w-5 text-green-500" />,
     badgeColor: "bg-green-100 text-green-800 hover:bg-green-100",
-    label: "Recebido"
+    label: "Concluído"
   }
 };
 

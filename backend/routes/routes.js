@@ -135,5 +135,6 @@ router.post('/api/login', loginController.login);
 
 // ROTAS DASHBOARD
 router.get('/api/dashboard', dashboardController.getResumo);
+router.get('/api/dashboard/producao-semanal', dashboardController.getProducaoSemanal);
 
 module.exports = router;

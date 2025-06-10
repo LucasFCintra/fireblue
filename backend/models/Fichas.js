@@ -13,8 +13,10 @@ class FichasModel {
   }
 
   async findById(idTerceiro) {
+
+    const id = idTerceiro
     try {
-      const result = await knex.select(["*"]).where({ idTerceiro }).table("fichas")
+      const result = await knex.select(["*"]).where({ id }).table("fichas")
       if (result.length > 0) {
         return result[0]
       } else {

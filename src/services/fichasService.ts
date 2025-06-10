@@ -1,9 +1,10 @@
 import axios from 'axios';
+import { randomUUID } from 'crypto';
 
 const API_URL = 'http://26.203.75.236:8687/api';
 
 export interface Ficha {
-  id: string;
+  id: number;
   codigo: string;
   banca: string;
   data_entrada: string | Date;
@@ -16,8 +17,8 @@ export interface Ficha {
 }
 
 export interface Movimentacao {
-  id: string;
-  ficha_id: string;
+  id: number;
+  ficha_id: number;
   data: string | Date;
   tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão";
   quantidade: number;
