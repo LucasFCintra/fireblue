@@ -64,6 +64,7 @@ export default function MateriaPrima() {
     lote: "",
     fornecedor: "",
     quantidade_total: 0,
+    quantidade_disponivel: 0,
     unidade: "m",
     localizacao: "",
     data_entrada: new Date(),
@@ -239,21 +240,21 @@ export default function MateriaPrima() {
   const handleCorte = async () => {
     if (!selectedRow || !quantidade_totalCorte) return;
     
-    const quantidade_total = parseFloat(quantidade_totalCorte);
-    if (quantidade_total > selectedRow.quantidade_total) {
-      toast.error("quantidade_total de corte não pode ser maior que a quantidade_total disponível");
+    const quantidade = parseFloat(quantidade_totalCorte);
+    if (quantidade > selectedRow.quantidade_total) {
+      toast.error("Quantidade de corte não pode ser maior que a quantidade disponível");
       return;
     }
     
     try {
       setIsLoading(true);
-      await materiaPrimaService.registrarCorte(selectedRow.id, quantidade_total, ordemProducao);
+      await materiaPrimaService.registrarCorte(selectedRow.id, quantidade, ordemProducao);
       await carregarBobinas();
       setIsCorteDialogOpen(false);
       setquantidade_totalCorte("");
       setOrdemProducao("");
       setSelectedRow(null);
-      toast.success(`Corte de ${quantidade_total}m realizado com sucesso`);
+      toast.success(`Corte de ${quantidade}m realizado com sucesso`);
     } catch (error) {
       toast.error("Erro ao registrar corte");
       console.error(error);
@@ -294,6 +295,7 @@ export default function MateriaPrima() {
         lote: "",
         fornecedor: "",
         quantidade_total: 0,
+        quantidade_disponivel: 0,
         unidade: "m",
         localizacao: "",
         data_entrada: new Date(),
@@ -384,6 +386,15 @@ export default function MateriaPrima() {
       cell: (row: Bobina) => (
         <span className={row.quantidade_total === 0 ? "text-red-500 font-medium" : ""}>
           {row.quantidade_total} {row.unidade}
+        </span>
+      ),
+    },
+    {
+      accessor: "quantidade_disponivel" as keyof Bobina,
+      header: "Quantidade Disponível",
+      cell: (row: Bobina) => (
+        <span className={row.quantidade_disponivel === 0 ? "text-red-500 font-medium" : ""}>
+          {row.quantidade_disponivel} {row.unidade}
         </span>
       ),
     },
@@ -758,14 +769,30 @@ export default function MateriaPrima() {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-3 gap-4">
               <div className="space-y-2">
-                <label htmlFor="quantidade_total">quantidade_total</label>
+                <label htmlFor="quantidade_total">Quantidade Total</label>
                 <Input
                   id="quantidade_total"
                   type="number"
                   value={novaBobina.quantidade_total}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_total: parseFloat(e.target.value) })}
+                  onChange={(e) => {
+                    const valor = parseFloat(e.target.value);
+                    setNovaBobina({ 
+                      ...novaBobina, 
+                      quantidade_total: valor,
+                      quantidade_disponivel: valor // Inicialmente igual à quantidade total
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="quantidade_disponivel">Quantidade Disponível</label>
+                <Input
+                  id="quantidade_disponivel"
+                  type="number"
+                  value={novaBobina.quantidade_disponivel}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_disponivel: parseFloat(e.target.value) })}
                 />
               </div>
               <div className="space-y-2">
@@ -882,14 +909,23 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-3 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="edit-quantidade_total">quantidade_total</label>
+                  <label htmlFor="edit-quantidade_total">Quantidade Total</label>
                   <Input
                     id="edit-quantidade_total"
                     type="number"
                     value={bobinaEditando.quantidade_total}
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, quantidade_total: parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label htmlFor="edit-quantidade_disponivel">Quantidade Disponível</label>
+                  <Input
+                    id="edit-quantidade_disponivel"
+                    type="number"
+                    value={bobinaEditando.quantidade_disponivel}
+                    onChange={(e) => setBobinaEditando({ ...bobinaEditando, quantidade_disponivel: parseFloat(e.target.value) })}
                   />
                 </div>
                 <div className="space-y-2">

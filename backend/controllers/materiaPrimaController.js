@@ -2,8 +2,7 @@ const MateriasPrimas = require("../models/materiaPrima");
 
 class MateriasPrimasController {
 
-  async retornaEstoque(req, res) {
-    console.log('Retornando estoque');
+  async retornaEstoque(req, res) { 
     const estoque = await MateriasPrimas.retornaEstoque();
     res.json(estoque);
   }
@@ -78,12 +77,13 @@ class MateriasPrimasController {
     }
   }
 
-  async cortar(req, res) {
-    const { id, quantidade, ordemProducao, responsavel } = req.body;
+  async cortar(req, res) {    
+    const id = req.params.id;
+    const { quantidade, ordemProducao, responsavel } = req.body;
     if (!id || !quantidade) {
       return res.status(400).json({ error: "ID e quantidade são obrigatórios" });
     }
-
+    console.log('Controller: '+req.body)
     const result = await MateriasPrimas.cortar(id, quantidade, ordemProducao, responsavel);
     if (result.status) {
       res.status(200).json({
@@ -92,6 +92,21 @@ class MateriasPrimasController {
       });
     } else {
       res.status(400).json({ error: result.error || result.err });
+    }
+  }
+
+  async historico(req, res) {
+    const id = req.params.id;
+    if (!id) {
+      return res.status(400).json({ error: "ID é obrigatório" });
+    }
+
+    try {
+      const historico = await MateriasPrimas.buscarHistorico(id);
+      res.status(200).json(historico);
+    } catch (error) {
+      console.error('Erro ao buscar histórico:', error);
+      res.status(400).json({ error: "Erro ao buscar histórico de movimentações" });
     }
   }
 }

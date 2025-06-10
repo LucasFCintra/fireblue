@@ -37,8 +37,7 @@ import { ptBR } from "date-fns/locale";
 import { fichasService, Ficha } from "@/services/fichasService";
 import { ReactNode } from "react";
 import { StatusTrackingCard } from "@/components/StatusTrackingCard";
-import { MovimentacaoModal } from "@/components/fichas/MovimentacaoModal";
-import { todasFichas, fichasEmProducao, fichasAguardandoRetirada, fichasConcluidas } from "@/data/fichasDataMock";
+import { MovimentacaoModal } from "@/components/fichas/MovimentacaoModal"; 
 
 export default function Fichas() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,16 +48,21 @@ export default function Fichas() {
   const [isMovimentacaoDialogOpen, setIsMovimentacaoDialogOpen] = useState(false);
   const [isConcluirFichaDialogOpen, setIsConcluirFichaDialogOpen] = useState(false);
   const [isNovaFichaDialogOpen, setIsNovaFichaDialogOpen] = useState(false);
-  const [filteredData, setFilteredData] = useState<Ficha[]>(todasFichas);
+  const [filteredData, setFilteredData] = useState<Ficha[]>([]);
+  const [statusSummary, setStatusSummary] = useState({
+    'aguardando_retirada': 0,
+    'em_producao': 0,
+    'concluido': 0
+  });
   
   // Estado para nova ficha
   const [novaFicha, setNovaFicha] = useState<Omit<Ficha, 'id'>>({
     codigo: "",
     banca: "",
-    dataEntrada: new Date(),
-    dataPrevisao: new Date(),
+    data_entrada: new Date(),
+    data_previsao: new Date(),
     quantidade: 0,
-    status: "aguardando-retirada",
+    status: "aguardando_retirada",
     produto: "",
     cor: "",
     observacoes: ""
@@ -84,12 +88,13 @@ export default function Fichas() {
   const carregarFichas = async () => {
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // const fichas = await fichasService.listarFichas();
-      // setFilteredData(fichas);
+      const fichas = await fichasService.listarFichas();
+      setFilteredData(fichas);
       
-      // Usando dados mockados
-      setFilteredData(todasFichas);
+      // Carregar resumo de status
+      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const summary = await response.json();
+      setStatusSummary(summary);
     } catch (error) {
       toast.error("Erro ao carregar fichas");
       console.error(error);
@@ -106,11 +111,11 @@ export default function Fichas() {
   // Função para lidar com a pesquisa
   const handleSearch = () => {
     if (!searchQuery.trim()) {
-      setFilteredData(todasFichas);
+      carregarFichas();
       return;
     }
     
-    const filtrado = todasFichas.filter(ficha => 
+    const filtrado = filteredData.filter(ficha => 
       ficha.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ficha.banca.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ficha.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -133,10 +138,8 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // await fichasService.excluirFicha(selectedFicha.id);
+      await fichasService.excluirFicha(selectedFicha.id);
       
-      // Usando dados mockados
       const novaLista = filteredData.filter(ficha => ficha.id !== selectedFicha.id);
       setFilteredData(novaLista);
       
@@ -163,18 +166,16 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // await fichasService.atualizarFicha(fichaEditando);
+      const fichaAtualizada = await fichasService.atualizarFicha(fichaEditando);
       
-      // Usando dados mockados
       const novaLista = filteredData.map(ficha => 
-        ficha.id === fichaEditando.id ? fichaEditando : ficha
+        ficha.id === fichaAtualizada.id ? fichaAtualizada : ficha
       );
       setFilteredData(novaLista);
       
       setIsEditDialogOpen(false);
       setFichaEditando(null);
-      toast.success(`Ficha ${fichaEditando.codigo} atualizada com sucesso`);
+      toast.success(`Ficha ${fichaAtualizada.codigo} atualizada com sucesso`);
     } catch (error) {
       toast.error("Erro ao atualizar ficha");
       console.error(error);
@@ -201,15 +202,15 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // await fichasService.concluirFicha(selectedFicha.id);
-      
-      // Usando dados mockados
-      const novaLista = filteredData.map(ficha => 
-        ficha.id === selectedFicha.id ? {...ficha, status: "concluido" as any} : ficha
+      await fichasService.registrarMovimentacao(
+        selectedFicha.id,
+        "Conclusão",
+        selectedFicha.quantidade,
+        "Conclusão da produção",
+        "Sistema"
       );
-      setFilteredData(novaLista);
       
+      await carregarFichas();
       setIsConcluirFichaDialogOpen(false);
       setSelectedFicha(null);
       toast.success(`Ficha ${selectedFicha.codigo} concluída com sucesso`);
@@ -230,14 +231,12 @@ export default function Fichas() {
   const handleCreateFicha = async () => {
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // const novaFichaCriada = await fichasService.criarFicha(novaFicha);
-      
-      // Usando dados mockados
-      const novaFichaCriada: Ficha = {
+      const fichaParaCriar = {
         ...novaFicha,
-        id: `NOVA-${Date.now()}`
+        data_entrada: novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString() : novaFicha.data_entrada,
+        data_previsao: novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString() : novaFicha.data_previsao
       };
+      const novaFichaCriada = await fichasService.criarFicha(fichaParaCriar);
       
       setFilteredData([novaFichaCriada, ...filteredData]);
       
@@ -245,10 +244,10 @@ export default function Fichas() {
       setNovaFicha({
         codigo: "",
         banca: "",
-        dataEntrada: new Date(),
-        dataPrevisao: new Date(),
+        data_entrada: new Date(),
+        data_previsao: new Date(),
         quantidade: 0,
-        status: "aguardando-retirada",
+        status: "aguardando_retirada",
         produto: "",
         cor: "",
         observacoes: ""
@@ -288,15 +287,18 @@ export default function Fichas() {
   };
   
   // Abrir modal por status
-  const handleAbrirPorStatus = (status: string) => {
-    const fichasFiltradas = todasFichas.filter(ficha => {
-      if (status === "aguardando-retirada") return ficha.status === "aguardando-retirada";
-      if (status === "em-producao") return ficha.status === "em-producao";
-      if (status === "concluido") return ficha.status === "concluido";
-      return false;
-    });
-    
-    setFilteredData(fichasFiltradas);
+  const handleAbrirPorStatus = async (status: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+      const fichas = await response.json();
+      setFilteredData(fichas);
+    } catch (error) {
+      toast.error("Erro ao carregar fichas por status");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   // Colunas para a tabela de fichas
@@ -314,17 +316,33 @@ export default function Fichas() {
       header: "Banca",
     },
     {
-      accessor: "dataEntrada" as keyof Ficha,
+      accessor: "data_entrada" as keyof Ficha,
       header: "Data de Entrada",
       cell: (row: Ficha) => {
-        return format(new Date(row.dataEntrada), 'dd/MM/yyyy', { locale: ptBR });
+        try {
+          const data = new Date(row.data_entrada);
+          if (isNaN(data.getTime())) {
+            return "Data inválida";
+          }
+          return format(data, 'dd/MM/yyyy', { locale: ptBR });
+        } catch (error) {
+          return "Data inválida";
+        }
       },
     },
     {
-      accessor: "dataPrevisao" as keyof Ficha,
+      accessor: "data_previsao" as keyof Ficha,
       header: "Previsão de retorno",
       cell: (row: Ficha) => {
-        return format(new Date(row.dataPrevisao), 'dd/MM/yyyy', { locale: ptBR });
+        try {
+          const data = new Date(row.data_previsao);
+          if (isNaN(data.getTime())) {
+            return "Data inválida";
+          }
+          return format(data, 'dd/MM/yyyy', { locale: ptBR });
+        } catch (error) {
+          return "Data inválida";
+        }
       },
     },
     {
@@ -339,16 +357,16 @@ export default function Fichas() {
       header: "Status",
       cell: (row: Ficha) => {
         let variant = "default";
-        if (row.status === "aguardando-retirada") variant = "outline";
-        if (row.status === "em-producao") variant = "default";
+        if (row.status === "aguardando_retirada") variant = "outline";
+        if (row.status === "em_producao") variant = "default";
         if (row.status === "concluido") variant = "success";
         
         return (
           <Badge variant={variant as any}
-            className={row.status === "aguardando-retirada" ? "bg-amber-50 text-amber-500 border-amber-200 hover:bg-amber-50" : ""}
+            className={row.status === "aguardando_retirada" ? "bg-amber-50 text-amber-500 border-amber-200 hover:bg-amber-50" : ""}
           >
-            {row.status === "aguardando-retirada" ? "Aguardando Retirada" : 
-             row.status === "em-producao" ? "Em Produção" : 
+            {row.status === "aguardando_retirada" ? "Aguardando Retirada" : 
+             row.status === "em_producao" ? "Em Produção" : 
              row.status === "concluido" ? "Concluído" : row.status}
           </Badge>
         );
@@ -511,10 +529,10 @@ export default function Fichas() {
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
             <StatusTrackingCard 
               icon={<Clock className="h-10 w-10 text-amber-500" />}
-              count={fichasAguardandoRetirada.length}
+              count={statusSummary.aguardando_retirada}
               label="Aguardando Retirada"
               className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4"
-              onClick={() => handleAbrirPorStatus("aguardando-retirada")}
+              onClick={() => handleAbrirPorStatus("aguardando_retirada")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
@@ -523,10 +541,10 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
-              count={fichasEmProducao.length}
+              count={statusSummary.em_producao}
               label="Em Produção"
               className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4"
-              onClick={() => handleAbrirPorStatus("em-producao")}
+              onClick={() => handleAbrirPorStatus("em_producao")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
@@ -535,7 +553,7 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<CheckCircle className="h-10 w-10 text-green-500" />}
-              count={fichasConcluidas.length}
+              count={statusSummary.concluido}
               label="Concluídas"
               className="bg-green-50 border-green-200 w-full md:w-1/4"
               onClick={() => handleAbrirPorStatus("concluido")}

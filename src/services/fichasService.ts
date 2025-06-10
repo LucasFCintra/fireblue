@@ -6,10 +6,10 @@ export interface Ficha {
   id: string;
   codigo: string;
   banca: string;
-  dataEntrada: Date;
-  dataPrevisao: Date;
+  data_entrada: string | Date;
+  data_previsao: string | Date;
   quantidade: number;
-  status: "aguardando-retirada" | "em-producao" | "recebido" | "concluido";
+  status: "aguardando_retirada" | "em_producao" | "recebido" | "concluido";
   produto: string;
   cor: string;
   observacoes?: string;
@@ -17,8 +17,8 @@ export interface Ficha {
 
 export interface Movimentacao {
   id: string;
-  fichaId: string;
-  data: Date;
+  ficha_id: string;
+  data: string | Date;
   tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão";
   quantidade: number;
   descricao: string;
@@ -42,7 +42,7 @@ export const fichasService = {
   },
 
   async atualizarFicha(ficha: Ficha): Promise<Ficha> {
-    const response = await axios.put(`${API_URL}/fichas`, ficha);
+    const response = await axios.put(`${API_URL}/fichas/${ficha.id}`, ficha);
     return response.data.data;
   },
 
