@@ -38,6 +38,7 @@ export const MovimentacaoModal: React.FC<MovimentacaoModalProps> = ({
   const [quantidade, setQuantidade] = useState("");
   const [descricao, setDescricao] = useState("");
   const [quantidadeComBanca, setQuantidadeComBanca] = useState(0);
+  const [responsavel, setResponsavel] = useState("");
 
   useEffect(() => {
     if (ficha && isOpen) {
@@ -75,48 +76,28 @@ export const MovimentacaoModal: React.FC<MovimentacaoModalProps> = ({
     setQuantidadeComBanca(ficha.quantidade - quantidadeRetornada);
   };
 
-  const handleRegistrarMovimentacao = async () => {
-    if (!ficha) return;
-    
-    const quantidadeNum = parseFloat(quantidade);
-    
-    if (isNaN(quantidadeNum) || quantidadeNum <= 0) {
-      toast.error("A quantidade deve ser um número válido maior que zero");
-      return;
-    }
-    
-    if (tipoMovimentacao === "Retorno" && quantidadeNum > quantidadeComBanca) {
-      toast.error("A quantidade de retorno não pode ser maior que a quantidade com a banca");
-      return;
-    }
-    
-    if (!descricao.trim()) {
-      toast.error("A descrição é obrigatória");
-      return;
-    }
-    
+  const handleSubmit = async () => {
     try {
-      setIsLoading(true);
+      const quantidadeNum = Number(quantidade);
+      if (isNaN(quantidadeNum) || quantidadeNum <= 0) {
+        toast.error("Quantidade inválida");
+        return;
+      }
+
       await fichasService.registrarMovimentacao(
         ficha.id,
         tipoMovimentacao,
         quantidadeNum,
-        descricao
+        descricao,
+        responsavel
       );
       
       toast.success("Movimentação registrada com sucesso");
-      setTipoMovimentacao("Retorno");
-      setQuantidade("");
-      setDescricao("");
-      
-      await carregarMovimentacoes();
-      calcularQuantidadeComBanca();
       onMovimentacaoRegistrada();
+      onClose();
     } catch (error) {
-      toast.error("Erro ao registrar movimentação");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
+      console.error('Erro ao registrar movimentação:', error);
+      toast.error('Erro ao registrar movimentação');
     }
   };
 
@@ -174,8 +155,18 @@ export const MovimentacaoModal: React.FC<MovimentacaoModalProps> = ({
                 />
               </div>
               
+              <div className="space-y-2">
+                <Label htmlFor="responsavel">Responsável</Label>
+                <Input 
+                  id="responsavel" 
+                  value={responsavel} 
+                  onChange={(e) => setResponsavel(e.target.value)}
+                  placeholder="Informe o responsável"
+                />
+              </div>
+              
               <ActionButton 
-                onClick={handleRegistrarMovimentacao} 
+                onClick={handleSubmit} 
                 isLoading={isLoading}
                 loadingText="Registrando..."
                 className="w-full"

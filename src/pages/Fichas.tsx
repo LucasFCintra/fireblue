@@ -12,6 +12,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -38,7 +39,9 @@ import { fichasService, Ficha } from "@/services/fichasService";
 import { ReactNode } from "react";
 import { StatusTrackingCard } from "@/components/StatusTrackingCard";
 import { MovimentacaoModal } from "@/components/fichas/MovimentacaoModal";
-import { todasFichas, fichasEmProducao, fichasAguardandoRetirada, fichasConcluidas } from "@/data/fichasDataMock";
+import { bancasService, Banca } from "@/services/bancasService";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function Fichas() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,16 +52,21 @@ export default function Fichas() {
   const [isMovimentacaoDialogOpen, setIsMovimentacaoDialogOpen] = useState(false);
   const [isConcluirFichaDialogOpen, setIsConcluirFichaDialogOpen] = useState(false);
   const [isNovaFichaDialogOpen, setIsNovaFichaDialogOpen] = useState(false);
-  const [filteredData, setFilteredData] = useState<Ficha[]>(todasFichas);
+  const [filteredData, setFilteredData] = useState<Ficha[]>([]);
+  const [statusSummary, setStatusSummary] = useState({
+    'aguardando_retirada': 0,
+    'em_producao': 0,
+    'concluido': 0
+  });
   
   // Estado para nova ficha
   const [novaFicha, setNovaFicha] = useState<Omit<Ficha, 'id'>>({
     codigo: "",
     banca: "",
-    dataEntrada: new Date(),
-    dataPrevisao: new Date(),
+    data_entrada: new Date(),
+    data_previsao: new Date(),
     quantidade: 0,
-    status: "aguardando-retirada",
+    status: "aguardando_retirada",
     produto: "",
     cor: "",
     observacoes: ""
@@ -75,21 +83,28 @@ export default function Fichas() {
     dataFim: ""
   });
   
+  // Estado para bancas
+  const [bancas, setBancas] = useState<Banca[]>([]);
+  
   // Estatísticas
   const totalPecasCortadas = filteredData.reduce((total, ficha) => total + ficha.quantidade, 0);
   const totalFichasCriadas = filteredData.length;
   const totalFichasConcluidas = filteredData.filter(ficha => ficha.status === "concluido").length;
   
+  // Estado para filtrar bancas
+  const [bancaSearchQuery, setBancaSearchQuery] = useState("");
+  
   // Função para carregar as fichas
   const carregarFichas = async () => {
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // const fichas = await fichasService.listarFichas();
-      // setFilteredData(fichas);
+      const fichas = await fichasService.listarFichas();
+      setFilteredData(fichas);
       
-      // Usando dados mockados
-      setFilteredData(todasFichas);
+      // Carregar resumo de status
+      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const summary = await response.json();
+      setStatusSummary(summary);
     } catch (error) {
       toast.error("Erro ao carregar fichas");
       console.error(error);
@@ -98,19 +113,31 @@ export default function Fichas() {
     }
   };
   
+  // Função para carregar as bancas
+  const carregarBancas = async () => {
+    try {
+      const data = await bancasService.listarBancas();
+      setBancas(data);
+    } catch (error) {
+      toast.error("Erro ao carregar bancas");
+      console.error(error);
+    }
+  };
+  
   // Carregar dados iniciais
   useEffect(() => {
     void carregarFichas();
+    void carregarBancas();
   }, []);
   
   // Função para lidar com a pesquisa
   const handleSearch = () => {
     if (!searchQuery.trim()) {
-      setFilteredData(todasFichas);
+      carregarFichas();
       return;
     }
     
-    const filtrado = todasFichas.filter(ficha => 
+    const filtrado = filteredData.filter(ficha => 
       ficha.codigo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ficha.banca.toLowerCase().includes(searchQuery.toLowerCase()) ||
       ficha.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -133,10 +160,8 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // await fichasService.excluirFicha(selectedFicha.id);
+      await fichasService.excluirFicha(selectedFicha.id);
       
-      // Usando dados mockados
       const novaLista = filteredData.filter(ficha => ficha.id !== selectedFicha.id);
       setFilteredData(novaLista);
       
@@ -153,6 +178,7 @@ export default function Fichas() {
   
   // Função para abrir o diálogo de edição
   const handleOpenEditDialog = (ficha: Ficha) => {
+    setBancaSearchQuery("");
     setFichaEditando({...ficha});
     setIsEditDialogOpen(true);
   };
@@ -163,18 +189,16 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // await fichasService.atualizarFicha(fichaEditando);
+      const fichaAtualizada = await fichasService.atualizarFicha(fichaEditando);
       
-      // Usando dados mockados
       const novaLista = filteredData.map(ficha => 
-        ficha.id === fichaEditando.id ? fichaEditando : ficha
+        ficha.id === fichaAtualizada.id ? fichaAtualizada : ficha
       );
       setFilteredData(novaLista);
       
       setIsEditDialogOpen(false);
       setFichaEditando(null);
-      toast.success(`Ficha ${fichaEditando.codigo} atualizada com sucesso`);
+      toast.success(`Ficha ${fichaAtualizada.codigo} atualizada com sucesso`);
     } catch (error) {
       toast.error("Erro ao atualizar ficha");
       console.error(error);
@@ -201,15 +225,15 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // await fichasService.concluirFicha(selectedFicha.id);
-      
-      // Usando dados mockados
-      const novaLista = filteredData.map(ficha => 
-        ficha.id === selectedFicha.id ? {...ficha, status: "concluido" as any} : ficha
+      await fichasService.registrarMovimentacao(
+        selectedFicha.id,
+        "Conclusão",
+        selectedFicha.quantidade,
+        "Conclusão da produção",
+        "Sistema"
       );
-      setFilteredData(novaLista);
       
+      await carregarFichas();
       setIsConcluirFichaDialogOpen(false);
       setSelectedFicha(null);
       toast.success(`Ficha ${selectedFicha.codigo} concluída com sucesso`);
@@ -223,6 +247,7 @@ export default function Fichas() {
   
   // Função para lidar com a adição de uma nova ficha
   const handleAddFicha = () => {
+    setBancaSearchQuery("");
     setIsNovaFichaDialogOpen(true);
   };
   
@@ -230,14 +255,12 @@ export default function Fichas() {
   const handleCreateFicha = async () => {
     try {
       setIsLoading(true);
-      // Em um ambiente real, você faria a chamada ao serviço
-      // const novaFichaCriada = await fichasService.criarFicha(novaFicha);
-      
-      // Usando dados mockados
-      const novaFichaCriada: Ficha = {
+      const fichaParaCriar = {
         ...novaFicha,
-        id: `NOVA-${Date.now()}`
+        data_entrada: novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString() : novaFicha.data_entrada,
+        data_previsao: novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString() : novaFicha.data_previsao
       };
+      const novaFichaCriada = await fichasService.criarFicha(fichaParaCriar);
       
       setFilteredData([novaFichaCriada, ...filteredData]);
       
@@ -245,10 +268,10 @@ export default function Fichas() {
       setNovaFicha({
         codigo: "",
         banca: "",
-        dataEntrada: new Date(),
-        dataPrevisao: new Date(),
+        data_entrada: new Date(),
+        data_previsao: new Date(),
         quantidade: 0,
-        status: "aguardando-retirada",
+        status: "aguardando_retirada",
         produto: "",
         cor: "",
         observacoes: ""
@@ -287,17 +310,32 @@ export default function Fichas() {
     carregarFichas();
   };
   
-  // Abrir modal por status
-  const handleAbrirPorStatus = (status: string) => {
-    const fichasFiltradas = todasFichas.filter(ficha => {
-      if (status === "aguardando-retirada") return ficha.status === "aguardando-retirada";
-      if (status === "em-producao") return ficha.status === "em-producao";
-      if (status === "concluido") return ficha.status === "concluido";
-      return false;
-    });
-    
-    setFilteredData(fichasFiltradas);
+  // Função para abrir por status
+  const handleAbrirPorStatus = async (status: string) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+      const fichas = await response.json();
+      setFilteredData(fichas);
+      toast.success(`${fichas.length} ficha(s) encontrada(s) no status ${status}`);
+    } catch (error) {
+      toast.error("Erro ao carregar fichas por status");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
+  
+  // Função para limpar filtros
+  const handleLimparFiltros = () => {
+    carregarFichas();
+    toast.success("Filtros limpos");
+  };
+  
+  // Função para filtrar bancas
+  const filteredBancas = bancas.filter(banca => 
+    banca.nome.toLowerCase().includes(bancaSearchQuery.toLowerCase())
+  );
   
   // Colunas para a tabela de fichas
   const columns: {
@@ -314,17 +352,33 @@ export default function Fichas() {
       header: "Banca",
     },
     {
-      accessor: "dataEntrada" as keyof Ficha,
+      accessor: "data_entrada" as keyof Ficha,
       header: "Data de Entrada",
       cell: (row: Ficha) => {
-        return format(new Date(row.dataEntrada), 'dd/MM/yyyy', { locale: ptBR });
+        try {
+          const data = new Date(row.data_entrada);
+          if (isNaN(data.getTime())) {
+            return "Data inválida";
+          }
+          return format(data, 'dd/MM/yyyy', { locale: ptBR });
+        } catch (error) {
+          return "Data inválida";
+        }
       },
     },
     {
-      accessor: "dataPrevisao" as keyof Ficha,
+      accessor: "data_previsao" as keyof Ficha,
       header: "Previsão de retorno",
       cell: (row: Ficha) => {
-        return format(new Date(row.dataPrevisao), 'dd/MM/yyyy', { locale: ptBR });
+        try {
+          const data = new Date(row.data_previsao);
+          if (isNaN(data.getTime())) {
+            return "Data inválida";
+          }
+          return format(data, 'dd/MM/yyyy', { locale: ptBR });
+        } catch (error) {
+          return "Data inválida";
+        }
       },
     },
     {
@@ -339,16 +393,16 @@ export default function Fichas() {
       header: "Status",
       cell: (row: Ficha) => {
         let variant = "default";
-        if (row.status === "aguardando-retirada") variant = "outline";
-        if (row.status === "em-producao") variant = "default";
+        if (row.status === "aguardando_retirada") variant = "outline";
+        if (row.status === "em_producao") variant = "default";
         if (row.status === "concluido") variant = "success";
         
         return (
           <Badge variant={variant as any}
-            className={row.status === "aguardando-retirada" ? "bg-amber-50 text-amber-500 border-amber-200 hover:bg-amber-50" : ""}
+            className={row.status === "aguardando_retirada" ? "bg-amber-50 text-amber-500 border-amber-200 hover:bg-amber-50" : ""}
           >
-            {row.status === "aguardando-retirada" ? "Aguardando Retirada" : 
-             row.status === "em-producao" ? "Em Produção" : 
+            {row.status === "aguardando_retirada" ? "Aguardando Retirada" : 
+             row.status === "em_producao" ? "Em Produção" : 
              row.status === "concluido" ? "Concluído" : row.status}
           </Badge>
         );
@@ -413,6 +467,18 @@ export default function Fichas() {
     },
   ];
   
+  // Função para fechar o modal de edição
+  const handleCloseEditDialog = () => {
+    setBancaSearchQuery("");
+    setIsEditDialogOpen(false);
+  };
+
+  // Função para fechar o modal de nova ficha
+  const handleCloseNovaFichaDialog = () => {
+    setBancaSearchQuery("");
+    setIsNovaFichaDialogOpen(false);
+  };
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -435,6 +501,13 @@ export default function Fichas() {
             >
               Buscar
             </ActionButton>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleLimparFiltros}
+            >
+              Limpar Filtros
+            </Button>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -511,10 +584,10 @@ export default function Fichas() {
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
             <StatusTrackingCard 
               icon={<Clock className="h-10 w-10 text-amber-500" />}
-              count={fichasAguardandoRetirada.length}
+              count={statusSummary.aguardando_retirada}
               label="Aguardando Retirada"
-              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4"
-              onClick={() => handleAbrirPorStatus("aguardando-retirada")}
+              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors"
+              onClick={() => handleAbrirPorStatus("aguardando_retirada")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
@@ -523,10 +596,10 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
-              count={fichasEmProducao.length}
+              count={statusSummary.em_producao}
               label="Em Produção"
-              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4"
-              onClick={() => handleAbrirPorStatus("em-producao")}
+              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
+              onClick={() => handleAbrirPorStatus("em_producao")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
@@ -535,9 +608,9 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<CheckCircle className="h-10 w-10 text-green-500" />}
-              count={fichasConcluidas.length}
+              count={statusSummary.concluido}
               label="Concluídas"
-              className="bg-green-50 border-green-200 w-full md:w-1/4"
+              className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors"
               onClick={() => handleAbrirPorStatus("concluido")}
             />
           </div>
@@ -557,7 +630,7 @@ export default function Fichas() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDelete}
         title="Excluir Ficha"
-        description={`Tem certeza que deseja excluir a ficha ${selectedFicha?.codigo}?`}
+        description={selectedFicha ? `Tem certeza que deseja excluir a ficha ${selectedFicha.codigo}?` : "Tem certeza que deseja excluir esta ficha?"}
       />
       
       {/* Diálogo para confirmar conclusão */}
@@ -566,175 +639,273 @@ export default function Fichas() {
         onClose={() => setIsConcluirFichaDialogOpen(false)}
         onConfirm={handleConcluirFicha}
         title="Concluir Ficha"
-        description={`Tem certeza que deseja marcar a ficha ${selectedFicha?.codigo} como concluída?`}
+        description={selectedFicha ? `Tem certeza que deseja marcar a ficha ${selectedFicha.codigo} como concluída?` : "Tem certeza que deseja marcar esta ficha como concluída?"}
       />
       
       {/* Modal de Movimentações */}
-      <MovimentacaoModal
-        isOpen={isMovimentacaoDialogOpen}
-        onClose={() => setIsMovimentacaoDialogOpen(false)}
-        ficha={selectedFicha}
-        onMovimentacaoRegistrada={handleMovimentacaoRegistrada}
-      />
+      {selectedFicha && (
+        <MovimentacaoModal
+          isOpen={isMovimentacaoDialogOpen}
+          onClose={() => setIsMovimentacaoDialogOpen(false)}
+          ficha={selectedFicha}
+          onMovimentacaoRegistrada={handleMovimentacaoRegistrada}
+        />
+      )}
       
-      {/* Diálogo para editar ficha */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      {/* Modal de Edição */}
+      <Dialog open={isEditDialogOpen} onOpenChange={handleCloseEditDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Editar Ficha</DialogTitle>
+            <DialogDescription>
+              Atualize os dados da ficha
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {fichaEditando && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="codigo" className="text-right">
-                    Código
-                  </label>
-                  <Input
-                    id="codigo"
-                    value={fichaEditando.codigo}
-                    onChange={(e) => setFichaEditando({...fichaEditando, codigo: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="banca" className="text-right">
-                    Banca
-                  </label>
-                  <Input
-                    id="banca"
-                    value={fichaEditando.banca}
-                    onChange={(e) => setFichaEditando({...fichaEditando, banca: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="produto" className="text-right">
-                    Produto
-                  </label>
-                  <Input
-                    id="produto"
-                    value={fichaEditando.produto}
-                    onChange={(e) => setFichaEditando({...fichaEditando, produto: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="cor" className="text-right">
-                    Cor
-                  </label>
-                  <Input
-                    id="cor"
-                    value={fichaEditando.cor}
-                    onChange={(e) => setFichaEditando({...fichaEditando, cor: e.target.value})}
-                    className="col-span-3"
-                  />
-                </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <label htmlFor="quantidade" className="text-right">
-                    Quantidade
-                  </label>
-                  <Input
-                    id="quantidade"
-                    type="number"
-                    value={fichaEditando.quantidade}
-                    onChange={(e) => setFichaEditando({...fichaEditando, quantidade: parseInt(e.target.value) || 0})}
-                    className="col-span-3"
-                  />
-                </div>
-              </>
-            )}
-          </div>
+          {fichaEditando && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-codigo" className="text-right">
+                  Código
+                </Label>
+                <Input
+                  id="edit-codigo"
+                  value={fichaEditando.codigo}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, codigo: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-banca" className="text-right">
+                  Banca
+                </Label>
+                <Select
+                  value={fichaEditando.banca}
+                  onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
+                >
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Selecione uma banca" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <div className="px-2 pb-2">
+                      <Input
+                        placeholder="Buscar banca..."
+                        value={bancaSearchQuery}
+                        onChange={(e) => setBancaSearchQuery(e.target.value)}
+                        className="h-8"
+                      />
+                    </div>
+                    {filteredBancas.map((banca) => (
+                      <SelectItem key={banca.id} value={banca.nome}>
+                        {banca.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-dataEntrada" className="text-right">
+                  Data Entrada
+                </Label>
+                <Input
+                  id="edit-dataEntrada"
+                  type="date"
+                  value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-dataPrevisao" className="text-right">
+                  Previsão
+                </Label>
+                <Input
+                  id="edit-dataPrevisao"
+                  type="date"
+                  value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-quantidade" className="text-right">
+                  Quantidade
+                </Label>
+                <Input
+                  id="edit-quantidade"
+                  type="number"
+                  value={fichaEditando.quantidade}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-produto" className="text-right">
+                  Produto
+                </Label>
+                <Input
+                  id="edit-produto"
+                  value={fichaEditando.produto}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, produto: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-cor" className="text-right">
+                  Cor
+                </Label>
+                <Input
+                  id="edit-cor"
+                  value={fichaEditando.cor}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-observacoes" className="text-right">
+                  Observações
+                </Label>
+                <Textarea
+                  id="edit-observacoes"
+                  value={fichaEditando.observacoes}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
+                  className="col-span-3"
+                />
+              </div>
+            </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+            <Button variant="outline" onClick={handleCloseEditDialog}>
               Cancelar
             </Button>
-            <ActionButton 
-              onClick={handleEdit} 
-              isLoading={isLoading}
-              loadingText="Salvando..."
-            >
-              Salvar
-            </ActionButton>
+            <Button onClick={handleEdit}>Salvar Alterações</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
-      {/* Diálogo para nova ficha */}
-      <Dialog open={isNovaFichaDialogOpen} onOpenChange={setIsNovaFichaDialogOpen}>
+      {/* Modal de Nova Ficha */}
+      <Dialog open={isNovaFichaDialogOpen} onOpenChange={handleCloseNovaFichaDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Nova Ficha</DialogTitle>
+            <DialogDescription>
+              Preencha os dados da nova ficha
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="codigo" className="text-right">
+              <Label htmlFor="codigo" className="text-right">
                 Código
-              </label>
+              </Label>
               <Input
                 id="codigo"
                 value={novaFicha.codigo}
-                onChange={(e) => setNovaFicha({...novaFicha, codigo: e.target.value})}
+                onChange={(e) => setNovaFicha({ ...novaFicha, codigo: e.target.value })}
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="banca" className="text-right">
+              <Label htmlFor="banca" className="text-right">
                 Banca
-              </label>
-              <Input
-                id="banca"
+              </Label>
+              <Select
                 value={novaFicha.banca}
-                onChange={(e) => setNovaFicha({...novaFicha, banca: e.target.value})}
-                className="col-span-3"
-              />
+                onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione uma banca" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 pb-2">
+                    <Input
+                      placeholder="Buscar banca..."
+                      value={bancaSearchQuery}
+                      onChange={(e) => setBancaSearchQuery(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                  {filteredBancas.map((banca) => (
+                    <SelectItem key={banca.id} value={banca.nome}>
+                      {banca.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="produto" className="text-right">
-                Produto
-              </label>
+              <Label htmlFor="dataEntrada" className="text-right">
+                Data Entrada
+              </Label>
               <Input
-                id="produto"
-                value={novaFicha.produto}
-                onChange={(e) => setNovaFicha({...novaFicha, produto: e.target.value})}
+                id="dataEntrada"
+                type="date"
+                value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
+                onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="cor" className="text-right">
-                Cor
-              </label>
+              <Label htmlFor="dataPrevisao" className="text-right">
+                Previsão
+              </Label>
               <Input
-                id="cor"
-                value={novaFicha.cor}
-                onChange={(e) => setNovaFicha({...novaFicha, cor: e.target.value})}
+                id="dataPrevisao"
+                type="date"
+                value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
+                onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
                 className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <label htmlFor="quantidade" className="text-right">
+              <Label htmlFor="quantidade" className="text-right">
                 Quantidade
-              </label>
+              </Label>
               <Input
                 id="quantidade"
                 type="number"
-                value={novaFicha.quantidade || ""}
-                onChange={(e) => setNovaFicha({...novaFicha, quantidade: parseInt(e.target.value) || 0})}
+                value={novaFicha.quantidade}
+                onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="produto" className="text-right">
+                Produto
+              </Label>
+              <Input
+                id="produto"
+                value={novaFicha.produto}
+                onChange={(e) => setNovaFicha({ ...novaFicha, produto: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="cor" className="text-right">
+                Cor
+              </Label>
+              <Input
+                id="cor"
+                value={novaFicha.cor}
+                onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="observacoes" className="text-right">
+                Observações
+              </Label>
+              <Textarea
+                id="observacoes"
+                value={novaFicha.observacoes}
+                onChange={(e) => setNovaFicha({ ...novaFicha, observacoes: e.target.value })}
                 className="col-span-3"
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNovaFichaDialogOpen(false)}>
+            <Button variant="outline" onClick={handleCloseNovaFichaDialog}>
               Cancelar
             </Button>
-            <ActionButton 
-              onClick={handleCreateFicha} 
-              isLoading={isLoading}
-              loadingText="Criando..."
-            >
-              Criar
-            </ActionButton>
+            <Button onClick={handleCreateFicha}>Criar Ficha</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

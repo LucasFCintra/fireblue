@@ -1,24 +1,25 @@
 import axios from 'axios';
+import { randomUUID } from 'crypto';
 
 const API_URL = 'http://26.203.75.236:8687/api';
 
 export interface Ficha {
-  id: string;
+  id: number;
   codigo: string;
   banca: string;
-  dataEntrada: Date;
-  dataPrevisao: Date;
+  data_entrada: string | Date;
+  data_previsao: string | Date;
   quantidade: number;
-  status: "aguardando-retirada" | "em-producao" | "recebido" | "concluido";
+  status: "aguardando_retirada" | "em_producao" | "recebido" | "concluido";
   produto: string;
   cor: string;
   observacoes?: string;
 }
 
 export interface Movimentacao {
-  id: string;
-  fichaId: string;
-  data: Date;
+  id: number;
+  ficha_id: number;
+  data: string | Date;
   tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão";
   quantidade: number;
   descricao: string;
@@ -42,7 +43,7 @@ export const fichasService = {
   },
 
   async atualizarFicha(ficha: Ficha): Promise<Ficha> {
-    const response = await axios.put(`${API_URL}/fichas`, ficha);
+    const response = await axios.put(`${API_URL}/fichas/${ficha.id}`, ficha);
     return response.data.data;
   },
 

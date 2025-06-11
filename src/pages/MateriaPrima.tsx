@@ -64,6 +64,7 @@ export default function MateriaPrima() {
     lote: "",
     fornecedor: "",
     quantidade_total: 0,
+    quantidade_disponivel: 0,
     unidade: "m",
     localizacao: "",
     data_entrada: new Date(),
@@ -239,21 +240,21 @@ export default function MateriaPrima() {
   const handleCorte = async () => {
     if (!selectedRow || !quantidade_totalCorte) return;
     
-    const quantidade_total = parseFloat(quantidade_totalCorte);
-    if (quantidade_total > selectedRow.quantidade_total) {
-      toast.error("quantidade_total de corte não pode ser maior que a quantidade_total disponível");
+    const quantidade = parseFloat(quantidade_totalCorte);
+    if (quantidade > selectedRow.quantidade_total) {
+      toast.error("Quantidade de corte não pode ser maior que a quantidade disponível");
       return;
     }
     
     try {
       setIsLoading(true);
-      await materiaPrimaService.registrarCorte(selectedRow.id, quantidade_total, ordemProducao);
+      await materiaPrimaService.registrarCorte(selectedRow.id, quantidade, ordemProducao);
       await carregarBobinas();
       setIsCorteDialogOpen(false);
       setquantidade_totalCorte("");
       setOrdemProducao("");
       setSelectedRow(null);
-      toast.success(`Corte de ${quantidade_total}m realizado com sucesso`);
+      toast.success(`Corte de ${quantidade}m realizado com sucesso`);
     } catch (error) {
       toast.error("Erro ao registrar corte");
       console.error(error);
@@ -288,7 +289,24 @@ export default function MateriaPrima() {
       await materiaPrimaService.criarBobina(novaBobina);
       await carregarBobinas();
       setIsNovaBobinaDialogOpen(false);
+<<<<<<< HEAD
       limparFormulario();
+=======
+      setNovaBobina({
+        tipo_tecido: "",
+        cor: "",
+        lote: "",
+        fornecedor: "",
+        quantidade_total: 0,
+        quantidade_disponivel: 0,
+        unidade: "m",
+        localizacao: "",
+        data_entrada: new Date(),
+        status: "Em Estoque",
+        codigo_barras: "",
+        observacoes: ""
+      });
+>>>>>>> 727fb4f321595acb9823291ef35fe52d1de1e33c
       toast.success("Bobina criada com sucesso");
     } catch (error) {
       toast.error("Erro ao criar bobina");
@@ -394,6 +412,15 @@ export default function MateriaPrima() {
           </span>
         );
       },
+    },
+    {
+      accessor: "quantidade_disponivel" as keyof Bobina,
+      header: "Quantidade Disponível",
+      cell: (row: Bobina) => (
+        <span className={row.quantidade_disponivel === 0 ? "text-red-500 font-medium" : ""}>
+          {row.quantidade_disponivel} {row.unidade}
+        </span>
+      ),
     },
     {
       accessor: "localizacao" as keyof Bobina,
@@ -870,7 +897,106 @@ export default function MateriaPrima() {
                 />
               </div>
             </div>
+<<<<<<< HEAD
           )}
+=======
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="lote">Lote</label>
+                <Input
+                  id="lote"
+                  value={novaBobina.lote}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, lote: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="fornecedor">Fornecedor</label>
+                <Input
+                  id="fornecedor"
+                  value={novaBobina.fornecedor}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, fornecedor: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-3 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="quantidade_total">Quantidade Total</label>
+                <Input
+                  id="quantidade_total"
+                  type="number"
+                  value={novaBobina.quantidade_total}
+                  onChange={(e) => {
+                    const valor = parseFloat(e.target.value);
+                    setNovaBobina({ 
+                      ...novaBobina, 
+                      quantidade_total: valor,
+                      quantidade_disponivel: valor // Inicialmente igual à quantidade total
+                    });
+                  }}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="quantidade_disponivel">Quantidade Disponível</label>
+                <Input
+                  id="quantidade_disponivel"
+                  type="number"
+                  value={novaBobina.quantidade_disponivel}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_disponivel: parseFloat(e.target.value) })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="unidade">Unidade</label>
+                <Select
+                  value={novaBobina.unidade}
+                  onValueChange={(value) => setNovaBobina({ ...novaBobina, unidade: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione a unidade" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="m">Metros (m)</SelectItem>
+                    <SelectItem value="kg">Quilogramas (kg)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="localizacao">Localização</label>
+                <Input
+                  id="localizacao"
+                  value={novaBobina.localizacao}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, localizacao: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="data_entrada">Data de Entrada</label>
+                <Input
+                  id="data_entrada"
+                  type="date"
+                  value={format(novaBobina.data_entrada, "yyyy-MM-dd")}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, data_entrada: new Date(e.target.value) })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="codigo_barras">Código de Barras</label>
+              <Input
+                id="codigo_barras"
+                value={novaBobina.codigo_barras}
+                onChange={(e) => setNovaBobina({ ...novaBobina, codigo_barras: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="observacoes">Observações</label>
+              <Input
+                id="observacoes"
+                value={novaBobina.observacoes}
+                onChange={(e) => setNovaBobina({ ...novaBobina, observacoes: e.target.value })}
+              />
+            </div>
+          </div>
+>>>>>>> 727fb4f321595acb9823291ef35fe52d1de1e33c
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setIsNovaBobinaDialogOpen(false);
@@ -936,9 +1062,15 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
+<<<<<<< HEAD
               <div className="grid grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <label htmlFor="edit-quantidade_total">quantidade_total</label>
+=======
+              <div className="grid grid-3 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="edit-quantidade_total">Quantidade Total</label>
+>>>>>>> 727fb4f321595acb9823291ef35fe52d1de1e33c
                   <Input
                     id="edit-quantidade_total"
                     type="number"
@@ -946,7 +1078,20 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, quantidade_total: parseFloat(e.target.value) })}
                   />
                 </div>
+<<<<<<< HEAD
                 <div className="space-y-4">
+=======
+                <div className="space-y-2">
+                  <label htmlFor="edit-quantidade_disponivel">Quantidade Disponível</label>
+                  <Input
+                    id="edit-quantidade_disponivel"
+                    type="number"
+                    value={bobinaEditando.quantidade_disponivel}
+                    onChange={(e) => setBobinaEditando({ ...bobinaEditando, quantidade_disponivel: parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+>>>>>>> 727fb4f321595acb9823291ef35fe52d1de1e33c
                   <label htmlFor="edit-unidade">Unidade</label>
                   <Select
                     value={bobinaEditando.unidade}

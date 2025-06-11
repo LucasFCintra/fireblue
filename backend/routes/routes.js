@@ -18,6 +18,23 @@ const redefinirSenhaController = require("../controllers/redefinirSenhaControlle
 const loginController = require("../controllers/loginController");
 const dashboardController = require("../controllers/dashboardController");
  const materiaPrimaController = require('../controllers/materiaPrimaController');
+ const fichasController = require('../controllers/fichasController');
+
+ // Rotas para fichas
+ router.get('/api/fichas', fichasController.index);
+ router.get('/api/fichas/:id', fichasController.indexOne);
+ router.get('/api/fichas/status/:status', fichasController.indexByStatus);
+ router.get('/api/fichas/summary/status', fichasController.getStatusSummary);
+ router.get('/api/fichas/list/:status', fichasController.getFichasByStatus);
+ router.post('/api/fichas', fichasController.create);
+ router.put('/api/fichas/:id', fichasController.update);
+ router.delete('/api/fichas/:id', fichasController.delete);
+ 
+ // Rotas para movimentações
+//  router.post('/:id/movimentacao', fichasController.registrarMovimentacao);
+//  router.get('/:id/movimentacoes', fichasController.buscarMovimentacoes);
+ 
+//  console.log('router', router);
 
 // Rotas básicas CRUD
 router.get('/api/materia-prima/estoque', materiaPrimaController.retornaEstoque);
@@ -26,10 +43,10 @@ router.get('/api/materia-prima/:id', materiaPrimaController.indexOne);
 router.post('/api/materia-prima', materiaPrimaController.create);
 router.put('/api/materia-prima', materiaPrimaController.update);
 router.delete('/api/materia-prima/:id', materiaPrimaController.delete);
-// // Rotas específicas
-// router.get('/api/materia-prima/buscar/filtros', materiaPrimaController.buscarComFiltros);
-// router.post('/api/materia-prima/:id/corte', materiaPrimaController.registrarCorte);
-// router.get('/api/materia-prima/:id/historico', materiaPrimaController.buscarHistorico);
+// Rotas específicas
+// router.get('/api/materia-prima/buscar/filtros', materiaPrimaController.);
+router.post('/api/materia-prima/:id/corte', materiaPrimaController.cortar);
+router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico);
 
 // ROTAS PRODUTOS
 router.get('/api/produtos', produtosController.index);
@@ -118,5 +135,6 @@ router.post('/api/login', loginController.login);
 
 // ROTAS DASHBOARD
 router.get('/api/dashboard', dashboardController.getResumo);
+router.get('/api/dashboard/producao-semanal', dashboardController.getProducaoSemanal);
 
 module.exports = router;

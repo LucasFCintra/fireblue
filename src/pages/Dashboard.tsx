@@ -8,7 +8,8 @@ import {
 import { useState, useEffect } from "react";
 import { StatusTrackingCard } from "@/components/StatusTrackingCard";
 import { FichasStatusModal, Ficha } from "@/components/FichasStatusModal";
-import { fichasAguardandoRetirada, fichasEmProducao, fichasRecebidas } from "@/data/fichasMock";
+import { toast } from "@/components/ui/sonner";
+// import { fichasAguardandoRetirada, fichasEmProducao, fichasRecebidas } from "@/data/fichasMock";
 
 // Dados fictícios para os gráficos
 const productionData = [
@@ -67,30 +68,77 @@ function AnimatedCounter({ endValue, duration = 1500 }) {
 }
 
 export default function Dashboard() {
-  // Dados para o rastreamento geral
-  const aguardandoRetirada = fichasAguardandoRetirada.length;
-  const emProducao = fichasEmProducao.length;
-  const recebidos = fichasRecebidas.length;
-  
+  // Estado para os dados do dashboard
+  const [dashboardData, setDashboardData] = useState({
+    aguardandoRetirada: 0,
+    emProducao: 0,
+    concluido: 0,
+    totalProdutos: 0,
+    totalSaidas: 0,
+    totalEntradas: 0,
+    itensBaixoEstoque: 0
+  });
+
+  // Estado para os dados de produção
+  const [producaoSemanal, setProducaoSemanal] = useState([]);
+
   // Estado para controlar o modal de detalhes
   const [modalOpen, setModalOpen] = useState(false);
-  const [statusSelecionado, setStatusSelecionado] = useState<"aguardando-retirada" | "em-producao" | "recebido" | null>(null);
+  const [statusSelecionado, setStatusSelecionado] = useState<"aguardando_retirada" | "em_producao" | "concluido" | null>(null);
   const [fichasFiltradas, setFichasFiltradas] = useState<Ficha[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Função para carregar os dados do dashboard
+  const carregarDashboard = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const data = await response.json();
+      
+      setDashboardData({
+        aguardandoRetirada: data.aguardando_retirada || 0,
+        emProducao: data.em_producao || 0,
+        concluido: data.concluido || 0,
+        totalProdutos: 1234, // Dados mockados por enquanto
+        totalSaidas: 584,
+        totalEntradas: 356,
+        itensBaixoEstoque: 15
+      });
+
+      // Carregar dados de produção semanal
+      const producaoResponse = await fetch('http://26.203.75.236:8687/api/dashboard/producao-semanal');
+      const producaoData = await producaoResponse.json();
+      setProducaoSemanal(producaoData);
+    } catch (error) {
+      toast.error("Erro ao carregar dados do dashboard");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Carregar dados iniciais
+  useEffect(() => {
+    carregarDashboard();
+  }, []);
   
   // Função para abrir o modal com as fichas de um determinado status
-  const handleOpenModal = (status: "aguardando-retirada" | "em-producao" | "recebido") => {
-    setStatusSelecionado(status);
-    
-    // Seleciona as fichas de acordo com o status
-    if (status === "aguardando-retirada") {
-      setFichasFiltradas(fichasAguardandoRetirada);
-    } else if (status === "em-producao") {
-      setFichasFiltradas(fichasEmProducao);
-    } else if (status === "recebido") {
-      setFichasFiltradas(fichasRecebidas);
+  const handleOpenModal = async (status: "aguardando_retirada" | "em_producao" | "concluido") => {
+    try {
+      setIsLoading(true);
+      setStatusSelecionado(status);
+      
+      const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+      const fichas = await response.json();
+      setFichasFiltradas(fichas);
+      
+      setModalOpen(true);
+    } catch (error) {
+      toast.error("Erro ao carregar fichas");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
-    
-    setModalOpen(true);
   };
 
   return (
@@ -100,7 +148,7 @@ export default function Dashboard() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatusCard
           title="Produtos em Estoque"
-          value={1234}
+          value={dashboardData.totalProdutos}
           description="Produtos disponíveis no estoque"
           icon={<Package className="h-4 w-4" />}
           trend={{ value: 12, positive: true }}
@@ -108,7 +156,7 @@ export default function Dashboard() {
         />
         <StatusCard
           title="Saídas de Matéria Prima"
-          value={584}
+          value={dashboardData.totalSaidas}
           description="+20% em relação ao mês anterior"
           icon={<ArrowUpFromLine className="h-4 w-4" />}
           trend={{ value: 20, positive: false }}
@@ -116,7 +164,7 @@ export default function Dashboard() {
         />
         <StatusCard
           title="Entrada de Produto"
-          value={356}
+          value={dashboardData.totalEntradas}
           description="Produtos recebidos no mês"
           icon={<ArrowDownToLine className="h-4 w-4" />}
           trend={{ value: 15, positive: true }}
@@ -124,7 +172,7 @@ export default function Dashboard() {
         />
         <StatusCard
           title="Itens Baixo Estoque"
-          value={15}
+          value={dashboardData.itensBaixoEstoque}
           description="Itens abaixo do nível mínimo"
           icon={<AlertTriangle className="h-4 w-4" />}
           className="border-red-200 bg-red-50"
@@ -144,10 +192,10 @@ export default function Dashboard() {
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
             <StatusTrackingCard 
               icon={<Clock className="h-10 w-10 text-amber-500" />}
-              count={aguardandoRetirada}
+              count={dashboardData.aguardandoRetirada}
               label="Aguardando Retirada"
-              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4"
-              onClick={() => handleOpenModal("aguardando-retirada")}
+              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors"
+              onClick={() => handleOpenModal("aguardando_retirada")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
@@ -156,10 +204,10 @@ export default function Dashboard() {
             
             <StatusTrackingCard 
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
-              count={emProducao}
+              count={dashboardData.emProducao}
               label="Em Produção"
-              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4"
-              onClick={() => handleOpenModal("em-producao")}
+              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
+              onClick={() => handleOpenModal("em_producao")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
@@ -168,27 +216,27 @@ export default function Dashboard() {
             
             <StatusTrackingCard 
               icon={<Truck className="h-10 w-10 text-green-500" />}
-              count={recebidos}
-              label="Itens Recebidos"
-              className="bg-green-50 border-green-200 w-full md:w-1/4"
-              onClick={() => handleOpenModal("recebido")}
+              count={dashboardData.concluido}
+              label="Concluídas"
+              className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors"
+              onClick={() => handleOpenModal("concluido")}
             />
           </div>
         </CardContent>
       </Card>
       
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="col-span-1">
+        <Card>
           <CardHeader>
             <CardTitle>Produção por Período</CardTitle>
             <CardDescription>
-              Volume de produção nos últimos 7 dias
+              Volume de produção na semana atual
             </CardDescription>
           </CardHeader>
           <CardContent className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={productionData}
+                data={producaoSemanal}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
                 <defs>
@@ -213,7 +261,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
         
-        <Card className="col-span-1">
+        <Card>
           <CardHeader>
             <CardTitle>Top Produtos por Volume</CardTitle>
             <CardDescription>

@@ -86,9 +86,7 @@ class MateriasPrimasModel {
         observacoes: materiaPrima.observacoes || ''
       };
 
-      console.log('Dados formatados:', dadosFormatados);
-
-      // Atualizar no banco
+           // Atualizar no banco
       await knex.update(dadosFormatados).where({ id }).table("materias_primas");
       
       // Buscar a matéria prima atualizada
@@ -130,32 +128,49 @@ class MateriasPrimasModel {
 
   async cortar(id, quantidadeCorte, ordemProducao = null, responsavel = null) {
     try {
+
+      
       const bobina = await this.findById(id);
       if (!bobina) return { status: false, error: "Bobina não encontrada" };
 
-      const novaQtd = bobina.quantidade_disponivel - quantidadeCorte;
+      const novaQtd = bobina.quantidade_disponivel - quantidadeCorte; 
+     console.log(bobina.quantidade_total,(bobina.quantidade_total * 0.2),(novaQtd < (bobina.quantidade_total * 0.2) ? "baixo_estoque" :      "em_estoque"))
       if (novaQtd < 0) return { status: false, error: "Estoque insuficiente" };
+      // Atualizar a quantidade disponível na tabela materias_primas
+      await knex('materias_primas')
+        .where({ id })
+        .update({
+          quantidade_disponivel: novaQtd,
+          status: novaQtd <= 0 ? "sem_estoque" : 
+                 novaQtd < (bobina.quantidade_total * 0.2) ? "baixo_estoque" : 
+                 "em_estoque"
+        });
 
-      await knex.update({
-        quantidade_disponivel: novaQtd
-      }).where({ id }).table("materias_primas");
-
-      await knex.insert({
+      // Registrar a movimentação
+      await knex('movimentacoes').insert({
         materias_primas_id: id,
         tipo: "corte",
         quantidade: -quantidadeCorte,
         ordem_producao: ordemProducao,
         observacoes: responsavel ? `Responsável: ${responsavel}` : null,
         data_movimentacao: new Date()
-      }).table("movimentacoes");
+      });
 
-      // Atualizar o status após o corte
-      await this.atualizarStatusBobina(id);
-
+      // Buscar a bobina atualizada
       const atualizada = await this.findById(id);
+
+      // Emitir evento de atualização
+      if (global.io) {
+        global.io.emit('bobina_status_atualizado', {
+          id,
+          status: atualizada.status,
+          quantidade_disponivel: atualizada.quantidade_disponivel
+        });
+      }
+
       return { status: true, data: atualizada };
     } catch (err) {
-      console.log(err);
+      console.error('Erro ao realizar corte:', err);
       return { status: false, err };
     }
   }
@@ -199,31 +214,22 @@ class MateriasPrimasModel {
 
   async retornaEstoque() {
     try {
-      // Buscar todas as bobinas
-      const todasBobinas = await knex.select(["*"]).table("materias_primas");
-      
-      // Classificar as bobinas por status
-      const resultSemEstoque = todasBobinas.filter(bobina => bobina.status === "sem_estoque");
-      const resultBaixoEstoque = todasBobinas.filter(bobina => bobina.status === "baixo_estoque");
-      const resultEmEstoque = todasBobinas.filter(bobina => bobina.status === "em_estoque");
-      console.log('todasBobinas', todasBobinas.length);
-      console.log('Bobinas sem estoque:', resultSemEstoque.length);
-      console.log('Bobinas com baixo estoque:', resultBaixoEstoque.length);
-      console.log('Bobinas em estoque:', resultEmEstoque.length);
+      const semEstoque = await knex.select(["*"])
+        .where({ status: "sem_estoque" })
+        .table("materias_primas");
 
-      // Emitir evento de atualização do estoque
-      if (global.io) {
-        global.io.emit('estoque_atualizado', {
-          semEstoque: resultSemEstoque,
-          baixoEstoque: resultBaixoEstoque,
-          emEstoque: resultEmEstoque
-        });
-      }
+      const baixoEstoque = await knex.select(["*"])
+        .where({ status: "baixo_estoque" })
+        .table("materias_primas");
+
+      const emEstoque = await knex.select(["*"])
+        .where({ status: "em_estoque" })
+        .table("materias_primas");
 
       return {
-        semEstoque: resultSemEstoque,
-        baixoEstoque: resultBaixoEstoque,
-        emEstoque: resultEmEstoque
+        semEstoque,
+        baixoEstoque,
+        emEstoque
       };
     } catch (err) {
       console.log(err);
@@ -232,6 +238,28 @@ class MateriasPrimasModel {
         baixoEstoque: [],
         emEstoque: []
       };
+    }
+  }
+
+  async buscarHistorico(id) {
+    try {
+      const historico = await knex.select([
+        'id',
+        'materias_primas_id as bobinaId',
+        'tipo',
+        'quantidade as quantidade_total',
+        'ordem_producao as ordemProducao',
+        'observacoes as responsavel',
+        'data_movimentacao as data'
+      ])
+      .where({ materias_primas_id: id })
+      .orderBy('data_movimentacao', 'desc')
+      .table("movimentacoes");
+
+      return historico;
+    } catch (err) {
+      console.error('Erro ao buscar histórico:', err);
+      throw err;
     }
   }
 }
