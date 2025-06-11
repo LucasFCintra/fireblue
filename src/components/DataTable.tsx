@@ -133,13 +133,23 @@ export default function DataTable<T>({
     
     // Aplicar filtro de pesquisa global
     if (searchable && searchQuery) {
-      filtered = filtered.filter((item) =>
-        Object.values(item as Record<string, any>).some(
-          (value) =>
-            value &&
-            value.toString().toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
+      const searchTerms = searchQuery.toLowerCase().trim().split(/\s+/);
+      
+      filtered = filtered.filter((item) => {
+        // Verifica se todos os termos de busca estão presentes em pelo menos um campo
+        return searchTerms.every(term => {
+          return Object.entries(item as Record<string, any>).some(([key, value]) => {
+            // Ignora campos que não são úteis para busca como IDs, funções, etc.
+            if (!value || typeof value === 'function' || key === 'id' || typeof value === 'object') {
+              return false;
+            }
+            
+            // Converte para string de forma segura e verifica se inclui o termo
+            const valueStr = String(value).toLowerCase();
+            return valueStr.includes(term);
+          });
+        });
+      });
     }
     
     // Aplicar filtros de coluna
@@ -162,9 +172,14 @@ export default function DataTable<T>({
   // Notificar o componente pai quando os dados filtrados mudarem
   useEffect(() => {
     if (onFilterChange) {
-      onFilterChange(filteredData);
+      // Se não houver busca ou filtros, envia todos os dados
+      if ((!searchQuery || searchQuery.trim() === '') && Object.keys(columnFilters).length === 0) {
+        onFilterChange(data);
+      } else {
+        onFilterChange(filteredData);
+      }
     }
-  }, [filteredData, onFilterChange]);
+  }, [filteredData, onFilterChange, data, searchQuery, columnFilters]);
 
   // Paginate data
   const paginatedData = pagination
@@ -194,6 +209,13 @@ export default function DataTable<T>({
             onChange={(e) => {
               setSearchQuery(e.target.value);
               setCurrentPage(1);
+              
+              // Se o campo de busca foi limpo, resetar os filtros
+              if (!e.target.value.trim()) {
+                if (onFilterChange) {
+                  onFilterChange(data);
+                }
+              }
             }}
           />
         </div>

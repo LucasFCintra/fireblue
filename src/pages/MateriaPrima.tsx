@@ -38,7 +38,6 @@ import { io } from 'socket.io-client';
 const API_URL = 'http://localhost:8687/api';
 
 export default function MateriaPrima() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRow, setSelectedRow] = useState<Bobina | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -48,6 +47,7 @@ export default function MateriaPrima() {
   const [isNovaBobinaDialogOpen, setIsNovaBobinaDialogOpen] = useState(false);
   const [quantidade_totalCorte, setquantidade_totalCorte] = useState("");
   const [ordemProducao, setOrdemProducao] = useState("");
+  const [bobinasOriginais, setBobinasOriginais] = useState<Bobina[]>([]);
   const [filteredData, setFilteredData] = useState<Bobina[]>([]);
   const [historico, setHistorico] = useState<Movimentacao[]>([]);
   const [socket, setSocket] = useState<any>(null);
@@ -83,11 +83,29 @@ export default function MateriaPrima() {
     dataFim: ""
   });
   
+  // Função para limpar o formulário de nova bobina
+  const limparFormulario = () => {
+    setNovaBobina({
+      tipo_tecido: "",
+      cor: "",
+      lote: "",
+      fornecedor: "",
+      quantidade_total: 0,
+      unidade: "m",
+      localizacao: "",
+      data_entrada: new Date(),
+      status: "Em Estoque",
+      codigo_barras: "",
+      observacoes: ""
+    });
+  };
+  
   // Função para carregar as bobinas
   const carregarBobinas = async () => {
     try {
       setIsLoading(true);
       const bobinas = await materiaPrimaService.listarBobinas();
+      setBobinasOriginais(bobinas);
       setFilteredData(bobinas);
     } catch (error) {
       toast.error("Erro ao carregar bobinas");
@@ -119,26 +137,8 @@ export default function MateriaPrima() {
     void carregarEstoque();
   }, [filteredData]);
   
-  // Função para lidar com a pesquisa
-  const handleSearch = async () => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`${API_URL}/materia-prima/buscar?q=${encodeURIComponent(searchQuery)}`);
-      
-      if (!response.ok) {
-        throw new Error('Erro ao buscar bobinas');
-      }
-
-      const bobinas = await response.json();
-      setFilteredData(bobinas);
-      toast.success(`${bobinas.length} bobina(s) encontrada(s)`);
-    } catch (error) {
-      toast.error("Erro ao buscar bobinas");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Atualizado para usar a busca integrada do DataTable
+  // O componente DataTable agora gerencia a pesquisa e chama onFilterChange
   
   // Função para lidar com a adição de uma nova bobina
   const handleAddBobina = () => {
@@ -288,19 +288,7 @@ export default function MateriaPrima() {
       await materiaPrimaService.criarBobina(novaBobina);
       await carregarBobinas();
       setIsNovaBobinaDialogOpen(false);
-      setNovaBobina({
-        tipo_tecido: "",
-        cor: "",
-        lote: "",
-        fornecedor: "",
-        quantidade_total: 0,
-        unidade: "m",
-        localizacao: "",
-        data_entrada: new Date(),
-        status: "Em Estoque",
-        codigo_barras: "",
-        observacoes: ""
-      });
+      limparFormulario();
       toast.success("Bobina criada com sucesso");
     } catch (error) {
       toast.error("Erro ao criar bobina");
@@ -381,11 +369,31 @@ export default function MateriaPrima() {
     {
       accessor: "quantidade_total" as keyof Bobina,
       header: "quantidade_total",
-      cell: (row: Bobina) => (
-        <span className={row.quantidade_total === 0 ? "text-red-500 font-medium" : ""}>
-          {row.quantidade_total} {row.unidade}
-        </span>
-      ),
+      cell: (row: Bobina) => {
+        let textColor = "";
+        let bgColor = "";
+        let borderColor = "";
+        
+        if (row.status === "Em Estoque") {
+          textColor = "text-green-700";
+          bgColor = "bg-green-50";
+          borderColor = "border-green-200";
+        } else if (row.status === "Baixo Estoque") {
+          textColor = "text-yellow-700";
+          bgColor = "bg-yellow-50";
+          borderColor = "border-yellow-200";
+        } else if (row.status === "Sem Estoque") {
+          textColor = "text-red-700";
+          bgColor = "bg-red-50";
+          borderColor = "border-red-200";
+        }
+        
+        return (
+          <span className={`font-medium px-2 py-1 rounded-md ${textColor} ${bgColor} ${borderColor} border`}>
+            {row.quantidade_total} {row.unidade}
+          </span>
+        );
+      },
     },
     {
       accessor: "localizacao" as keyof Bobina,
@@ -395,23 +403,37 @@ export default function MateriaPrima() {
       accessor: "data_entrada" as keyof Bobina,
       header: "Data de Entrada",
       cell: (row: Bobina) => {
-        return new Date(row.data_entrada).toLocaleDateString("pt-BR");
+        let textColor = "";
+        let bgColor = "";
+        
+        if (row.status === "Em Estoque") {
+          textColor = "text-green-700";
+          bgColor = "bg-green-50";
+        } else if (row.status === "Baixo Estoque") {
+          textColor = "text-yellow-700";
+          bgColor = "bg-yellow-50";
+        } else if (row.status === "Sem Estoque") {
+          textColor = "text-red-700";
+          bgColor = "bg-red-50";
+        }
+        
+        return (
+          <span className={`${textColor} ${bgColor} px-2 py-1 rounded-md font-medium`}>
+            {new Date(row.data_entrada).toLocaleDateString("pt-BR")}
+          </span>
+        );
       },
     },
     {
       accessor: "status" as keyof Bobina,
       header: "Status",
       cell: (row: Bobina) => {
+        let color = "bg-green-100 text-green-800";
+        if (row.status === "Baixo Estoque") color = "bg-yellow-100 text-yellow-800";
+        if (row.status === "Sem Estoque") color = "bg-red-100 text-red-800";
+        
         return (
-          <Badge
-            variant={
-              row.status === "Em Estoque"
-                ? "default"
-                : row.status === "Baixo Estoque"
-                ? "secondary"
-                : "destructive"
-            }
-          >
+          <Badge variant="outline" className={`${color}`}>
             {row.status}
           </Badge>
         );
@@ -421,35 +443,57 @@ export default function MateriaPrima() {
       accessor: "id" as keyof Bobina,
       header: "Ações",
       cell: (row: Bobina) => {
+        let iconColor = "";
+        let borderColor = "";
+        let bgHoverColor = "";
+        
+        if (row.status === "Em Estoque") {
+          iconColor = "text-green-600";
+          borderColor = "border-green-200";
+          bgHoverColor = "hover:bg-green-50";
+        } else if (row.status === "Baixo Estoque") {
+          iconColor = "text-yellow-600";
+          borderColor = "border-yellow-200";
+          bgHoverColor = "hover:bg-yellow-50";
+        } else if (row.status === "Sem Estoque") {
+          iconColor = "text-red-600";
+          borderColor = "border-red-200";
+          bgHoverColor = "hover:bg-red-50";
+        }
+        
         return (
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="icon"
+              className={`${borderColor} ${bgHoverColor}`}
               onClick={() => handleOpenHistoricoDialog(row)}
             >
-              <History className="h-4 w-4" />
+              <History className={`h-4 w-4 ${iconColor}`} />
             </Button>
             <Button
               variant="outline"
               size="icon"
+              className={`${borderColor} ${bgHoverColor}`}
               onClick={() => handleOpenCorteDialog(row)}
             >
-              <Scissors className="h-4 w-4" />
+              <Scissors className={`h-4 w-4 ${iconColor}`} />
             </Button>
             <Button
               variant="outline"
               size="icon"
+              className={`${borderColor} ${bgHoverColor}`}
               onClick={() => handleOpenEditDialog(row)}
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className={`h-4 w-4 ${iconColor}`} />
             </Button>
             <Button
               variant="outline"
               size="icon"
+              className={`${borderColor} ${bgHoverColor}`}
               onClick={() => handleOpenDeleteDialog(row)}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className={`h-4 w-4 ${iconColor}`} />
             </Button>
           </div>
         );
@@ -464,6 +508,13 @@ export default function MateriaPrima() {
 
     // Escutar eventos de atualização
     newSocket.on('bobina_status_atualizado', (data) => {
+      setBobinasOriginais(prevData => 
+        prevData.map(bobina => 
+          bobina.id === data.id 
+            ? { ...bobina, status: data.status, quantidade_disponivel: data.quantidade_disponivel }
+            : bobina
+        )
+      );
       setFilteredData(prevData => 
         prevData.map(bobina => 
           bobina.id === data.id 
@@ -474,10 +525,14 @@ export default function MateriaPrima() {
     });
 
     newSocket.on('nova_bobina', (bobina) => {
+      setBobinasOriginais(prevData => [...prevData, bobina]);
       setFilteredData(prevData => [...prevData, bobina]);
     });
 
     newSocket.on('bobina_atualizada', (bobina) => {
+      setBobinasOriginais(prevData => 
+        prevData.map(b => b.id === bobina.id ? bobina : b)
+      );
       setFilteredData(prevData => 
         prevData.map(b => b.id === bobina.id ? bobina : b)
       );
@@ -489,36 +544,10 @@ export default function MateriaPrima() {
   }, []);
   
   return (
-    <div className="container mx-auto p-4">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold tracking-tight">Controle de Bobinas</h1>
         <div className="flex items-center gap-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Buscar por tecido, cor ou lote..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <ActionButton 
-              onClick={handleSearch} 
-              isLoading={isLoading} 
-              loadingText="Buscando..." 
-              size="sm"
-              startIcon={<Search className="h-4 w-4" />}
-            >
-              Buscar
-            </ActionButton>
-          </div>
-          <ActionButton
-            variant="outline" 
-            size="sm"
-            startIcon={<Filter className="h-4 w-4" />}
-            onClick={() => toast.info("Filtros serão implementados")}
-          >
-            Filtros
-          </ActionButton>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -542,43 +571,57 @@ export default function MateriaPrima() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card className="border-blue-200 bg-blue-50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Bobinas</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-blue-800">Total de Bobinas</CardTitle>
+            <Package className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{filteredData.length}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-blue-700">{filteredData.length}</div>
+            <p className="text-xs text-blue-600">
               Bobinas cadastradas no sistema
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-200 bg-green-50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bobinas com Estoque</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-green-800">Bobinas com Estoque</CardTitle>
+            <Package className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-700">
               {estoque.emEstoque.length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-green-600">
               Bobinas disponíveis para uso
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-yellow-200 bg-yellow-50">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bobinas sem Estoque</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-yellow-800">Baixo Estoque</CardTitle>
+            <Package className="h-4 w-4 text-yellow-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">
+            <div className="text-2xl font-bold text-yellow-700">
+              {estoque.baixoEstoque.length}
+            </div>
+            <p className="text-xs text-yellow-600">
+              Bobinas com estoque baixo
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-red-200 bg-red-50">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-red-800">Bobinas sem Estoque</CardTitle>
+            <Package className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-700">
               {estoque.semEstoque.length}
             </div>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-red-600">
               Bobinas que precisam de reposição
             </p>
           </CardContent>
@@ -586,11 +629,12 @@ export default function MateriaPrima() {
       </div>
 
       <DataTable
-        data={filteredData}
+        data={bobinasOriginais}
         columns={columns}
-        searchable={false}
+        searchable={true}
         pagination={true}
         isLoading={isLoading}
+        onFilterChange={(filtered) => setFilteredData(filtered)}
       />
 
       {/* Modal de Corte */}
@@ -600,7 +644,7 @@ export default function MateriaPrima() {
             <DialogTitle>Registrar Corte</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-4">
               <label htmlFor="corte-quantidade_total">quantidade_total a Cortar</label>
               <Input
                 id="corte-quantidade_total"
@@ -610,7 +654,7 @@ export default function MateriaPrima() {
                 placeholder="quantidade_total em metros"
               />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-4">
               <label htmlFor="corte-ordem">Ordem de Produção</label>
               <Input
                 id="corte-ordem"
@@ -649,8 +693,8 @@ export default function MateriaPrima() {
           <DialogHeader>
             <DialogTitle>Histórico de Movimentações</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-6">
               <div>
                 <label className="text-sm font-medium">Bobina</label>
                 <p className="text-sm text-muted-foreground">
@@ -716,112 +760,122 @@ export default function MateriaPrima() {
       </Dialog>
 
       {/* Dialog de Nova Bobina */}
-      <Dialog open={isNovaBobinaDialogOpen} onOpenChange={setIsNovaBobinaDialogOpen}>
+      <Dialog open={isNovaBobinaDialogOpen} onOpenChange={(open) => {
+        setIsNovaBobinaDialogOpen(open);
+        if (!open) {
+          limparFormulario();
+        }
+      }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Nova Bobina</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="tipo_tecido">Tipo de Tecido</label>
+          {novaBobina && (
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <label htmlFor="tipo_tecido">Tipo de Tecido</label>
+                  <Input
+                    id="tipo_tecido"
+                    value={novaBobina.tipo_tecido}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, tipo_tecido: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label htmlFor="cor">Cor</label>
+                  <Input
+                    id="cor"
+                    value={novaBobina.cor}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, cor: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <label htmlFor="lote">Lote</label>
+                  <Input
+                    id="lote"
+                    value={novaBobina.lote}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, lote: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label htmlFor="fornecedor">Fornecedor</label>
+                  <Input
+                    id="fornecedor"
+                    value={novaBobina.fornecedor}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, fornecedor: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <label htmlFor="quantidade_total">quantidade_total</label>
+                  <Input
+                    id="quantidade_total"
+                    type="number"
+                    value={novaBobina.quantidade_total}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_total: parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label htmlFor="unidade">Unidade</label>
+                  <Select
+                    value={novaBobina.unidade}
+                    onValueChange={(value) => setNovaBobina({ ...novaBobina, unidade: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a unidade" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="m">Metros (m)</SelectItem>
+                      <SelectItem value="kg">Quilogramas (kg)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <label htmlFor="localizacao">Localização</label>
+                  <Input
+                    id="localizacao"
+                    value={novaBobina.localizacao}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, localizacao: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-4">
+                  <label htmlFor="data_entrada">Data de Entrada</label>
+                  <Input
+                    id="data_entrada"
+                    type="date"
+                    value={format(novaBobina.data_entrada, "yyyy-MM-dd")}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, data_entrada: new Date(e.target.value) })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-4">
+                <label htmlFor="codigo_barras">Código de Barras</label>
                 <Input
-                  id="tipo_tecido"
-                  value={novaBobina.tipo_tecido}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, tipo_tecido: e.target.value })}
+                  id="codigo_barras"
+                  value={novaBobina.codigo_barras}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, codigo_barras: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
-                <label htmlFor="cor">Cor</label>
+              <div className="space-y-4">
+                <label htmlFor="observacoes">Observações</label>
                 <Input
-                  id="cor"
-                  value={novaBobina.cor}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, cor: e.target.value })}
+                  id="observacoes"
+                  value={novaBobina.observacoes}
+                  onChange={(e) => setNovaBobina({ ...novaBobina, observacoes: e.target.value })}
                 />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="lote">Lote</label>
-                <Input
-                  id="lote"
-                  value={novaBobina.lote}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, lote: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="fornecedor">Fornecedor</label>
-                <Input
-                  id="fornecedor"
-                  value={novaBobina.fornecedor}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, fornecedor: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="quantidade_total">quantidade_total</label>
-                <Input
-                  id="quantidade_total"
-                  type="number"
-                  value={novaBobina.quantidade_total}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_total: parseFloat(e.target.value) })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="unidade">Unidade</label>
-                <Select
-                  value={novaBobina.unidade}
-                  onValueChange={(value) => setNovaBobina({ ...novaBobina, unidade: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione a unidade" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="m">Metros (m)</SelectItem>
-                    <SelectItem value="kg">Quilogramas (kg)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label htmlFor="localizacao">Localização</label>
-                <Input
-                  id="localizacao"
-                  value={novaBobina.localizacao}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, localizacao: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="data_entrada">Data de Entrada</label>
-                <Input
-                  id="data_entrada"
-                  type="date"
-                  value={format(novaBobina.data_entrada, "yyyy-MM-dd")}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, data_entrada: new Date(e.target.value) })}
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="codigo_barras">Código de Barras</label>
-              <Input
-                id="codigo_barras"
-                value={novaBobina.codigo_barras}
-                onChange={(e) => setNovaBobina({ ...novaBobina, codigo_barras: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <label htmlFor="observacoes">Observações</label>
-              <Input
-                id="observacoes"
-                value={novaBobina.observacoes}
-                onChange={(e) => setNovaBobina({ ...novaBobina, observacoes: e.target.value })}
-              />
-            </div>
-          </div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNovaBobinaDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsNovaBobinaDialogOpen(false);
+              limparFormulario();
+            }}>
               Cancelar
             </Button>
             <Button onClick={handleCreateBobina} disabled={isLoading}>
@@ -845,9 +899,9 @@ export default function MateriaPrima() {
             <DialogTitle>Editar Bobina</DialogTitle>
           </DialogHeader>
           {bobinaEditando && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+            <div className="grid gap-6 py-4">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <label htmlFor="edit-tipo_tecido">Tipo de Tecido</label>
                   <Input
                     id="edit-tipo_tecido"
@@ -855,7 +909,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, tipo_tecido: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <label htmlFor="edit-cor">Cor</label>
                   <Input
                     id="edit-cor"
@@ -864,8 +918,8 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <label htmlFor="edit-lote">Lote</label>
                   <Input
                     id="edit-lote"
@@ -873,7 +927,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, lote: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <label htmlFor="edit-fornecedor">Fornecedor</label>
                   <Input
                     id="edit-fornecedor"
@@ -882,8 +936,8 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <label htmlFor="edit-quantidade_total">quantidade_total</label>
                   <Input
                     id="edit-quantidade_total"
@@ -892,7 +946,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, quantidade_total: parseFloat(e.target.value) })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <label htmlFor="edit-unidade">Unidade</label>
                   <Select
                     value={bobinaEditando.unidade}
@@ -908,8 +962,8 @@ export default function MateriaPrima() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-6">
+                <div className="space-y-4">
                   <label htmlFor="edit-localizacao">Localização</label>
                   <Input
                     id="edit-localizacao"
@@ -917,7 +971,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, localizacao: e.target.value })}
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-4">
                   <label htmlFor="edit-data_entrada">Data de Entrada</label>
                   <Input
                     id="edit-data_entrada"
@@ -927,7 +981,7 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <label htmlFor="edit-codigo_barras">Código de Barras</label>
                 <Input
                   id="edit-codigo_barras"
@@ -935,7 +989,7 @@ export default function MateriaPrima() {
                   onChange={(e) => setBobinaEditando({ ...bobinaEditando, codigo_barras: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <label htmlFor="edit-observacoes">Observações</label>
                 <Input
                   id="edit-observacoes"
@@ -987,8 +1041,8 @@ export default function MateriaPrima() {
           <DialogHeader>
             <DialogTitle>Filtrar Bobinas</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-2">
+          <div className="grid gap-6 py-4">
+            <div className="space-y-4">
               <label htmlFor="filtro-status">Status</label>
               <Select
                 value={filtros.status}
@@ -1005,7 +1059,7 @@ export default function MateriaPrima() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-4">
               <label htmlFor="filtro-fornecedor">Fornecedor</label>
               <Input
                 id="filtro-fornecedor"
@@ -1014,8 +1068,8 @@ export default function MateriaPrima() {
                 placeholder="Nome do fornecedor"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-4">
                 <label htmlFor="filtro-data-inicio">Data Inicial</label>
                 <Input
                   id="filtro-data-inicio"
@@ -1024,7 +1078,7 @@ export default function MateriaPrima() {
                   onChange={(e) => setFiltros({ ...filtros, dataInicio: e.target.value })}
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <label htmlFor="filtro-data-fim">Data Final</label>
                 <Input
                   id="filtro-data-fim"
