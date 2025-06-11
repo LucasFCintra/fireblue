@@ -664,8 +664,8 @@ export default function MateriaPrima() {
           <DialogHeader>
             <DialogTitle>Registrar Corte</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="space-y-4">
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
               <label htmlFor="corte-quantidade_total">quantidade_total a Cortar</label>
               <Input
                 id="corte-quantidade_total"
@@ -675,7 +675,7 @@ export default function MateriaPrima() {
                 placeholder="quantidade_total em metros"
               />
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label htmlFor="corte-ordem">Ordem de Produção</label>
               <Input
                 id="corte-ordem"
@@ -714,8 +714,8 @@ export default function MateriaPrima() {
           <DialogHeader>
             <DialogTitle>Histórico de Movimentações</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="grid grid-cols-2 gap-6">
+          <div className="grid gap-4 py-2">
+            <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Bobina</label>
                 <p className="text-sm text-muted-foreground">
@@ -792,9 +792,9 @@ export default function MateriaPrima() {
             <DialogTitle>Nova Bobina</DialogTitle>
           </DialogHeader>
           {novaBobina && (
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
+            <div className="grid gap-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="tipo_tecido">Tipo de Tecido</label>
                   <Input
                     id="tipo_tecido"
@@ -802,7 +802,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setNovaBobina({ ...novaBobina, tipo_tecido: e.target.value })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="cor">Cor</label>
                   <Input
                     id="cor"
@@ -811,8 +811,8 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="lote">Lote</label>
                   <Input
                     id="lote"
@@ -820,7 +820,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setNovaBobina({ ...novaBobina, lote: e.target.value })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="fornecedor">Fornecedor</label>
                   <Input
                     id="fornecedor"
@@ -829,8 +829,8 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="grid grid-2 gap-6">
-                <div className="space-y-4">
+              <div className="grid grid-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="quantidade_total">quantidade_total</label>
                   <Input
                     id="quantidade_total"
@@ -839,7 +839,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_total: parseFloat(e.target.value) })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="unidade">Unidade</label>
                   <Select
                     value={novaBobina.unidade}
@@ -855,8 +855,8 @@ export default function MateriaPrima() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="localizacao">Localização</label>
                   <Input
                     id="localizacao"
@@ -864,7 +864,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setNovaBobina({ ...novaBobina, localizacao: e.target.value })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="data_entrada">Data de Entrada</label>
                   <Input
                     id="data_entrada"
@@ -874,7 +874,7 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <label htmlFor="codigo_barras">Código de Barras</label>
                 <Input
                   id="codigo_barras"
@@ -882,7 +882,7 @@ export default function MateriaPrima() {
                   onChange={(e) => setNovaBobina({ ...novaBobina, codigo_barras: e.target.value })}
                 />
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <label htmlFor="observacoes">Observações</label>
                 <Input
                   id="observacoes"
@@ -920,9 +920,9 @@ export default function MateriaPrima() {
             <DialogTitle>Editar Bobina</DialogTitle>
           </DialogHeader>
           {bobinaEditando && (
-            <div className="grid gap-6 py-4">
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
+            <div className="grid gap-4 py-2">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="edit-tipo_tecido">Tipo de Tecido</label>
                   <Input
                     id="edit-tipo_tecido"
@@ -930,7 +930,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, tipo_tecido: e.target.value })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="edit-cor">Cor</label>
                   <Input
                     id="edit-cor"
@@ -939,8 +939,8 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="edit-lote">Lote</label>
                   <Input
                     id="edit-lote"
@@ -948,7 +948,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, lote: e.target.value })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="edit-fornecedor">Fornecedor</label>
                   <Input
                     id="edit-fornecedor"
@@ -992,8 +992,8 @@ export default function MateriaPrima() {
                   </Select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="edit-localizacao">Localização</label>
                   <Input
                     id="edit-localizacao"
@@ -1001,7 +1001,7 @@ export default function MateriaPrima() {
                     onChange={(e) => setBobinaEditando({ ...bobinaEditando, localizacao: e.target.value })}
                   />
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-2">
                   <label htmlFor="edit-data_entrada">Data de Entrada</label>
                   <Input
                     id="edit-data_entrada"
@@ -1011,7 +1011,7 @@ export default function MateriaPrima() {
                   />
                 </div>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <label htmlFor="edit-codigo_barras">Código de Barras</label>
                 <Input
                   id="edit-codigo_barras"
@@ -1019,7 +1019,7 @@ export default function MateriaPrima() {
                   onChange={(e) => setBobinaEditando({ ...bobinaEditando, codigo_barras: e.target.value })}
                 />
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <label htmlFor="edit-observacoes">Observações</label>
                 <Input
                   id="edit-observacoes"
@@ -1071,8 +1071,8 @@ export default function MateriaPrima() {
           <DialogHeader>
             <DialogTitle>Filtrar Bobinas</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="space-y-4">
+          <div className="grid gap-4 py-2">
+            <div className="space-y-2">
               <label htmlFor="filtro-status">Status</label>
               <Select
                 value={filtros.status}
@@ -1089,7 +1089,7 @@ export default function MateriaPrima() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2">
               <label htmlFor="filtro-fornecedor">Fornecedor</label>
               <Input
                 id="filtro-fornecedor"
@@ -1098,8 +1098,8 @@ export default function MateriaPrima() {
                 placeholder="Nome do fornecedor"
               />
             </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
                 <label htmlFor="filtro-data-inicio">Data Inicial</label>
                 <Input
                   id="filtro-data-inicio"
@@ -1108,7 +1108,7 @@ export default function MateriaPrima() {
                   onChange={(e) => setFiltros({ ...filtros, dataInicio: e.target.value })}
                 />
               </div>
-              <div className="space-y-4">
+              <div className="space-y-2">
                 <label htmlFor="filtro-data-fim">Data Final</label>
                 <Input
                   id="filtro-data-fim"

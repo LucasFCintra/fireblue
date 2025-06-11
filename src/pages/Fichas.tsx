@@ -418,46 +418,54 @@ export default function Fichas() {
     },
     {
       accessor: (row: Ficha) => (
-        <div className="flex gap-2">
+        <div className="flex gap-2 justify-end">
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
               handleOpenMovimentacaoDialog(row);
             }}
+            className="hover:bg-blue-50 text-blue-600"
+            title="Histórico de Movimentações"
           >
             <History className="h-4 w-4" />
           </Button>
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
               handleOpenEditDialog(row);
             }}
+            className="hover:bg-indigo-50 text-indigo-600"
+            title="Editar Ficha"
           >
             <Edit className="h-4 w-4" />
           </Button>
           {row.status !== "concluido" && (
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 handleOpenConcluirDialog(row);
               }}
+              className="hover:bg-green-50 text-green-600"
+              title="Concluir Ficha"
             >
               <CheckCircle className="h-4 w-4" />
             </Button>
           )}
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
               handleOpenDeleteDialog(row);
             }}
+            className="hover:bg-red-50 text-red-500"
+            title="Excluir Ficha"
           >
             <Trash2 className="h-4 w-4" />
           </Button>
@@ -480,9 +488,14 @@ export default function Fichas() {
   };
   
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Controle de Fichas</h1>
+    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center border-b pb-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-blue-900">Controle de Fichas</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Gerencie fichas de produção e acompanhe o fluxo de trabalho
+          </p>
+        </div>
         <div className="flex items-center gap-4">
           <div className="flex gap-2">
             <Input
@@ -498,6 +511,7 @@ export default function Fichas() {
               loadingText="Buscando..." 
               size="sm"
               startIcon={<Search className="h-4 w-4" />}
+              className="bg-blue-600 hover:bg-blue-700"
             >
               Buscar
             </ActionButton>
@@ -526,6 +540,7 @@ export default function Fichas() {
             size="sm"
             startIcon={<Plus className="h-4 w-4" />}
             onClick={handleAddFicha}
+            className="bg-blue-600 hover:bg-blue-700"
           >
             Nova Ficha
           </ActionButton>
@@ -533,39 +548,39 @@ export default function Fichas() {
       </div>
       
       {/* Cards de estatísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-700">
+        <Card className="border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Peças Cortadas</CardTitle>
-            <Scissors className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-blue-800">Total de Peças Cortadas</CardTitle>
+            <Scissors className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalPecasCortadas}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-blue-700">{totalPecasCortadas}</div>
+            <p className="text-xs text-blue-600">
               Unidades cortadas para produção
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-purple-200 bg-purple-50 hover:shadow-md transition-all hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Fichas Criadas</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-purple-800">Total de Fichas Criadas</CardTitle>
+            <FileText className="h-5 w-5 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalFichasCriadas}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-purple-700">{totalFichasCriadas}</div>
+            <p className="text-xs text-purple-600">
               Fichas registradas no sistema
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total de Fichas Concluídas</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium text-green-800">Total de Fichas Concluídas</CardTitle>
+            <CheckCircle className="h-5 w-5 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalFichasConcluidas}</div>
-            <p className="text-xs text-muted-foreground">
+            <div className="text-2xl font-bold text-green-700">{totalFichasConcluidas}</div>
+            <p className="text-xs text-green-600">
               Fichas já finalizadas
             </p>
           </CardContent>
@@ -573,18 +588,18 @@ export default function Fichas() {
       </div>
       
       {/* Card de Rastreamento */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Rastreamento Geral</CardTitle>
+      <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
+        <CardHeader className="bg-gray-50 border-b">
+          <CardTitle className="text-gray-800">Rastreamento Geral</CardTitle>
           <p className="text-sm text-muted-foreground">
             Fluxo de trabalho e situação atual das fichas. Clique em um status para filtrar.
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
             <StatusTrackingCard 
               icon={<Clock className="h-10 w-10 text-amber-500" />}
-              count={statusSummary.aguardando_retirada}
+              count={String(statusSummary.aguardando_retirada)}
               label="Aguardando Retirada"
               className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors"
               onClick={() => handleAbrirPorStatus("aguardando_retirada")}
@@ -596,7 +611,7 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
-              count={statusSummary.em_producao}
+              count={String(statusSummary.em_producao)}
               label="Em Produção"
               className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
               onClick={() => handleAbrirPorStatus("em_producao")}
@@ -608,7 +623,7 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<CheckCircle className="h-10 w-10 text-green-500" />}
-              count={statusSummary.concluido}
+              count={String(statusSummary.concluido)}
               label="Concluídas"
               className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors"
               onClick={() => handleAbrirPorStatus("concluido")}
@@ -618,11 +633,13 @@ export default function Fichas() {
       </Card>
       
       {/* Tabela de Fichas */}
-      <DataTable 
-        data={filteredData}
-        columns={columns}
-        isLoading={isLoading}
-      />
+      <div className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-all animate-in fade-in duration-1000">
+        <DataTable 
+          data={filteredData}
+          columns={columns}
+          isLoading={isLoading}
+        />
+      </div>
       
       {/* Diálogo para confirmar exclusão */}
       <ConfirmDialog
@@ -631,6 +648,9 @@ export default function Fichas() {
         onConfirm={handleDelete}
         title="Excluir Ficha"
         description={selectedFicha ? `Tem certeza que deseja excluir a ficha ${selectedFicha.codigo}?` : "Tem certeza que deseja excluir esta ficha?"}
+        confirmText="Excluir"
+        cancelText="Cancelar"
+        variant="destructive"
       />
       
       {/* Diálogo para confirmar conclusão */}
@@ -640,6 +660,9 @@ export default function Fichas() {
         onConfirm={handleConcluirFicha}
         title="Concluir Ficha"
         description={selectedFicha ? `Tem certeza que deseja marcar a ficha ${selectedFicha.codigo} como concluída?` : "Tem certeza que deseja marcar esta ficha como concluída?"}
+        confirmText="Concluir"
+        cancelText="Cancelar"
+        variant="default"
       />
       
       {/* Modal de Movimentações */}
@@ -654,35 +677,43 @@ export default function Fichas() {
       
       {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleCloseEditDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Editar Ficha</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-blue-800">Editar Ficha</DialogTitle>
             <DialogDescription>
-              Atualize os dados da ficha
+              Atualize os dados da ficha de produção
             </DialogDescription>
           </DialogHeader>
           {fichaEditando && (
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-codigo" className="text-right">
-                  Código
-                </Label>
-                <Input
-                  id="edit-codigo"
-                  value={fichaEditando.codigo}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, codigo: e.target.value })}
-                  className="col-span-3"
-                />
+            <div className="grid gap-4 py-2">
+              <div className="p-3 bg-gray-50 rounded-md border">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="edit-codigo" className="text-right font-medium">
+                    Código
+                  </Label>
+                  <Input
+                    id="edit-codigo"
+                    value={fichaEditando.codigo}
+                    onChange={(e) => setFichaEditando({ ...fichaEditando, codigo: e.target.value })}
+                    className="col-span-3 bg-white"
+                  />
+                </div>
               </div>
+              
+              <div className="space-y-2 col-span-2">
+                <h3 className="font-semibold text-gray-700 text-sm">Dados da Produção</h3>
+                <div className="h-0.5 bg-gray-100 mb-2"></div>
+              </div>
+              
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-banca" className="text-right">
+                <Label htmlFor="edit-banca" className="text-right font-medium">
                   Banca
                 </Label>
                 <Select
                   value={fichaEditando.banca}
                   onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
                 >
-                  <SelectTrigger className="col-span-3">
+                  <SelectTrigger className="col-span-3 bg-white">
                     <SelectValue placeholder="Selecione uma banca" />
                   </SelectTrigger>
                   <SelectContent>
@@ -703,31 +734,29 @@ export default function Fichas() {
                 </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-dataEntrada" className="text-right">
-                  Data Entrada
+                <Label htmlFor="edit-produto" className="text-right font-medium">
+                  Produto
                 </Label>
                 <Input
-                  id="edit-dataEntrada"
-                  type="date"
-                  value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
-                  className="col-span-3"
+                  id="edit-produto"
+                  value={fichaEditando.produto}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, produto: e.target.value })}
+                  className="col-span-3 bg-white"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-dataPrevisao" className="text-right">
-                  Previsão
+                <Label htmlFor="edit-cor" className="text-right font-medium">
+                  Cor
                 </Label>
                 <Input
-                  id="edit-dataPrevisao"
-                  type="date"
-                  value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
-                  className="col-span-3"
+                  id="edit-cor"
+                  value={fichaEditando.cor}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
+                  className="col-span-3 bg-white"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-quantidade" className="text-right">
+                <Label htmlFor="edit-quantidade" className="text-right font-medium">
                   Quantidade
                 </Label>
                 <Input
@@ -735,83 +764,109 @@ export default function Fichas() {
                   type="number"
                   value={fichaEditando.quantidade}
                   onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
-                  className="col-span-3"
+                  className="col-span-3 bg-white"
                 />
               </div>
+              
+              <div className="space-y-2 col-span-2 mt-2">
+                <h3 className="font-semibold text-gray-700 text-sm">Datas</h3>
+                <div className="h-0.5 bg-gray-100 mb-2"></div>
+              </div>
+              
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-produto" className="text-right">
-                  Produto
+                <Label htmlFor="edit-dataEntrada" className="text-right font-medium">
+                  Data Entrada
                 </Label>
                 <Input
-                  id="edit-produto"
-                  value={fichaEditando.produto}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, produto: e.target.value })}
-                  className="col-span-3"
+                  id="edit-dataEntrada"
+                  type="date"
+                  value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
+                  className="col-span-3 bg-white"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-cor" className="text-right">
-                  Cor
+                <Label htmlFor="edit-dataPrevisao" className="text-right font-medium">
+                  Previsão
                 </Label>
                 <Input
-                  id="edit-cor"
-                  value={fichaEditando.cor}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
-                  className="col-span-3"
+                  id="edit-dataPrevisao"
+                  type="date"
+                  value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
+                  className="col-span-3 bg-white"
                 />
               </div>
+              
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-observacoes" className="text-right">
+                <Label htmlFor="edit-observacoes" className="text-right font-medium">
                   Observações
                 </Label>
                 <Textarea
                   id="edit-observacoes"
                   value={fichaEditando.observacoes}
                   onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
-                  className="col-span-3"
+                  className="col-span-3 bg-white"
                 />
               </div>
             </div>
           )}
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={handleCloseEditDialog}>
               Cancelar
             </Button>
-            <Button onClick={handleEdit}>Salvar Alterações</Button>
+            <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                "Salvar Alterações"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
       
       {/* Modal de Nova Ficha */}
       <Dialog open={isNovaFichaDialogOpen} onOpenChange={handleCloseNovaFichaDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Nova Ficha</DialogTitle>
+            <DialogTitle className="text-xl font-semibold text-blue-800">Nova Ficha</DialogTitle>
             <DialogDescription>
-              Preencha os dados da nova ficha
+              Preencha os dados da nova ficha de produção
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="codigo" className="text-right">
-                Código
-              </Label>
-              <Input
-                id="codigo"
-                value={novaFicha.codigo}
-                onChange={(e) => setNovaFicha({ ...novaFicha, codigo: e.target.value })}
-                className="col-span-3"
-              />
+          <div className="grid gap-4 py-2">
+            <div className="p-3 bg-gray-50 rounded-md border">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="codigo" className="text-right font-medium">
+                  Código
+                </Label>
+                <Input
+                  id="codigo"
+                  value={novaFicha.codigo}
+                  onChange={(e) => setNovaFicha({ ...novaFicha, codigo: e.target.value })}
+                  className="col-span-3 bg-white"
+                />
+              </div>
             </div>
+            
+            <div className="space-y-2 col-span-2">
+              <h3 className="font-semibold text-gray-700 text-sm">Dados da Produção</h3>
+              <div className="h-0.5 bg-gray-100 mb-2"></div>
+            </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="banca" className="text-right">
+              <Label htmlFor="banca" className="text-right font-medium">
                 Banca
               </Label>
               <Select
                 value={novaFicha.banca}
                 onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}
               >
-                <SelectTrigger className="col-span-3">
+                <SelectTrigger className="col-span-3 bg-white">
                   <SelectValue placeholder="Selecione uma banca" />
                 </SelectTrigger>
                 <SelectContent>
@@ -832,31 +887,29 @@ export default function Fichas() {
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataEntrada" className="text-right">
-                Data Entrada
+              <Label htmlFor="produto" className="text-right font-medium">
+                Produto
               </Label>
               <Input
-                id="dataEntrada"
-                type="date"
-                value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
-                onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
-                className="col-span-3"
+                id="produto"
+                value={novaFicha.produto}
+                onChange={(e) => setNovaFicha({ ...novaFicha, produto: e.target.value })}
+                className="col-span-3 bg-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataPrevisao" className="text-right">
-                Previsão
+              <Label htmlFor="cor" className="text-right font-medium">
+                Cor
               </Label>
               <Input
-                id="dataPrevisao"
-                type="date"
-                value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
-                onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
-                className="col-span-3"
+                id="cor"
+                value={novaFicha.cor}
+                onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
+                className="col-span-3 bg-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantidade" className="text-right">
+              <Label htmlFor="quantidade" className="text-right font-medium">
                 Quantidade
               </Label>
               <Input
@@ -864,48 +917,66 @@ export default function Fichas() {
                 type="number"
                 value={novaFicha.quantidade}
                 onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) })}
-                className="col-span-3"
+                className="col-span-3 bg-white"
               />
             </div>
+            
+            <div className="space-y-2 col-span-2 mt-2">
+              <h3 className="font-semibold text-gray-700 text-sm">Datas</h3>
+              <div className="h-0.5 bg-gray-100 mb-2"></div>
+            </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="produto" className="text-right">
-                Produto
+              <Label htmlFor="dataEntrada" className="text-right font-medium">
+                Data Entrada
               </Label>
               <Input
-                id="produto"
-                value={novaFicha.produto}
-                onChange={(e) => setNovaFicha({ ...novaFicha, produto: e.target.value })}
-                className="col-span-3"
+                id="dataEntrada"
+                type="date"
+                value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
+                onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
+                className="col-span-3 bg-white"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cor" className="text-right">
-                Cor
+              <Label htmlFor="dataPrevisao" className="text-right font-medium">
+                Previsão
               </Label>
               <Input
-                id="cor"
-                value={novaFicha.cor}
-                onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
-                className="col-span-3"
+                id="dataPrevisao"
+                type="date"
+                value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
+                onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
+                className="col-span-3 bg-white"
               />
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="observacoes" className="text-right">
+              <Label htmlFor="observacoes" className="text-right font-medium">
                 Observações
               </Label>
               <Textarea
                 id="observacoes"
                 value={novaFicha.observacoes}
                 onChange={(e) => setNovaFicha({ ...novaFicha, observacoes: e.target.value })}
-                className="col-span-3"
+                className="col-span-3 bg-white"
               />
             </div>
           </div>
-          <DialogFooter>
+          <DialogFooter className="mt-6">
             <Button variant="outline" onClick={handleCloseNovaFichaDialog}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateFicha}>Criar Ficha</Button>
+            <Button onClick={handleCreateFicha} className="bg-blue-600 hover:bg-blue-700">
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Criando...
+                </>
+              ) : (
+                "Criar Ficha"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -5,7 +5,7 @@ import { LucideIcon } from 'lucide-react';
 
 interface StatusTrackingCardProps {
   icon: ReactNode;
-  count: number;
+  count: number | string;
   label: string;
   className?: string;
   onClick: () => void;
