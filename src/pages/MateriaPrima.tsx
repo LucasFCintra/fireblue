@@ -66,7 +66,7 @@ export default function MateriaPrima() {
     fornecedor: "",
     quantidade_total: 0,
     quantidade_disponivel: 0,
-    unidade: "m",
+    unidade: "Bobina",
     localizacao: "",
     data_entrada: new Date(),
     status: "Em Estoque",
@@ -94,7 +94,7 @@ export default function MateriaPrima() {
       fornecedor: "",
       quantidade_total: 0,
       quantidade_disponivel: 0,
-      unidade: "m",
+      unidade: "Bobina",
       localizacao: "",
       data_entrada: new Date(),
       status: "Em Estoque",
@@ -849,8 +849,9 @@ export default function MateriaPrima() {
                       <SelectValue placeholder="Selecione a unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="m">Metros (m)</SelectItem>
-                      <SelectItem value="kg">Quilogramas (kg)</SelectItem>
+                    <SelectItem value="Bobina">Bobina</SelectItem> 
+                      {/* <SelectItem value="m">Metros (m)</SelectItem>
+                      <SelectItem value="kg">Quilogramas (kg)</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>
@@ -982,12 +983,13 @@ export default function MateriaPrima() {
                     value={bobinaEditando.unidade}
                     onValueChange={(value) => setBobinaEditando({ ...bobinaEditando, unidade: value })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger aria-readonly>
                       <SelectValue placeholder="Selecione a unidade" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="m">Metros (m)</SelectItem>
-                      <SelectItem value="kg">Quilogramas (kg)</SelectItem>
+                    <SelectItem value="Bobina" aria-selected>Bobina</SelectItem>
+                      {/* <SelectItem value="m">Metros (m)</SelectItem>
+                      <SelectItem value="kg">Quilogramas (kg)</SelectItem> */}
                     </SelectContent>
                   </Select>
                 </div>

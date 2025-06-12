@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Package, FileText, Download, Filter, Edit, Trash2, Plus, 
-  Search, Loader2, Scissors, History, CheckCircle, Clock, CircleDot, Truck, MoveRight 
+  Search, Loader2, Scissors, History, CheckCircle, Clock, CircleDot, Truck, MoveRight, Copy 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +42,7 @@ import { MovimentacaoModal } from "@/components/fichas/MovimentacaoModal";
 import { bancasService, Banca } from "@/services/bancasService";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { RecebimentoParcialModal } from "@/components/fichas/RecebimentoParcialModal";
 
 export default function Fichas() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -52,6 +53,7 @@ export default function Fichas() {
   const [isMovimentacaoDialogOpen, setIsMovimentacaoDialogOpen] = useState(false);
   const [isConcluirFichaDialogOpen, setIsConcluirFichaDialogOpen] = useState(false);
   const [isNovaFichaDialogOpen, setIsNovaFichaDialogOpen] = useState(false);
+  const [isRecebimentoParcialDialogOpen, setIsRecebimentoParcialDialogOpen] = useState(false);
   const [filteredData, setFilteredData] = useState<Ficha[]>([]);
   const [statusSummary, setStatusSummary] = useState({
     'aguardando_retirada': 0,
@@ -69,6 +71,7 @@ export default function Fichas() {
     status: "aguardando_retirada",
     produto: "",
     cor: "",
+    tamanho: "M",
     observacoes: ""
   });
   
@@ -189,7 +192,13 @@ export default function Fichas() {
     
     try {
       setIsLoading(true);
-      const fichaAtualizada = await fichasService.atualizarFicha(fichaEditando);
+      const fichaParaAtualizar = {
+        ...fichaEditando,
+        data_entrada: fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString() : fichaEditando.data_entrada,
+        data_previsao: fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString() : fichaEditando.data_previsao,
+        quantidade: Number(fichaEditando.quantidade)
+      };
+      const fichaAtualizada = await fichasService.atualizarFicha(fichaParaAtualizar);
       
       const novaLista = filteredData.map(ficha => 
         ficha.id === fichaAtualizada.id ? fichaAtualizada : ficha
@@ -233,7 +242,9 @@ export default function Fichas() {
         "Sistema"
       );
       
+      // Recarregar todas as fichas para garantir dados atualizados
       await carregarFichas();
+      
       setIsConcluirFichaDialogOpen(false);
       setSelectedFicha(null);
       toast.success(`Ficha ${selectedFicha.codigo} concluída com sucesso`);
@@ -258,7 +269,8 @@ export default function Fichas() {
       const fichaParaCriar = {
         ...novaFicha,
         data_entrada: novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString() : novaFicha.data_entrada,
-        data_previsao: novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString() : novaFicha.data_previsao
+        data_previsao: novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString() : novaFicha.data_previsao,
+        quantidade: Number(novaFicha.quantidade)
       };
       const novaFichaCriada = await fichasService.criarFicha(fichaParaCriar);
       
@@ -274,6 +286,7 @@ export default function Fichas() {
         status: "aguardando_retirada",
         produto: "",
         cor: "",
+        tamanho: "M",
         observacoes: ""
       });
       toast.success("Ficha criada com sucesso");
@@ -336,6 +349,68 @@ export default function Fichas() {
   const filteredBancas = bancas.filter(banca => 
     banca.nome.toLowerCase().includes(bancaSearchQuery.toLowerCase())
   );
+  
+  // Função para duplicar uma ficha
+  const handleDuplicarFicha = (ficha: Ficha) => {
+    setBancaSearchQuery("");
+    setNovaFicha({
+      codigo: `${ficha.codigo}-COPY`,
+      banca: ficha.banca,
+      data_entrada: new Date(),
+      data_previsao: new Date(),
+      quantidade: ficha.quantidade,
+      status: "aguardando_retirada",
+      produto: ficha.produto,
+      cor: ficha.cor,
+      tamanho: ficha.tamanho,
+      observacoes: ficha.observacoes
+    });
+    setIsNovaFichaDialogOpen(true);
+  };
+  
+  // Função para iniciar produção
+  const handleIniciarProducao = async (ficha: Ficha) => {
+    try {
+      setIsLoading(true);
+      const fichaAtualizada = await fichasService.atualizarFicha({
+        ...ficha,
+        status: "em_producao"
+      });
+      
+      // Atualizar a lista de fichas
+      const novaLista = filteredData.map(f => 
+        f.id === fichaAtualizada.id ? fichaAtualizada : f
+      );
+      setFilteredData(novaLista);
+      
+      // Atualizar o resumo de status
+      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const summary = await response.json();
+      setStatusSummary(summary);
+      
+      // Atualizar as estatísticas
+      const totalFichasConcluidas = novaLista.filter(f => f.status === "concluido").length;
+      const totalPecasCortadas = novaLista.reduce((total, f) => total + f.quantidade, 0);
+      
+      toast.success(`Ficha ${ficha.codigo} iniciada em produção`);
+    } catch (error) {
+      toast.error("Erro ao iniciar produção");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Função para lidar com o recebimento parcial registrado
+  const handleRecebimentoParcialRegistrado = () => {
+    carregarFichas();
+  };
+  
+  // Função para abrir o diálogo de recebimento parcial
+  const handleOpenRecebimentoParcialDialog = (ficha: Ficha) => {
+    setSelectedFicha(ficha);
+    setIsRecebimentoParcialDialogOpen(true);
+  };
   
   // Colunas para a tabela de fichas
   const columns: {
@@ -417,8 +492,26 @@ export default function Fichas() {
       header: "Cor",
     },
     {
+      accessor: "tamanho" as keyof Ficha,
+      header: "Tamanho",
+    },
+    {
       accessor: (row: Ficha) => (
         <div className="flex gap-2 justify-end">
+          {row.status === "aguardando_retirada" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDuplicarFicha(row);
+              }}
+              className="hover:bg-purple-50 text-purple-600"
+              title="Duplicar Ficha"
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
@@ -443,18 +536,36 @@ export default function Fichas() {
           >
             <Edit className="h-4 w-4" />
           </Button>
+          {row.status === "em_producao" && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenRecebimentoParcialDialog(row);
+              }}
+              className="hover:bg-yellow-50 text-yellow-600"
+              title="Recebimento Parcial"
+            >
+              <Package className="h-4 w-4" />
+            </Button>
+          )}
           {row.status !== "concluido" && (
             <Button
               variant="ghost"
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
-                handleOpenConcluirDialog(row);
+                if (row.status === "aguardando_retirada") {
+                  handleIniciarProducao(row);
+                } else {
+                  handleOpenConcluirDialog(row);
+                }
               }}
-              className="hover:bg-green-50 text-green-600"
-              title="Concluir Ficha"
+              className={row.status === "aguardando_retirada" ? "hover:bg-blue-50 text-blue-600" : "hover:bg-green-50 text-green-600"}
+              title={row.status === "aguardando_retirada" ? "Iniciar Produção" : "Concluir Ficha"}
             >
-              <CheckCircle className="h-4 w-4" />
+              {row.status === "aguardando_retirada" ? <CircleDot className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
             </Button>
           )}
           <Button
@@ -675,6 +786,16 @@ export default function Fichas() {
         />
       )}
       
+      {/* Modal de Recebimento Parcial */}
+      {selectedFicha && (
+        <RecebimentoParcialModal
+          isOpen={isRecebimentoParcialDialogOpen}
+          onClose={() => setIsRecebimentoParcialDialogOpen(false)}
+          ficha={selectedFicha}
+          onRecebimentoRegistrado={handleRecebimentoParcialRegistrado}
+        />
+      )}
+      
       {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleCloseEditDialog}>
         <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -754,6 +875,25 @@ export default function Fichas() {
                   onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
                   className="col-span-3 bg-white"
                 />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="edit-tamanho" className="text-right font-medium">
+                  Tamanho
+                </Label>
+                <Select
+                  value={fichaEditando.tamanho}
+                  onValueChange={(value) => setFichaEditando({ ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" })}
+                >
+                  <SelectTrigger className="col-span-3 bg-white">
+                    <SelectValue placeholder="Selecione um tamanho" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="P">P</SelectItem>
+                    <SelectItem value="M">M</SelectItem>
+                    <SelectItem value="G">G</SelectItem>
+                    <SelectItem value="GG">GG</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="edit-quantidade" className="text-right font-medium">
@@ -907,6 +1047,25 @@ export default function Fichas() {
                 onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
                 className="col-span-3 bg-white"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="tamanho" className="text-right font-medium">
+                Tamanho
+              </Label>
+              <Select
+                value={novaFicha.tamanho}
+                onValueChange={(value) => setNovaFicha({ ...novaFicha, tamanho: value as "P" | "M" | "G" | "GG" })}
+              >
+                <SelectTrigger className="col-span-3 bg-white">
+                  <SelectValue placeholder="Selecione um tamanho" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="P">P</SelectItem>
+                  <SelectItem value="M">M</SelectItem>
+                  <SelectItem value="G">G</SelectItem>
+                  <SelectItem value="GG">GG</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="quantidade" className="text-right font-medium">

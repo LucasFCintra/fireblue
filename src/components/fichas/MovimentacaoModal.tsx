@@ -126,8 +126,9 @@ export const MovimentacaoModal: React.FC<MovimentacaoModalProps> = ({
                     <SelectValue placeholder="Selecione o tipo" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Retorno">Retorno</SelectItem>
+                    <SelectItem value="Entrada">Entrada</SelectItem>
                     <SelectItem value="Saída">Saída</SelectItem>
+                    <SelectItem value="Perca">Perca</SelectItem>
                     <SelectItem value="Conclusão">Conclusão</SelectItem>
                   </SelectContent>
                 </Select>

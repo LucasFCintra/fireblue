@@ -1,3 +1,4 @@
+const { Console } = require("console")
 const Fichas = require("../models/Fichas")
 
 class FichasController {
@@ -7,12 +8,12 @@ class FichasController {
   }
 
   async indexOne(req, res) {
-    const id = req.params.idTerceiro
-    const terceiro = await Fichas.findById(id)
-    if (!terceiro) {
+    const id = req.params.id
+    const ficha = await Fichas.findById(id)
+    if (!ficha) {
       res.status(404).json({})
     } else {
-      res.json(terceiro)
+      res.json(ficha)
     }
   }
 
@@ -57,9 +58,12 @@ class FichasController {
   }
 
   async update(req, res) {
-    const { idTerceiro, ...dados } = req.body
-    if (idTerceiro) {
-      const result = await Fichas.update(idTerceiro, dados)
+    const { id, ...dados } = req.body
+
+    console.log('ControllerID'+id)
+    console.log('Controller'+JSON.stringify(req.body))
+    if (id) {
+      const result = await Fichas.update(id, dados)
       if (result.status) {
         res.status(200).json({
           message: "Terceiro atualizado com sucesso",
@@ -83,6 +87,51 @@ class FichasController {
       })
     } else {
       res.status(406).send(result.err)
+    }
+  }
+
+  async registrarMovimentacao(req, res) {
+    try {
+      const { id } = req.params;
+      const movimentacao = req.body;
+      console.log(movimentacao)
+      // Validar se a ficha existe
+      const ficha = await Fichas.findById(id);
+      if (!ficha) {
+        return res.status(404).json({ error: "Ficha não encontrada" });
+      }
+
+      // Registrar a movimentação
+      const movimentacaoId = await Fichas.registrarMovimentacao(id, movimentacao);
+      
+      res.json({ 
+        success: true, 
+        message: "Movimentação registrada com sucesso",
+        data: { id: movimentacaoId }
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Erro ao registrar movimentação" });
+    }
+  }
+
+  async buscarMovimentacoes(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Validar se a ficha existe
+      const ficha = await Fichas.findById(id);
+      if (!ficha) {
+        return res.status(404).json({ error: "Ficha não encontrada" });
+      }
+
+      // Buscar as movimentações
+      const movimentacoes = await Fichas.buscarMovimentacoes(id);
+      
+      res.json(movimentacoes);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Erro ao buscar movimentações" });
     }
   }
 }

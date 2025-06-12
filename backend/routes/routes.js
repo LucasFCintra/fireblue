@@ -2,7 +2,6 @@ var express = require("express");
 var app = express();
 var router = express.Router();
 
-
 const produtosController = require("../controllers/produtosController");
 const clientesController = require("../controllers/clientesController");
 const fornecedoresController = require("../controllers/fornecedoresController");
@@ -17,34 +16,37 @@ const cadastroController = require("../controllers/cadastroController");
 const redefinirSenhaController = require("../controllers/redefinirSenhaController");
 const loginController = require("../controllers/loginController");
 const dashboardController = require("../controllers/dashboardController");
- const materiaPrimaController = require('../controllers/materiaPrimaController');
- const fichasController = require('../controllers/fichasController');
+const materiaPrimaController = require('../controllers/materiaPrimaController');
+const fichasController = require('../controllers/fichasController');
+const recebimentosParciaisController = require('../controllers/RecebimentosParciaisController');
 
- // Rotas para fichas
- router.get('/api/fichas', fichasController.index);
- router.get('/api/fichas/:id', fichasController.indexOne);
- router.get('/api/fichas/status/:status', fichasController.indexByStatus);
- router.get('/api/fichas/summary/status', fichasController.getStatusSummary);
- router.get('/api/fichas/list/:status', fichasController.getFichasByStatus);
- router.post('/api/fichas', fichasController.create);
- router.put('/api/fichas/:id', fichasController.update);
- router.delete('/api/fichas/:id', fichasController.delete);
- 
- // Rotas para movimentações
-//  router.post('/:id/movimentacao', fichasController.registrarMovimentacao);
-//  router.get('/:id/movimentacoes', fichasController.buscarMovimentacoes);
- 
-//  console.log('router', router);
+// ROTAS RECEBIMENTOS PARCIAIS
+router.post('/api/recebimentos-parciais', recebimentosParciaisController.create);
+router.get('/api/recebimentos-parciais/ficha/:fichaId', recebimentosParciaisController.findByFichaId);
+router.put('/api/recebimentos-parciais/:id', recebimentosParciaisController.update);
+router.delete('/api/recebimentos-parciais/:id', recebimentosParciaisController.delete);
 
-// Rotas básicas CRUD
+// ROTAS FICHAS
+router.get('/api/fichas', fichasController.index);
+router.get('/api/fichas/:id', fichasController.indexOne);
+router.get('/api/fichas/status/:status', fichasController.indexByStatus);
+router.get('/api/fichas/summary/status', fichasController.getStatusSummary);
+router.get('/api/fichas/list/:status', fichasController.getFichasByStatus);
+router.post('/api/fichas', fichasController.create);
+router.put('/api/fichas/:id', fichasController.update);
+router.delete('/api/fichas/:id', fichasController.delete);
+
+// Rotas para movimentações - IMPORTANTE: estas rotas devem vir ANTES das rotas com parâmetros
+router.post('/api/fichas/:id/movimentacao', fichasController.registrarMovimentacao);
+router.get('/api/fichas/:id/movimentacoes', fichasController.buscarMovimentacoes);
+
+// ROTAS MATÉRIA PRIMA
 router.get('/api/materia-prima/estoque', materiaPrimaController.retornaEstoque);
 router.get('/api/materia-prima', materiaPrimaController.index);
 router.get('/api/materia-prima/:id', materiaPrimaController.indexOne);
 router.post('/api/materia-prima', materiaPrimaController.create);
 router.put('/api/materia-prima', materiaPrimaController.update);
 router.delete('/api/materia-prima/:id', materiaPrimaController.delete);
-// Rotas específicas
-// router.get('/api/materia-prima/buscar/filtros', materiaPrimaController.);
 router.post('/api/materia-prima/:id/corte', materiaPrimaController.cortar);
 router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico);
 

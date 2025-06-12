@@ -3,18 +3,19 @@ import { randomUUID } from 'crypto';
 
 const API_URL = 'http://26.203.75.236:8687/api';
 
-export interface Ficha {
+export type Ficha = {
   id: number;
   codigo: string;
   banca: string;
-  data_entrada: string | Date;
-  data_previsao: string | Date;
+  data_entrada: Date | string;
+  data_previsao: Date | string;
   quantidade: number;
-  status: "aguardando_retirada" | "em_producao" | "recebido" | "concluido";
+  status: "aguardando_retirada" | "em_producao" | "concluido";
   produto: string;
   cor: string;
-  observacoes?: string;
-}
+  tamanho: "P" | "M" | "G" | "GG";
+  observacoes: string;
+};
 
 export interface Movimentacao {
   id: number;
@@ -32,7 +33,7 @@ export const fichasService = {
     return response.data;
   },
 
-  async buscarFicha(id: string): Promise<Ficha> {
+  async buscarFicha(id: number): Promise<Ficha> {
     const response = await axios.get(`${API_URL}/fichas/${id}`);
     return response.data;
   },
@@ -43,21 +44,26 @@ export const fichasService = {
   },
 
   async atualizarFicha(ficha: Ficha): Promise<Ficha> {
-    const response = await axios.put(`${API_URL}/fichas/${ficha.id}`, ficha);
+    const fichaParaEnviar = {
+      ...ficha,
+      data_entrada: ficha.data_entrada instanceof Date ? ficha.data_entrada.toISOString() : ficha.data_entrada,
+      data_previsao: ficha.data_previsao instanceof Date ? ficha.data_previsao.toISOString() : ficha.data_previsao
+    };
+    const response = await axios.put(`${API_URL}/fichas/${ficha.id}`, fichaParaEnviar);
     return response.data.data;
   },
 
-  async excluirFicha(id: string): Promise<void> {
+  async excluirFicha(id: number): Promise<void> {
     await axios.delete(`${API_URL}/fichas/${id}`);
   },
 
-  async concluirFicha(id: string): Promise<Ficha> {
+  async concluirFicha(id: number): Promise<Ficha> {
     const response = await axios.post(`${API_URL}/fichas/${id}/concluir`);
     return response.data.data;
   },
 
   async registrarMovimentacao(
-    id: string, 
+    id: number, 
     tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão", 
     quantidade: number, 
     descricao: string, 
@@ -72,7 +78,7 @@ export const fichasService = {
     return response.data.data;
   },
 
-  async buscarMovimentacoes(id: string): Promise<Movimentacao[]> {
+  async buscarMovimentacoes(id: number): Promise<Movimentacao[]> {
     const response = await axios.get(`${API_URL}/fichas/${id}/movimentacoes`);
     return response.data;
   }
