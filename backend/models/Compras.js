@@ -25,16 +25,32 @@ class ComprasModel {
 
   async create(compra) {
     try {
-      await knex.insert(compra).table("compras")
+      const ids = await knex.insert(compra).table("compras")
+      // Após criar, buscar a compra completa para enviar via Socket
+      const novaCompra = await this.findById(ids[0])
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('compra_criada', novaCompra)
+      }
+      return novaCompra
     } catch (err) {
       console.log(err)
+      return null
     }
   }
 
   async update(idCompra, compra) {
     try {
       await knex.update(compra).where({ idCompra }).table("compras")
-      return { status: true }
+      
+      // Após atualizar, buscar a compra completa para enviar via Socket
+      const compraAtualizada = await this.findById(idCompra)
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('compra_atualizada', compraAtualizada)
+      }
+      
+      return { status: true, data: compraAtualizada }
     } catch (err) {
       return { status: false, err }
     }
@@ -42,8 +58,17 @@ class ComprasModel {
 
   async delete(idCompra) {
     try {
+      // Buscar a compra antes de excluir para poder enviar os dados via Socket
+      const compraExcluida = await this.findById(idCompra)
+      
       await knex.delete().where({ idCompra }).table("compras")
-      return { status: true }
+      
+      // Emitir evento para todos os clientes conectados
+      if (global.io && compraExcluida) {
+        global.io.emit('compra_excluida', compraExcluida)
+      }
+      
+      return { status: true, data: compraExcluida }
     } catch (err) {
       return { status: false, err }
     }

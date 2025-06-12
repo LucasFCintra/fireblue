@@ -26,9 +26,17 @@ class InventarioModel {
 
   async create(inventario) {
     try {
-      await knex.insert(inventario).table("inventario")
+      const ids = await knex.insert(inventario).table("inventario")
+      // Após criar, buscar o item completo para enviar via Socket
+      const novoItem = await this.findById(ids[0])
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('inventario_item_criado', novoItem)
+      }
+      return novoItem
     } catch (err) {
       console.log(err)
+      return null
     }
   }
 
@@ -36,17 +44,34 @@ class InventarioModel {
     try {
       console.log('Model: Atualizando inventario: '+ JSON.stringify(inventario) +  ' \n id: '+id)
       await knex.update(inventario).where({ id:id }).table("inventario")
-      return { status: true }
+      
+      // Após atualizar, buscar o item completo para enviar via Socket
+      const itemAtualizado = await this.findById(id)
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('inventario_item_atualizado', itemAtualizado)
+      }
+      
+      return { status: true, data: itemAtualizado }
     } catch (err) {
       console.log('Model: Erro ao atualizar inventario: '+err)
       return { status: false, err }
     }
   }
 
-  async delete(id ) {
+  async delete(id) {
     try {
-      await knex.delete().where({ id  }).table("inventario")
-      return { status: true }
+      // Buscar o item antes de excluir para poder enviar os dados via Socket
+      const itemExcluido = await this.findById(id)
+      
+      await knex.delete().where({ id }).table("inventario")
+      
+      // Emitir evento para todos os clientes conectados
+      if (global.io && itemExcluido) {
+        global.io.emit('inventario_item_excluido', itemExcluido)
+      }
+      
+      return { status: true, data: itemExcluido }
     } catch (err) {
       return { status: false, err }
     }

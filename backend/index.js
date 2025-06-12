@@ -44,6 +44,8 @@ var io = require('socket.io')(server, {
 });
 
 // Objeto global para armazenar as conexões de socket
+// Este objeto permite que os controllers e models enviem eventos para todos os clientes conectados
+// É acessado nos controllers/models via global.io.emit('nome_do_evento', dados)
 global.io = io;
 
 try{
@@ -87,7 +89,7 @@ app.get('/api/server-status', (req, res) => {
   });
 });
 
-// Configuração do Socket.IO
+// Configuração do Socket.IO para comunicação em tempo real
 io.on('connection', (socket) => {
     console.log('Novo cliente conectado:', socket.id);
     
@@ -123,6 +125,16 @@ io.on('connection', (socket) => {
             message: 'Pong do servidor!' 
         });
     });
+    
+    // Eventos emitidos automaticamente pelos controllers e models quando há alterações:
+    // - cliente_criado, cliente_atualizado, cliente_excluido
+    // - fornecedor_criado, fornecedor_atualizado, fornecedor_excluido
+    // - produto_criado, produto_atualizado, produto_excluido
+    // - venda_criada, venda_atualizada, venda_excluida
+    // - compra_criada, compra_atualizada, compra_excluida
+    // - inventario_item_criado, inventario_item_atualizado, inventario_item_excluido
+    // - materias_primas_criada, materias_primas_atualizada, materias_primas_excluida
+    // - terceiro_criado, terceiro_atualizado, terceiro_excluido
 });
 
 // Usar o server em vez do app para o listen

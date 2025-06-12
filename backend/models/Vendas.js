@@ -25,16 +25,32 @@ class VendasModel {
 
   async create(venda) {
     try {
-      await knex.insert(venda).table("vendas")
+      const ids = await knex.insert(venda).table("vendas")
+      // Após criar, buscar a venda completa para enviar via Socket
+      const novaVenda = await this.findById(ids[0])
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('venda_criada', novaVenda)
+      }
+      return novaVenda
     } catch (err) {
       console.log(err)
+      return null
     }
   }
 
   async update(idVenda, venda) {
     try {
       await knex.update(venda).where({ idVenda }).table("vendas")
-      return { status: true }
+      
+      // Após atualizar, buscar a venda completa para enviar via Socket
+      const vendaAtualizada = await this.findById(idVenda)
+      // Emitir evento para todos os clientes conectados
+      if (global.io) {
+        global.io.emit('venda_atualizada', vendaAtualizada)
+      }
+      
+      return { status: true, data: vendaAtualizada }
     } catch (err) {
       return { status: false, err }
     }
@@ -42,8 +58,17 @@ class VendasModel {
 
   async delete(idVenda) {
     try {
+      // Buscar a venda antes de excluir para poder enviar os dados via Socket
+      const vendaExcluida = await this.findById(idVenda)
+      
       await knex.delete().where({ idVenda }).table("vendas")
-      return { status: true }
+      
+      // Emitir evento para todos os clientes conectados
+      if (global.io && vendaExcluida) {
+        global.io.emit('venda_excluida', vendaExcluida)
+      }
+      
+      return { status: true, data: vendaExcluida }
     } catch (err) {
       return { status: false, err }
     }

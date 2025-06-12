@@ -37,6 +37,6 @@ export interface RelatorioSemanal {
   fechamentos: FechamentoBanca[];
   totalPecas: number;
   valorTotal: number;
-  status: 'aberto' | 'fechado';
+  status: 'aberto' | 'fechado' | 'pago';
   dataCriacao: string;
 } 

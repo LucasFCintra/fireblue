@@ -19,8 +19,15 @@ class VendasController {
   async create(req, res) {
     const venda = req.body
     if (venda) {
-      await Vendas.create(venda)
-      res.status(200).send("Venda inserida com sucesso")
+      const resultado = await Vendas.create(venda)
+      if (resultado) {
+        res.status(200).json({
+          message: "Venda inserida com sucesso",
+          data: resultado
+        })
+      } else {
+        res.status(400).json({ err: "Erro ao inserir venda" })
+      }
     } else {
       res.status(400).json({ err: "Informações indefinidas" })
     }
@@ -31,7 +38,10 @@ class VendasController {
     if (idVenda) {
       const result = await Vendas.update(idVenda, dados)
       if (result.status) {
-        res.status(200).send("Venda atualizada com sucesso")
+        res.status(200).json({
+          message: "Venda atualizada com sucesso",
+          data: result.data
+        })
       } else {
         res.status(406).send(result.err)
       }
@@ -44,7 +54,10 @@ class VendasController {
     const id = req.params.idVenda
     const result = await Vendas.delete(id)
     if (result.status) {
-      res.status(200).send("Venda excluída com sucesso")
+      res.status(200).json({
+        message: "Venda excluída com sucesso",
+        data: result.data
+      })
     } else {
       res.status(406).send(result.err)
     }

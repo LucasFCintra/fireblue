@@ -19,8 +19,15 @@ class ComprasController {
   async create(req, res) {
     const compra = req.body
     if (compra) {
-      await Compras.create(compra)
-      res.status(200).send("Compra inserida com sucesso")
+      const resultado = await Compras.create(compra)
+      if (resultado) {
+        res.status(200).json({
+          message: "Compra inserida com sucesso",
+          data: resultado
+        })
+      } else {
+        res.status(400).json({ err: "Erro ao inserir compra" })
+      }
     } else {
       res.status(400).json({ err: "Informações indefinidas" })
     }
@@ -31,7 +38,10 @@ class ComprasController {
     if (idCompra) {
       const result = await Compras.update(idCompra, dados)
       if (result.status) {
-        res.status(200).send("Compra atualizada com sucesso")
+        res.status(200).json({
+          message: "Compra atualizada com sucesso",
+          data: result.data
+        })
       } else {
         res.status(406).send(result.err)
       }
@@ -44,7 +54,10 @@ class ComprasController {
     const id = req.params.idCompra
     const result = await Compras.delete(id)
     if (result.status) {
-      res.status(200).send("Compra excluída com sucesso")
+      res.status(200).json({
+        message: "Compra excluída com sucesso",
+        data: result.data
+      })
     } else {
       res.status(406).send(result.err)
     }

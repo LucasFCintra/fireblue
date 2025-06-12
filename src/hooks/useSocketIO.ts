@@ -1,6 +1,39 @@
 import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
+/**
+ * Hook para gerenciar a conexão Socket.IO com o servidor para comunicação em tempo real.
+ * 
+ * Este hook permite:
+ * 1. Estabelecer conexão com o servidor Socket.IO
+ * 2. Receber eventos em tempo real quando dados são alterados no servidor
+ * 3. Atualizar a interface automaticamente sem necessidade de recarregar a página
+ * 
+ * Exemplos de uso:
+ * 
+ * ```tsx
+ * // Em um componente React:
+ * const { socket, connected } = useSocketIO();
+ * 
+ * useEffect(() => {
+ *   if (!socket) return;
+ *   
+ *   // Escutar por eventos específicos
+ *   socket.on('cliente_criado', (novoCliente) => {
+ *     // Atualizar estado local com o novo cliente
+ *     setClientes(prev => [...prev, novoCliente]);
+ *   });
+ *   
+ *   // Limpar listeners ao desmontar
+ *   return () => {
+ *     socket.off('cliente_criado');
+ *   };
+ * }, [socket]);
+ * ```
+ * 
+ * Para mais exemplos, veja os hooks: useClientes, useFornecedores, useInventario, etc.
+ */
+
 // Obtém o endereço do servidor a partir de variáveis de ambiente ou usa um IP específico
 // Para redes locais ou VPN (como Radmin), use um IP fixo que seja acessível por todas as máquinas
 const getServerUrl = () => {

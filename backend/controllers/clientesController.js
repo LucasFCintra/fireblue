@@ -43,6 +43,10 @@ class ClientesController {
     if (idCliente) {
       const result = await Clientes.update(idCliente, dados)
       if (result.status) {
+        const clienteAtualizado = await Clientes.findById(idCliente)
+        if (global.io && clienteAtualizado) {
+          global.io.emit('cliente_atualizado', clienteAtualizado)
+        }
         res.status(200).json({
           message: "Cliente atualizado com sucesso",
           data: result.data
@@ -57,8 +61,12 @@ class ClientesController {
 
   async delete(req, res) {
     const id = req.params.idCliente
+    const clienteExcluido = await Clientes.findById(id)
     const result = await Clientes.delete(id)
     if (result.status) {
+      if (global.io && clienteExcluido) {
+        global.io.emit('cliente_excluido', clienteExcluido)
+      }
       res.status(200).json({
         message: "Cliente excluído com sucesso",
         data: result.data
