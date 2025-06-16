@@ -10,7 +10,8 @@ export type Ficha = {
   data_entrada: Date | string;
   data_previsao: Date | string;
   quantidade: number;
-  status: "aguardando_retirada" | "em_producao" | "concluido";
+  quantidade_recebida: number;
+  status: "aguardando_retirada" | "em_producao" | "concluido" | "recebido_parcialmente";
   produto: string;
   cor: string;
   tamanho: "P" | "M" | "G" | "GG";
@@ -69,13 +70,35 @@ export const fichasService = {
     descricao: string, 
     responsavel?: string
   ): Promise<Ficha> {
-    const response = await axios.post(`${API_URL}/fichas/${id}/movimentacao`, {
-      tipo,
-      quantidade,
-      descricao,
-      responsavel
-    });
-    return response.data.data;
+    try {
+      // Primeiro, buscar a ficha atual
+      const fichaAtual = await this.buscarFicha(id);
+      
+      // Calcular a nova quantidade recebida
+      const novaQuantidadeRecebida = fichaAtual.quantidade_recebida + quantidade;
+      
+      // Atualizar a ficha com a nova quantidade recebida
+      const fichaAtualizada = await this.atualizarFicha({
+        ...fichaAtual,
+        quantidade_recebida: novaQuantidadeRecebida,
+        // Se a quantidade recebida for igual ou maior que a quantidade total, marcar como concluído
+        status: novaQuantidadeRecebida >= fichaAtual.quantidade ? "concluido" : "recebido_parcialmente"
+      });
+
+      // Registrar a movimentação
+      const response = await axios.post(`${API_URL}/fichas/${id}/movimentacao`, {
+        tipo,
+        quantidade,
+        descricao,
+        responsavel,
+        data: new Date().toISOString()
+      });
+
+      return fichaAtualizada;
+    } catch (error) {
+      console.error("Erro ao registrar movimentação:", error);
+      throw error;
+    }
   },
 
   async buscarMovimentacoes(id: number): Promise<Movimentacao[]> {

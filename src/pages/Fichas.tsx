@@ -58,7 +58,8 @@ export default function Fichas() {
   const [statusSummary, setStatusSummary] = useState({
     'aguardando_retirada': 0,
     'em_producao': 0,
-    'concluido': 0
+    'concluido': 0,
+    'recebido_parcialmente': 0
   });
   
   // Estado para nova ficha
@@ -68,6 +69,7 @@ export default function Fichas() {
     data_entrada: new Date(),
     data_previsao: new Date(),
     quantidade: 0,
+    quantidade_recebida: 0,
     status: "aguardando_retirada",
     produto: "",
     cor: "",
@@ -283,6 +285,7 @@ export default function Fichas() {
         data_entrada: new Date(),
         data_previsao: new Date(),
         quantidade: 0,
+        quantidade_recebida: 0,
         status: "aguardando_retirada",
         produto: "",
         cor: "",
@@ -359,6 +362,7 @@ export default function Fichas() {
       data_entrada: new Date(),
       data_previsao: new Date(),
       quantidade: ficha.quantidade,
+      quantidade_recebida: 0,
       status: "aguardando_retirada",
       produto: ficha.produto,
       cor: ficha.cor,
@@ -460,7 +464,14 @@ export default function Fichas() {
       accessor: "quantidade" as keyof Ficha,
       header: "Quantidade",
       cell: (row: Ficha) => (
-        <span>{row.quantidade} unid.</span>
+        <div className="flex flex-col">
+          <span>{row.quantidade} unid.</span>
+          {(row.status === "concluido" || row.status === "recebido_parcialmente") && (
+            <span className="text-sm text-gray-500">
+              Recebido: {row.quantidade_recebida || 0} unid.
+            </span>
+          )}
+        </div>
       ),
     },
     {
@@ -471,6 +482,7 @@ export default function Fichas() {
         if (row.status === "aguardando_retirada") variant = "outline";
         if (row.status === "em_producao") variant = "default";
         if (row.status === "concluido") variant = "success";
+        if (row.status === "recebido_parcialmente") variant = "warning";
         
         return (
           <Badge variant={variant as any}
@@ -478,6 +490,7 @@ export default function Fichas() {
           >
             {row.status === "aguardando_retirada" ? "Aguardando Retirada" : 
              row.status === "em_producao" ? "Em Produção" : 
+             row.status === "recebido_parcialmente" ? "Recebido Parcialmente" :
              row.status === "concluido" ? "Concluído" : row.status}
           </Badge>
         );
@@ -536,7 +549,7 @@ export default function Fichas() {
           >
             <Edit className="h-4 w-4" />
           </Button>
-          {row.status === "em_producao" && (
+          {(row.status === "em_producao" || row.status === "recebido_parcialmente") && (
             <Button
               variant="ghost"
               size="icon"
@@ -726,6 +739,19 @@ export default function Fichas() {
               label="Em Produção"
               className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
               onClick={() => handleAbrirPorStatus("em_producao")}
+            />
+            
+            <div className="hidden md:flex items-center justify-center w-1/6">
+              <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
+            </div>
+            
+            <StatusTrackingCard 
+              icon={<Package className="h-10 w-10 text-yellow-500" />}
+              count={String(statusSummary.recebido_parcialmente)}
+              label="Recebido Parcialmente"
+              sublabel={`${filteredData.filter(f => f.status === "recebido_parcialmente").reduce((total, f) => total + f.quantidade_recebida, 0)} itens recebidos`}
+              className="bg-yellow-50 border-yellow-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-yellow-100 transition-colors"
+              onClick={() => handleAbrirPorStatus("recebido_parcialmente")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">

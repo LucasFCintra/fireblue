@@ -7,6 +7,7 @@ interface StatusTrackingCardProps {
   icon: ReactNode;
   count: number | string;
   label: string;
+  sublabel?: string;
   className?: string;
   onClick: () => void;
 }
@@ -15,6 +16,7 @@ export const StatusTrackingCard: React.FC<StatusTrackingCardProps> = ({
   icon,
   count,
   label,
+  sublabel,
   className,
   onClick
 }) => {
@@ -35,6 +37,11 @@ export const StatusTrackingCard: React.FC<StatusTrackingCardProps> = ({
       <span className="text-sm font-bold text-gray-600">
         {label}
       </span>
+      {sublabel && (
+        <span className="text-xs text-gray-500 mt-1">
+          {sublabel}
+        </span>
+      )}
     </div>
   );
 }; 

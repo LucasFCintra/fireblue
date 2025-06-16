@@ -21,164 +21,82 @@ import { InventarioForm } from "@/components/forms/InventarioForm";
 import { AjusteEstoqueForm } from "@/components/forms/AjusteEstoqueForm";
 import { InventarioFiltros } from "@/components/InventarioFiltros";
 import { InventarioDetalhes } from "@/components/InventarioDetalhes";
+import { estoqueService, ItemEstoque } from "@/services/inventarioService";
+import { useForm } from "react-hook-form"
+import { Form } from "@/components/ui/form"
 
-// Dados fictícios para a tabela de inventário
-const inventarioData = [
-  {
-    id: "INV001",
-    produto: "Laptop Dell XPS 13",
-    sku: "DELL-XPS13",
-    categoria: "Eletrônicos",
-    quantidade: 25,
-    valorUnitario: 8999.90,
-    localizacao: "Prateleira A1",
-    status: "Em Estoque",
-    fornecedor: "Dell",
-    codigoBarras: "7891234567890",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 5,
-    descricao: "Laptop de alta performance para uso profissional",
-    dataCadastro: "2023-05-10",
-    dataUltimaAtualizacao: "2023-08-15",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Laptop+Dell",
-  },
-  {
-    id: "INV002",
-    produto: "Monitor Samsung 24\"",
-    sku: "SAM-M24",
-    categoria: "Eletrônicos",
-    quantidade: 42,
-    valorUnitario: 1299.90,
-    localizacao: "Prateleira B3",
-    status: "Em Estoque",
-    fornecedor: "Samsung",
-    codigoBarras: "7897654321234",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 10,
-    descricao: "Monitor LED Full HD de 24 polegadas",
-    dataCadastro: "2023-04-15",
-    dataUltimaAtualizacao: "2023-07-20",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Monitor+Samsung",
-  },
-  {
-    id: "INV003",
-    produto: "Teclado Mecânico Logitech",
-    sku: "LOG-TEC1",
-    categoria: "Periféricos",
-    quantidade: 15,
-    valorUnitario: 499.90,
-    localizacao: "Prateleira C2",
-    status: "Baixo Estoque",
-    fornecedor: "Logitech",
-    codigoBarras: "7891234567891",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 15,
-    descricao: "Teclado mecânico RGB com switches Cherry MX",
-    dataCadastro: "2023-03-25",
-    dataUltimaAtualizacao: "2023-08-05",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Teclado+Logitech",
-  },
-  {
-    id: "INV004",
-    produto: "Mouse Sem Fio Microsoft",
-    sku: "MS-M100",
-    categoria: "Periféricos",
-    quantidade: 52,
-    valorUnitario: 149.90,
-    localizacao: "Prateleira C4",
-    status: "Em Estoque",
-    fornecedor: "Microsoft",
-    codigoBarras: "7897654321235",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 20,
-    descricao: "Mouse sem fio ergonômico",
-    dataCadastro: "2023-02-18",
-    dataUltimaAtualizacao: "2023-06-10",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Mouse+Microsoft",
-  },
-  {
-    id: "INV005",
-    produto: "Fone de Ouvido Sony",
-    sku: "SONY-FO200",
-    categoria: "Áudio",
-    quantidade: 0,
-    valorUnitario: 599.90,
-    localizacao: "Prateleira D1",
-    status: "Sem Estoque",
-    fornecedor: "Sony",
-    codigoBarras: "7891234567892",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 10,
-    descricao: "Fone de ouvido com cancelamento de ruído",
-    dataCadastro: "2023-01-30",
-    dataUltimaAtualizacao: "2023-07-15",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Fone+Sony",
-  },
-  {
-    id: "INV006",
-    produto: "Carregador USB-C",
-    sku: "CHRG-USBC",
-    categoria: "Acessórios",
-    quantidade: 8,
-    valorUnitario: 89.90,
-    localizacao: "Prateleira E2",
-    status: "Baixo Estoque",
-    fornecedor: "Outros",
-    codigoBarras: "7897654321236",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 15,
-    descricao: "Carregador rápido USB-C 20W",
-    dataCadastro: "2023-03-05",
-    dataUltimaAtualizacao: "2023-08-01",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Carregador+USB-C",
-  },
-  {
-    id: "INV007",
-    produto: "Câmera Canon EOS",
-    sku: "CANON-EOS",
-    categoria: "Fotografia",
-    quantidade: 12,
-    valorUnitario: 3999.90,
-    localizacao: "Prateleira F1",
-    status: "Em Estoque",
-    fornecedor: "Canon",
-    codigoBarras: "7891234567893",
-    unidadeMedida: "Unidade",
-    estoqueMinimo: 5,
-    descricao: "Câmera digital profissional DSLR",
-    dataCadastro: "2023-04-20",
-    dataUltimaAtualizacao: "2023-08-10",
-    imagemUrl: "https://placehold.co/500x500/e2e8f0/1e293b?text=Camera+Canon",
-  },
-];
+// Componente para a célula da imagem
+const ImagemCell = ({ row }: { row: ItemEstoque }) => {
+  const [imageError, setImageError] = useState(false);
 
-export default function Inventario() {
+  return (
+    <div className="w-10 h-10 rounded-md overflow-hidden border border-input">
+      {row.imagem_url && !imageError ? (
+        <img 
+          src={row.imagem_url} 
+          alt={row.nome_produto}
+          className="w-full h-full object-cover"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <div className="w-full h-full bg-muted flex items-center justify-center">
+          <Package className="h-5 w-5 text-muted-foreground" />
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default function Estoque() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRow, setSelectedRow] = useState<any>(null);
+  const [selectedRow, setSelectedRow] = useState<ItemEstoque | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAjusteDialogOpen, setIsAjusteDialogOpen] = useState(false);
   const [isFiltrosOpen, setIsFiltrosOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isDetalhesOpen, setIsDetalhesOpen] = useState(false);
-  const [inventarioItems, setInventarioItems] = useState(inventarioData);
-  const [filteredData, setFilteredData] = useState(inventarioItems);
+  const [estoqueItems, setEstoqueItems] = useState<ItemEstoque[]>([]);
+  const [filteredData, setFilteredData] = useState<ItemEstoque[]>([]);
   const [activeFilters, setActiveFilters] = useState<any>(null);
   
-  // Calcular estatísticas de estoque
-  const emEstoque = filteredData.filter(item => item.status === "Em Estoque").length;
-  const baixoEstoque = filteredData.filter(item => item.status === "Baixo Estoque").length;
-  const semEstoque = filteredData.filter(item => item.status === "Sem Estoque").length;
+  const form = useForm({
+    // suas configurações do formulário aqui
+  })
   
-  // Atualizar os dados filtrados quando o inventário mudar
+  // Carregar dados do estoque
+  useEffect(() => {
+    const carregarEstoque = async () => {
+      setIsLoading(true);
+      try {
+        const items = await estoqueService.listarItens();
+        setEstoqueItems(items);
+        setFilteredData(items);
+      } catch (error) {
+        console.error("Erro ao carregar estoque:", error);
+        toast.error("Erro ao carregar estoque");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    carregarEstoque();
+  }, []);
+  
+  // Calcular estatísticas de estoque
+  const emEstoque = filteredData.filter(item => item.status === "ativo").length;
+  const baixoEstoque = filteredData.filter(item => item.status === "baixo").length;
+  const semEstoque = filteredData.filter(item => item.status === "inativo").length;
+  
+  // Atualizar os dados filtrados quando o estoque mudar
   useEffect(() => {
     if (activeFilters) {
       applyFilters(activeFilters);
     } else {
-      setFilteredData(inventarioItems);
+      setFilteredData(estoqueItems);
     }
-  }, [inventarioItems, activeFilters]);
+  }, [estoqueItems, activeFilters]);
   
   // Função para lidar com a pesquisa
   const handleSearch = () => {
@@ -186,14 +104,14 @@ export default function Inventario() {
     
     // Simulação de um atraso de carregamento
     setTimeout(() => {
-      let filtered = inventarioItems;
+      let filtered = estoqueItems;
       
       if (searchQuery.trim() !== "") {
-        filtered = inventarioItems.filter(item =>
-          item.produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.sku.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        filtered = estoqueItems.filter(item =>
+          item.nome_produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
           item.fornecedor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.codigoBarras?.toLowerCase().includes(searchQuery.toLowerCase())
+          item.codigo_barras?.toLowerCase().includes(searchQuery.toLowerCase())
         );
       }
       
@@ -205,27 +123,16 @@ export default function Inventario() {
   };
   
   // Função para lidar com a adição de um novo item
-  const handleAddItem = () => {
-    setIsAddDialogOpen(true);
-  };
-  
-  // Função para salvar um novo item
-  const handleSaveItem = async (data: any) => {
-    setIsLoading(true);
-    
-    // Simulação de um atraso de carregamento
-    setTimeout(() => {
-      // Em uma implementação real, aqui faríamos uma chamada para a API
-      const newItem = {
-        ...data,
-      };
-      
-      // Adicionar o novo item ao array de dados
-      setInventarioItems(prev => [newItem, ...prev]);
-      
-      setIsLoading(false);
-      toast.success(`Item ${data.produto} adicionado com sucesso`);
-    }, 1000);
+  const handleAddItem = async (data: any) => {
+    try {
+      const novoItem = await estoqueService.criarItem(data);
+      setEstoqueItems(prev => [...prev, novoItem]);
+      toast.success("Item adicionado com sucesso!");
+      setIsAddDialogOpen(false);
+    } catch (error) {
+      console.error("Erro ao adicionar item:", error);
+      toast.error("Erro ao adicionar item");
+    }
   };
   
   // Função para lidar com a exportação
@@ -240,35 +147,40 @@ export default function Inventario() {
   };
   
   // Função para lidar com a exclusão de um item
-  const handleDelete = () => {
-    setIsLoading(true);
+  const handleDeleteItem = async () => {
+    if (!selectedRow?.id) return;
     
-    // Simulação de um atraso de carregamento
-    setTimeout(() => {
-      // Em uma implementação real, aqui faríamos uma chamada para a API
-      setInventarioItems(prev => prev.filter(item => item.id !== selectedRow.id));
-      
-      setIsLoading(false);
+    try {
+      await estoqueService.excluirItem(selectedRow.id);
+      setEstoqueItems(prev => prev.filter(item => item.id !== selectedRow.id));
+      toast.success("Item excluído com sucesso!");
       setIsDeleteDialogOpen(false);
-      toast.success(`Item ${selectedRow.produto} removido com sucesso`);
-    }, 1000);
+    } catch (error) {
+      console.error("Erro ao excluir item:", error);
+      toast.error("Erro ao excluir item");
+    }
   };
   
   // Função para lidar com a edição de um item
-  const handleEdit = async (data: any) => {
-    setIsLoading(true);
+  const handleEditItem = async (data: any) => {
+    if (!selectedRow?.id) return;
     
-    // Simulação de um atraso de carregamento
-    setTimeout(() => {
-      // Em uma implementação real, aqui faríamos uma chamada para a API
-      setInventarioItems(prev => 
-        prev.map(item => item.id === data.id ? { ...data } : item)
+    try {
+      const itemAtualizado = await estoqueService.atualizarItem({
+        ...data,
+        id: selectedRow.id
+      });
+      
+      setEstoqueItems(prev => 
+        prev.map(item => item.id === selectedRow.id ? itemAtualizado : item)
       );
       
-      setIsLoading(false);
+      toast.success("Item atualizado com sucesso!");
       setIsEditDialogOpen(false);
-      toast.success(`Item ${data.produto} atualizado com sucesso`);
-    }, 1000);
+    } catch (error) {
+      console.error("Erro ao atualizar item:", error);
+      toast.error("Erro ao atualizar item");
+    }
   };
   
   // Função para lidar com o ajuste de estoque
@@ -278,7 +190,7 @@ export default function Inventario() {
     // Simulação de um atraso de carregamento
     setTimeout(() => {
       // Em uma implementação real, aqui faríamos uma chamada para a API
-      setInventarioItems(prev => 
+      setEstoqueItems(prev => 
         prev.map(item => 
           item.id === data.id 
             ? { ...item, quantidade: data.novaQuantidade, status: data.novoStatus } 
@@ -293,14 +205,14 @@ export default function Inventario() {
       let mensagem = "";
       switch (data.tipoAjuste) {
         case "entrada":
-          mensagem = `Entrada de ${data.quantidade} unidades registrada para ${selectedRow.produto}`;
+          mensagem = `Entrada de ${data.quantidade} unidades registrada para ${selectedRow.nome_produto}`;
           break;
         case "saida":
-          mensagem = `Saída de ${data.quantidade} unidades registrada para ${selectedRow.produto}`;
+          mensagem = `Saída de ${data.quantidade} unidades registrada para ${selectedRow.nome_produto}`;
           break;
         case "ajuste":
-        case "inventario":
-          mensagem = `Estoque ajustado para ${data.novaQuantidade} unidades para ${selectedRow.produto}`;
+        case "estoque":
+          mensagem = `Estoque ajustado para ${data.novaQuantidade} unidades para ${selectedRow.nome_produto}`;
           break;
       }
       
@@ -316,7 +228,7 @@ export default function Inventario() {
     setActiveFilters(filters);
     
     setTimeout(() => {
-      let filtered = [...inventarioItems];
+      let filtered = [...estoqueItems];
       
       // Filtrar por categorias
       if (filters.categorias && filters.categorias.length > 0) {
@@ -331,8 +243,8 @@ export default function Inventario() {
       // Filtrar por valor
       if (filters.valorMinimo !== undefined && filters.valorMaximo !== undefined) {
         filtered = filtered.filter(item => 
-          item.valorUnitario >= filters.valorMinimo && 
-          item.valorUnitario <= filters.valorMaximo
+          (item.preco_unitario || 0) >= filters.valorMinimo && 
+          (item.preco_unitario || 0) <= filters.valorMaximo
         );
       }
       
@@ -363,16 +275,16 @@ export default function Inventario() {
       if (filters.ordenacao) {
         switch (filters.ordenacao) {
           case "produto_asc":
-            filtered.sort((a, b) => a.produto.localeCompare(b.produto));
+            filtered.sort((a, b) => a.nome_produto.localeCompare(b.nome_produto));
             break;
           case "produto_desc":
-            filtered.sort((a, b) => b.produto.localeCompare(a.produto));
+            filtered.sort((a, b) => b.nome_produto.localeCompare(a.nome_produto));
             break;
           case "valor_asc":
-            filtered.sort((a, b) => a.valorUnitario - b.valorUnitario);
+            filtered.sort((a, b) => a.preco_unitario - b.preco_unitario);
             break;
           case "valor_desc":
-            filtered.sort((a, b) => b.valorUnitario - a.valorUnitario);
+            filtered.sort((a, b) => b.preco_unitario - a.preco_unitario);
             break;
           case "estoque_asc":
             filtered.sort((a, b) => a.quantidade - b.quantidade);
@@ -393,51 +305,52 @@ export default function Inventario() {
       setIsLoading(false);
       
       toast.success(`${filtered.length} item(s) encontrado(s) com os filtros aplicados`);
-    }, 800);
+    }, 300);
   };
   
-  // Colunas para a tabela de inventário
+  // Colunas para a tabela de estoque
   const columns = [
-    { accessor: "id", header: "ID" },
-    { accessor: "produto", header: "Produto" },
+    { 
+      accessor: "imagem_url",
+      header: "",
+      cell: (row: ItemEstoque) => <ImagemCell row={row} />
+    },
+    { 
+      accessor: "nome",
+      header: "Produto",
+      cell: (row: ItemEstoque) => {
+        return (
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col">
+              <span className="font-medium text-gray-900">{row.nome_produto}</span>
+              <span className="text-sm text-gray-500">{row.codigo_barras}</span>
+            </div>
+          </div>
+        );
+      }
+    },
     { accessor: "sku", header: "SKU" },
     { accessor: "categoria", header: "Categoria" },
     { 
       accessor: "quantidade", 
       header: "Quantidade",
-      cell: (row: any) => {
-        let textColor = "";
-        let bgColor = "";
-        let borderColor = "";
-        
-        if (row.status === "Em Estoque") {
-          textColor = "text-green-700";
-          bgColor = "bg-green-50";
-          borderColor = "border-green-200";
-        } else if (row.status === "Baixo Estoque") {
-          textColor = "text-yellow-700";
-          bgColor = "bg-yellow-50";
-          borderColor = "border-yellow-200";
-        } else if (row.status === "Sem Estoque") {
-          textColor = "text-red-700";
-          bgColor = "bg-red-50";
-          borderColor = "border-red-200";
-        }
-        
+      cell: (row: ItemEstoque) => {
         return (
-          <span className={`font-medium px-2 py-1 rounded-md ${textColor} ${bgColor} ${borderColor} border`}>
-            {row.quantidade}
-          </span>
+          <div className="flex flex-col">
+            <span className="font-medium">{row.quantidade}</span>
+            <span className="text-sm text-gray-500">{row.unidade}</span>
+          </div>
         );
       }
     },
     { 
-      accessor: "valorUnitario", 
+      accessor: "preco_unitario", 
       header: "Valor Unitário",
-      cell: (row: any) => {
+      cell: (row: ItemEstoque) => {
+        const valor = Number(row.preco_unitario) || 0;
         return (
           <span className="font-medium">
-            R$ {row.valorUnitario.toFixed(2)}
+            R$ {valor.toFixed(2)}
           </span>
         );
       }
@@ -446,16 +359,26 @@ export default function Inventario() {
     { 
       accessor: "status", 
       header: "Status",
-      cell: (row: any) => {
+      cell: (row: ItemEstoque) => {
         let color = "bg-green-100 text-green-800";
-        if (row.status === "Baixo Estoque") color = "bg-yellow-100 text-yellow-800";
-        if (row.status === "Sem Estoque") color = "bg-red-100 text-red-800";
+        if (row.status === "baixo") color = "bg-yellow-100 text-yellow-800";
+        if (row.status === "inativo") color = "bg-red-100 text-red-800";
         
         return (
-          <Badge variant="outline" className={`${color}`}>
-            {row.status}
-          </Badge>
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${color}`}>
+            {row.status === "ativo" ? "Em Estoque" : 
+             row.status === "baixo" ? "Baixo Estoque" : 
+             "Sem Estoque"}
+          </span>
         );
+      }
+    },
+    { accessor: "fornecedor", header: "Fornecedor" },
+    { 
+      accessor: "data_entrada", 
+      header: "Data de Entrada",
+      cell: (row: ItemEstoque) => {
+        return row.data_entrada ? new Date(row.data_entrada).toLocaleDateString() : "Não informado";
       }
     },
     {
@@ -513,7 +436,7 @@ export default function Inventario() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Inventário</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Estoque</h1>
         <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -545,7 +468,7 @@ export default function Inventario() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => toast.info("Relatório de Inventário será implementado")}>
+              <DropdownMenuItem onClick={() => toast.info("Relatório de Estoque será implementado")}>
                 <Package className="w-4 h-4 mr-2" />
                 Relatório de Estoque
               </DropdownMenuItem>
@@ -562,7 +485,7 @@ export default function Inventario() {
           <ActionButton
             size="sm"
             startIcon={<Plus className="h-4 w-4" />}
-            onClick={handleAddItem}
+            onClick={() => setIsAddDialogOpen(true)}
           >
             Novo Item
           </ActionButton>
@@ -658,9 +581,9 @@ export default function Inventario() {
       <ConfirmDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        onConfirm={handleDelete}
+        onConfirm={handleDeleteItem}
         title="Confirmar exclusão"
-        description={`Tem certeza que deseja excluir o produto "${selectedRow?.produto}"? Esta ação não pode ser desfeita.`}
+        description={`Tem certeza que deseja excluir o produto "${selectedRow?.nome_produto}"? Esta ação não pode ser desfeita.`}
         confirmText="Excluir"
         cancelText="Cancelar"
         variant="destructive"
@@ -668,25 +591,29 @@ export default function Inventario() {
       
       {/* Formulário de adição de item */}
       {isAddDialogOpen && (
-        <InventarioForm 
-          isOpen={isAddDialogOpen}
-          onClose={() => setIsAddDialogOpen(false)}
-          onSubmit={handleSaveItem}
-          title="Cadastrar Novo Item"
-          mode="create"
-        />
+        <Form {...form}>
+          <InventarioForm 
+            isOpen={isAddDialogOpen}
+            onClose={() => setIsAddDialogOpen(false)}
+            onSubmit={handleAddItem}
+            title="Cadastrar Novo Item"
+            mode="create"
+          />
+        </Form>
       )}
       
       {/* Formulário de edição de item */}
       {isEditDialogOpen && selectedRow && (
-        <InventarioForm 
-          isOpen={isEditDialogOpen}
-          onClose={() => setIsEditDialogOpen(false)}
-          onSubmit={handleEdit}
-          itemData={selectedRow}
-          title="Editar Item"
-          mode="edit"
-        />
+        <Form {...form}>
+          <InventarioForm 
+            isOpen={isEditDialogOpen}
+            onClose={() => setIsEditDialogOpen(false)}
+            onSubmit={handleEditItem}
+            itemData={selectedRow}
+            title="Editar Item"
+            mode="edit"
+          />
+        </Form>
       )}
       
       {/* Formulário de ajuste de estoque */}

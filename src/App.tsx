@@ -24,6 +24,7 @@ import Cadastro from "./pages/Cadastro";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import SocketTest from "./pages/SocketTest";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import Estoque from "./pages/Inventario";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const AppRoutes = () => (
       <Route path="configuracoes" element={<Configuracoes />} />
       <Route path="fechamento-semanal" element={<FechamentoSemanal />} />
       <Route path="socket-test" element={<SocketTest />} />
+      <Route path="estoque" element={<Estoque />} />
     </Route>
     
     <Route path="*" element={<NotFound />} />

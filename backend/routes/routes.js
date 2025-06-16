@@ -8,7 +8,7 @@ const fornecedoresController = require("../controllers/fornecedoresController");
 const terceirosController = require("../controllers/terceirosController");
 const ordensController = require("../controllers/ordensController");
 const comprasController = require("../controllers/comprasController");
-const inventarioController = require("../controllers/inventarioController");
+const inventarioController = require("../controllers/estoqueController");
 const vendasController = require("../controllers/vendasController");
 const relatoriosController = require("../controllers/relatoriosController");
 const configuracoesController = require("../controllers/configuracoesController");
@@ -19,6 +19,7 @@ const dashboardController = require("../controllers/dashboardController");
 const materiaPrimaController = require('../controllers/materiaPrimaController');
 const fichasController = require('../controllers/fichasController');
 const recebimentosParciaisController = require('../controllers/RecebimentosParciaisController');
+const estoqueController = require("../controllers/estoqueController");
 
 // ROTAS RECEBIMENTOS PARCIAIS
 router.post('/api/recebimentos-parciais', recebimentosParciaisController.create);
@@ -94,11 +95,11 @@ router.put('/api/compras', comprasController.update);
 router.delete('/api/compras/:idCompra', comprasController.delete);
 
 // ROTAS INVENTARIO
-router.get('/api/inventario', inventarioController.index);
-router.get('/api/inventario/:id', inventarioController.indexOne);
-router.post('/api/inventario', inventarioController.create);
-router.put('/api/inventario', inventarioController.update);
-router.delete('/api/inventario/:id', inventarioController.delete);
+router.get('/api/estoques', inventarioController.index);
+router.get('/api/estoques/:id', inventarioController.indexOne);
+router.post('/api/estoques', inventarioController.create);
+router.put('/api/estoques', inventarioController.update);
+router.delete('/api/estoques/:id', inventarioController.delete);
 
 // ROTAS VENDAS
 router.get('/api/vendas', vendasController.index);
@@ -139,4 +140,11 @@ router.post('/api/login', loginController.login);
 router.get('/api/dashboard', dashboardController.getResumo);
 router.get('/api/dashboard/producao-semanal', dashboardController.getProducaoSemanal);
 
+// ROTAS ESTOQUE
+router.get('/api/estoque', estoqueController.index);
+router.get('/api/estoque/:id', estoqueController.indexOne);
+router.post('/api/estoque', estoqueController.create);
+router.put('/api/estoque', estoqueController.update);
+router.delete('/api/estoque/:id', estoqueController.delete);
+ 
 module.exports = router;

@@ -94,7 +94,7 @@ class FichasController {
     try {
       const { id } = req.params;
       const movimentacao = req.body;
-      console.log(movimentacao)
+      console.log('Controller: '+movimentacao)
       // Validar se a ficha existe
       const ficha = await Fichas.findById(id);
       if (!ficha) {

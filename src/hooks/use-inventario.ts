@@ -5,10 +5,10 @@ import { toast } from "@/components/ui/sonner";
 
 const API_URL = 'http://26.203.75.236:8687';
 
-export interface ItemInventario {
+export interface ItemEstoque {
   id?: number;
-  idInventario?: number;
   nome: string;
+  sku?: string;
   quantidade: number;
   unidade?: string;
   categoria?: string;
@@ -23,128 +23,131 @@ export interface ItemInventario {
   status?: 'ativo' | 'inativo' | 'baixo';
   criado_em?: string;
   atualizado_em?: string;
+  estoque_minimo?: number;
+  descricao?: string;
+  imagem_url?: string;
 }
 
-export function useInventario() {
-  const [inventario, setInventario] = useState<ItemInventario[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+export function useEstoque() {
+  const [estoque, setEstoque] = useState<ItemEstoque[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { socket, connected } = useSocketIO();
+  const { socket } = useSocketIO();
 
-  const fetchInventario = async () => {
-    setIsLoading(true);
+  const fetchEstoque = async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/inventario`);
-      const data = Array.isArray(response.data) 
-        ? response.data 
-        : (response.data.items || []);
-      setInventario(data);
+      setLoading(true);
+      const response = await axios.get(`${API_URL}/api/estoque`);
+      const data = response.data.items;
+      setEstoque(data);
       setError(null);
     } catch (err) {
-      setError("Erro ao carregar dados do inventário");
-      console.error(err);
+      console.error('Erro ao buscar estoque:', err);
+      setError('Erro ao carregar dados do estoque');
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchInventario();
-  }, []);
+    fetchEstoque();
 
-  useEffect(() => {
-    if (!socket) return;
+    if (socket) {
+      socket.on('estoque_item_criado', (novoItem: ItemEstoque) => {
+        setEstoque((prevItems) => [...prevItems, novoItem]);
+        toast.success(`Item adicionado: ${novoItem.nome}`);
+      });
 
-    // Configurar ouvintes para os eventos do Socket.IO
-    socket.on('inventario_item_criado', (novoItem: ItemInventario) => {
-      console.log('Item de inventário criado:', novoItem);
-      setInventario((prevItems) => [...prevItems, novoItem]);
-      toast.success(`Item adicionado: ${novoItem.nome}`);
-    });
+      socket.on('estoque_item_atualizado', (itemAtualizado: ItemEstoque) => {
+        setEstoque((prevItems) =>
+          prevItems.map((item) =>
+            item.id === itemAtualizado.id
+              ? itemAtualizado
+              : item
+          )
+        );
+        toast.success(`Item atualizado: ${itemAtualizado.nome}`);
+      });
 
-    socket.on('inventario_item_atualizado', (itemAtualizado: ItemInventario) => {
-      console.log('Item de inventário atualizado:', itemAtualizado);
-      setInventario((prevItems) => 
-        prevItems.map((item) => 
-          (item.id === itemAtualizado.id || item.idInventario === itemAtualizado.idInventario) 
-            ? itemAtualizado 
-            : item
-        )
-      );
-      toast.success(`Item atualizado: ${itemAtualizado.nome}`);
-    });
+      socket.on('estoque_item_excluido', (itemExcluido: ItemEstoque) => {
+        setEstoque((prevItems) =>
+          prevItems.filter((item) => item.id !== itemExcluido.id)
+        );
+        toast.success(`Item removido: ${itemExcluido.nome}`);
+      });
+    }
 
-    socket.on('inventario_item_excluido', (itemExcluido: ItemInventario) => {
-      console.log('Item de inventário excluído:', itemExcluido);
-      setInventario((prevItems) => 
-        prevItems.filter((item) => 
-          item.id !== itemExcluido.id && item.idInventario !== itemExcluido.idInventario
-        )
-      );
-      toast.success(`Item removido: ${itemExcluido.nome}`);
-    });
-
-    // Limpar ouvintes ao desmontar o componente
     return () => {
-      socket.off('inventario_item_criado');
-      socket.off('inventario_item_atualizado');
-      socket.off('inventario_item_excluido');
+      if (socket) {
+        socket.off('estoque_item_criado');
+        socket.off('estoque_item_atualizado');
+        socket.off('estoque_item_excluido');
+      }
     };
   }, [socket]);
 
-  const adicionarItem = async (item: ItemInventario) => {
-    setIsLoading(true);
+  const adicionarItem = async (item: ItemEstoque) => {
     try {
-      const response = await axios.post(`${API_URL}/api/inventario`, item);
+      setLoading(true);
+      const response = await axios.post(`${API_URL}/api/estoque`, item);
+      const novoItem = response.data;
+      setEstoque((prevItems) => [...prevItems, novoItem]);
       setError(null);
-      return response.data;
+      return novoItem;
     } catch (err) {
-      setError("Erro ao adicionar item ao inventário");
-      console.error(err);
-      return null;
+      console.error('Erro ao adicionar item:', err);
+      setError('Erro ao adicionar item ao estoque');
+      throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const atualizarItem = async (id: number, item: Partial<ItemInventario>) => {
-    setIsLoading(true);
+  const atualizarItem = async (id: number, item: Partial<ItemEstoque>) => {
     try {
-      const response = await axios.put(`${API_URL}/api/inventario`, { ...item, id });
+      setLoading(true);
+      const response = await axios.put(`${API_URL}/api/estoque`, { ...item, id });
+      const itemAtualizado = response.data;
+      setEstoque((prevItems) =>
+        prevItems.map((item) =>
+          item.id === id ? itemAtualizado : item
+        )
+      );
       setError(null);
-      return response.data;
+      return itemAtualizado;
     } catch (err) {
-      setError("Erro ao atualizar item do inventário");
-      console.error(err);
-      return null;
+      console.error('Erro ao atualizar item:', err);
+      setError('Erro ao atualizar item do estoque');
+      throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
   const excluirItem = async (id: number) => {
-    setIsLoading(true);
     try {
-      const response = await axios.delete(`${API_URL}/api/inventario/${id}`);
+      setLoading(true);
+      await axios.delete(`${API_URL}/api/estoque/${id}`);
+      setEstoque((prevItems) =>
+        prevItems.filter((item) => item.id !== id)
+      );
       setError(null);
-      return response.data;
     } catch (err) {
-      setError("Erro ao excluir item do inventário");
-      console.error(err);
-      return null;
+      console.error('Erro ao excluir item:', err);
+      setError('Erro ao excluir item do estoque');
+      throw err;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  return { 
-    inventario, 
-    isLoading, 
-    error, 
-    adicionarItem, 
-    atualizarItem, 
+  return {
+    estoque,
+    loading,
+    error,
+    adicionarItem,
+    atualizarItem,
     excluirItem,
-    recarregarInventario: fetchInventario,
-    socketConnected: connected
+    recarregarEstoque: fetchEstoque,
   };
 } 
