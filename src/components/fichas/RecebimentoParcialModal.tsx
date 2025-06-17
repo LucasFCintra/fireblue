@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
 import axios from 'axios';
+import { fichasService } from '@/services/fichasService';
 
 interface RecebimentoParcialModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export function RecebimentoParcialModal({
 }: RecebimentoParcialModalProps) {
   const [quantidadeRecebida, setQuantidadeRecebida] = useState('');
   const [observacoes, setObservacoes] = useState('');
+  const [responsavel, setResponsavel] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -43,10 +45,13 @@ export function RecebimentoParcialModal({
       return;
     }
 
-    if (parseInt(quantidadeRecebida) > ficha.quantidade) {
+    const quantidadeRecebidaNum = parseInt(quantidadeRecebida);
+    const quantidadeRestante = ficha.quantidade - (ficha.quantidade_recebida || 0);
+
+    if (quantidadeRecebidaNum > quantidadeRestante) {
       toast({
         title: "Erro",
-        description: "A quantidade recebida não pode ser maior que a quantidade total",
+        description: "A quantidade recebida não pode ser maior que a quantidade restante",
         variant: "destructive",
       });
       return;
@@ -55,10 +60,12 @@ export function RecebimentoParcialModal({
     setIsLoading(true);
 
     try {
+      // Registrar o recebimento parcial
       await axios.post('http://26.203.75.236:8687/api/recebimentos-parciais', {
         ficha_id: ficha.id,
-        quantidade_recebida: parseInt(quantidadeRecebida),
-        observacoes
+        quantidade_recebida: quantidadeRecebidaNum,
+        observacoes,
+        responsavel
       });
 
       toast({
@@ -98,12 +105,40 @@ export function RecebimentoParcialModal({
           </div>
 
           <div className="space-y-2">
-            <Label>Quantidade Recebida</Label>
+            <Label>Quantidade Já Recebida</Label>
+            <Input
+              type="number"
+              value={ficha.quantidade_recebida || 0}
+              disabled
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Quantidade Restante</Label>
+            <Input
+              type="number"
+              value={ficha.quantidade - (ficha.quantidade_recebida || 0)}
+              disabled
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Quantidade Recebida Agora</Label>
             <Input
               type="number"
               value={quantidadeRecebida}
               onChange={(e) => setQuantidadeRecebida(e.target.value)}
               placeholder="Informe a quantidade recebida"
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Responsável</Label>
+            <Input
+              value={responsavel}
+              onChange={(e) => setResponsavel(e.target.value)}
+              placeholder="Informe o responsável pelo recebimento"
               required
             />
           </div>

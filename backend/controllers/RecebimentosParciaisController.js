@@ -12,8 +12,11 @@ class RecebimentosParciaisController {
         return res.status(404).json({ error: 'Ficha não encontrada' });
       }
 
+      // Calcula a nova quantidade recebida
+      const novaQuantidadeRecebida = (ficha.quantidade_recebida || 0) + quantidade_recebida;
+      
       // Calcula a quantidade restante
-      const quantidade_restante = ficha.quantidade - quantidade_recebida;
+      const quantidade_restante = ficha.quantidade - novaQuantidadeRecebida;
 
       // Cria o recebimento parcial
       const recebimento = await RecebimentosParciais.create({
@@ -24,10 +27,19 @@ class RecebimentosParciaisController {
         data_recebimento: new Date()
       });
 
-      // Se a quantidade restante for zero, atualiza o status da ficha para concluído
-      if (quantidade_restante === 0) {
-        await Fichas.update(ficha_id, { status: 'concluido' });
-      }
+      // Atualiza a quantidade recebida na ficha
+      await Fichas.update(ficha_id, { 
+        quantidade_recebida: novaQuantidadeRecebida,
+        status: quantidade_restante === 0 ? 'concluido' : 'em_producao'
+      });
+
+      // Registra a movimentação
+      await Fichas.registrarMovimentacao(ficha_id, {
+        tipo: 'Entrada',
+        quantidade: quantidade_recebida,
+        descricao: `Recebimento parcial: ${observacoes || 'Sem observações'}`,
+        responsavel: req.body.responsavel || 'Sistema'
+      });
 
       return res.status(201).json(recebimento);
     } catch (error) {

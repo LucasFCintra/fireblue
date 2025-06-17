@@ -91,25 +91,59 @@ export default function Fichas() {
   // Estado para bancas
   const [bancas, setBancas] = useState<Banca[]>([]);
   
-  // Estatísticas
-  const totalPecasCortadas = filteredData.reduce((total, ficha) => total + ficha.quantidade, 0);
-  const totalFichasCriadas = filteredData.length;
-  const totalFichasConcluidas = filteredData.filter(ficha => ficha.status === "concluido").length;
+  // Estado para todas as fichas (sem filtros)
+  const [todasFichas, setTodasFichas] = useState<Ficha[]>([]);
+  
+  // Estatísticas (agora usando todasFichas ao invés de filteredData)
+  const totalPecasCortadas = todasFichas.reduce((total, ficha) => total + ficha.quantidade, 0);
+  const totalFichasCriadas = todasFichas.length;
+  const totalFichasConcluidas = todasFichas.filter(ficha => ficha.status === "concluido").length;
   
   // Estado para filtrar bancas
   const [bancaSearchQuery, setBancaSearchQuery] = useState("");
+  
+  // Estado para armazenar as perdas por ficha
+  const [perdasPorFicha, setPerdasPorFicha] = useState<Record<number, number>>({});
+  
+  // Função para carregar as perdas das fichas
+  const carregarPerdas = async (fichas: Ficha[]) => {
+    try {
+      const perdas: Record<number, number> = {};
+      
+      // Para cada ficha concluída, buscar as movimentações de perda
+      for (const ficha of fichas.filter(f => f.status === "concluido")) {
+        const response = await fetch(`http://26.203.75.236:8687/api/movimentacoes-fichas/${ficha.id}`);
+        const movimentacoes = await response.json();
+        
+        // Somar todas as perdas da ficha
+        const totalPerdas = movimentacoes
+          .filter((m: any) => m.tipo === "Perda")
+          .reduce((total: number, m: any) => total + m.quantidade, 0);
+        
+        perdas[ficha.id] = totalPerdas;
+      }
+      
+      setPerdasPorFicha(perdas);
+    } catch (error) {
+      console.error("Erro ao carregar perdas:", error);
+    }
+  };
   
   // Função para carregar as fichas
   const carregarFichas = async () => {
     try {
       setIsLoading(true);
       const fichas = await fichasService.listarFichas();
+      setTodasFichas(fichas);
       setFilteredData(fichas);
       
       // Carregar resumo de status
       const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
       const summary = await response.json();
       setStatusSummary(summary);
+      
+      // Carregar perdas para fichas concluídas
+      await carregarPerdas(fichas);
     } catch (error) {
       toast.error("Erro ao carregar fichas");
       console.error(error);
@@ -330,9 +364,28 @@ export default function Fichas() {
   const handleAbrirPorStatus = async (status: string) => {
     try {
       setIsLoading(true);
-      const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
-      const fichas = await response.json();
+      let fichas;
+      
+      if (status === "em_producao") {
+        const response = await fetch('http://26.203.75.236:8687/api/fichas');
+        const todasFichas = await response.json();
+        fichas = todasFichas.filter(f => f.status === "em_producao");
+      } else if (status === "recebido_parcialmente") {
+        const response = await fetch('http://26.203.75.236:8687/api/fichas');
+        const todasFichas = await response.json();
+        fichas = todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0);
+      } else {
+        const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+        fichas = await response.json();
+      }
+      
       setFilteredData(fichas);
+      
+      // Se o status for concluído, carregar as perdas
+      if (status === "concluido") {
+        await carregarPerdas(fichas);
+      }
+      
       toast.success(`${fichas.length} ficha(s) encontrada(s) no status ${status}`);
     } catch (error) {
       toast.error("Erro ao carregar fichas por status");
@@ -416,6 +469,62 @@ export default function Fichas() {
     setIsRecebimentoParcialDialogOpen(true);
   };
   
+  // Função para calcular a quantidade em produção
+  const calcularQuantidadeEmProducao = (fichas: Ficha[]) => {
+    // Se estiver filtrado por recebido parcialmente, mostrar apenas os itens em produção das fichas com recebimento parcial
+    if (filtros.status === "recebido_parcialmente") {
+      return fichas
+        .filter(f => f.status === "em_producao" && f.quantidade_recebida > 0)
+        .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0)), 0);
+    }
+    // Se estiver filtrado por em_producao, mostrar apenas os itens filtrados
+    if (filtros.status === "em_producao") {
+      return fichas
+        .filter(f => f.status === "em_producao")
+        .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0)), 0);
+    }
+    // Para outros casos, mostrar o total de todos os itens em produção
+    return todasFichas
+      .filter(f => f.status === "em_producao")
+      .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0)), 0);
+  };
+
+  // Função para calcular a quantidade recebida parcialmente
+  const calcularQuantidadeRecebidaParcialmente = (fichas: Ficha[]) => {
+    // Sempre mostrar o total de fichas em produção com quantidade recebida
+    return todasFichas
+      .filter(f => f.status === "em_producao" && f.quantidade_recebida > 0)
+      .length;
+  };
+  
+  // Função para calcular a quantidade aguardando retirada
+  const calcularQuantidadeAguardandoRetirada = (fichas: Ficha[]) => {
+    // Se estiver filtrado por aguardando retirada, mostrar apenas os itens filtrados
+    if (filtros.status === "aguardando_retirada") {
+      return fichas
+        .filter(f => f.status === "aguardando_retirada")
+        .reduce((total, f) => total + f.quantidade, 0);
+    }
+    // Para outros casos, mostrar o total de todos os itens aguardando retirada
+    return todasFichas
+      .filter(f => f.status === "aguardando_retirada")
+      .reduce((total, f) => total + f.quantidade, 0);
+  };
+
+  // Função para calcular a quantidade concluída
+  const calcularQuantidadeConcluida = (fichas: Ficha[]) => {
+    // Se estiver filtrado por concluído, mostrar apenas os itens filtrados
+    if (filtros.status === "concluido") {
+      return fichas
+        .filter(f => f.status === "concluido")
+        .reduce((total, f) => total + f.quantidade, 0);
+    }
+    // Para outros casos, mostrar o total de todos os itens concluídos
+    return todasFichas
+      .filter(f => f.status === "concluido")
+      .reduce((total, f) => total + f.quantidade, 0);
+  };
+  
   // Colunas para a tabela de fichas
   const columns: {
     accessor: keyof Ficha | ((row: Ficha) => ReactNode);
@@ -466,10 +575,31 @@ export default function Fichas() {
       cell: (row: Ficha) => (
         <div className="flex flex-col">
           <span>{row.quantidade} unid.</span>
-          {(row.status === "concluido" || row.status === "recebido_parcialmente") && (
-            <span className="text-sm text-gray-500">
-              Recebido: {row.quantidade_recebida || 0} unid.
-            </span>
+          {(row.status === "em_producao" || row.status === "recebido_parcialmente") && (
+            <div className="text-sm text-gray-500 space-y-1">
+              {row.status === "em_producao" && (
+                <div>
+                  Em produção: {row.quantidade - (row.quantidade_recebida || 0)} unid.
+                </div>
+              )}
+              {(row.quantidade_recebida > 0) && (
+                <div>
+                  Recebido: {row.quantidade_recebida} unid.
+                </div>
+              )}
+            </div>
+          )}
+          {row.status === "concluido" && (
+            <div className="text-sm text-gray-500 space-y-1">
+              <div>
+                Recebido: {row.quantidade_recebida} unid.
+              </div>
+              {perdasPorFicha[row.id] > 0 && (
+                <div>
+                  Perdas: {perdasPorFicha[row.id]} unid.
+                </div>
+              )}
+            </div>
           )}
         </div>
       ),
@@ -725,6 +855,7 @@ export default function Fichas() {
               icon={<Clock className="h-10 w-10 text-amber-500" />}
               count={String(statusSummary.aguardando_retirada)}
               label="Aguardando Retirada"
+              sublabel={`${calcularQuantidadeAguardandoRetirada(filteredData)} itens`}
               className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors"
               onClick={() => handleAbrirPorStatus("aguardando_retirada")}
             />
@@ -737,6 +868,7 @@ export default function Fichas() {
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
               count={String(statusSummary.em_producao)}
               label="Em Produção"
+              sublabel={`${calcularQuantidadeEmProducao(filteredData)} itens com bancas`}
               className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
               onClick={() => handleAbrirPorStatus("em_producao")}
             />
@@ -747,9 +879,9 @@ export default function Fichas() {
             
             <StatusTrackingCard 
               icon={<Package className="h-10 w-10 text-yellow-500" />}
-              count={String(statusSummary.recebido_parcialmente)}
+              count={String(todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0).length)}
               label="Recebido Parcialmente"
-              sublabel={`${filteredData.filter(f => f.status === "recebido_parcialmente").reduce((total, f) => total + f.quantidade_recebida, 0)} itens recebidos`}
+              sublabel={`${calcularQuantidadeRecebidaParcialmente(todasFichas)} itens recebidos`}
               className="bg-yellow-50 border-yellow-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-yellow-100 transition-colors"
               onClick={() => handleAbrirPorStatus("recebido_parcialmente")}
             />
@@ -762,6 +894,7 @@ export default function Fichas() {
               icon={<CheckCircle className="h-10 w-10 text-green-500" />}
               count={String(statusSummary.concluido)}
               label="Concluídas"
+              sublabel={`${calcularQuantidadeConcluida(filteredData)} itens concluídos`}
               className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors"
               onClick={() => handleAbrirPorStatus("concluido")}
             />
