@@ -1,4 +1,4 @@
-import { Package, DollarSign, ShoppingCart, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, MoveRight, Clock, Truck, CircleDot } from "lucide-react";
+import { Package, DollarSign, ShoppingCart, AlertTriangle, ArrowDownToLine, ArrowUpFromLine, MoveRight, Clock, Truck, CircleDot, CheckCircle, Scissors, FileText } from "lucide-react";
 import StatusCard from "@/components/StatusCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -72,6 +72,7 @@ export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState({
     aguardandoRetirada: 0,
     emProducao: 0,
+    recebidoParcialmente: 0,
     concluido: 0,
     totalProdutos: 0,
     totalSaidas: 0,
@@ -84,7 +85,7 @@ export default function Dashboard() {
 
   // Estado para controlar o modal de detalhes
   const [modalOpen, setModalOpen] = useState(false);
-  const [statusSelecionado, setStatusSelecionado] = useState<"aguardando_retirada" | "em_producao" | "concluido" | null>(null);
+  const [statusSelecionado, setStatusSelecionado] = useState<"aguardando_retirada" | "em_producao" | "recebido_parcialmente" | "concluido" | null>(null);
   const [fichasFiltradas, setFichasFiltradas] = useState<Ficha[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -95,9 +96,15 @@ export default function Dashboard() {
       const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
       const data = await response.json();
       
+      // Buscar todas as fichas para calcular recebimento parcial
+      const fichasResponse = await fetch('http://26.203.75.236:8687/api/fichas');
+      const fichas = await fichasResponse.json();
+      const fichasRecebidasParcialmente = fichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0).length;
+      
       setDashboardData({
         aguardandoRetirada: data.aguardando_retirada || 0,
         emProducao: data.em_producao || 0,
+        recebidoParcialmente: fichasRecebidasParcialmente,
         concluido: data.concluido || 0,
         totalProdutos: 1234, // Dados mockados por enquanto
         totalSaidas: 584,
@@ -123,15 +130,22 @@ export default function Dashboard() {
   }, []);
   
   // Função para abrir o modal com as fichas de um determinado status
-  const handleOpenModal = async (status: "aguardando_retirada" | "em_producao" | "concluido") => {
+  const handleOpenModal = async (status: "aguardando_retirada" | "em_producao" | "recebido_parcialmente" | "concluido") => {
     try {
       setIsLoading(true);
       setStatusSelecionado(status);
       
-      const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
-      const fichas = await response.json();
-      setFichasFiltradas(fichas);
+      let fichas;
+      if (status === "recebido_parcialmente") {
+        const response = await fetch('http://26.203.75.236:8687/api/fichas');
+        const todasFichas = await response.json();
+        fichas = todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0);
+      } else {
+        const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+        fichas = await response.json();
+      }
       
+      setFichasFiltradas(fichas);
       setModalOpen(true);
     } catch (error) {
       toast.error("Erro ao carregar fichas");
@@ -142,187 +156,228 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center border-b border-border pb-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Visão geral do sistema e métricas de produção
+          </p>
+        </div>
+      </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StatusCard
-          title="Produtos em Estoque"
-          value={dashboardData.totalProdutos}
-          description="Produtos disponíveis no estoque"
-          icon={<Package className="h-4 w-4" />}
-          trend={{ value: 12, positive: true }}
-          animated={true}
-        />
-        <StatusCard
-          title="Saídas de Matéria Prima"
-          value={dashboardData.totalSaidas}
-          description="+20% em relação ao mês anterior"
-          icon={<ArrowUpFromLine className="h-4 w-4" />}
-          trend={{ value: 20, positive: false }}
-          animated={true}
-        />
-        <StatusCard
-          title="Entrada de Produto"
-          value={dashboardData.totalEntradas}
-          description="Produtos recebidos no mês"
-          icon={<ArrowDownToLine className="h-4 w-4" />}
-          trend={{ value: 15, positive: true }}
-          animated={true}
-        />
-        <StatusCard
-          title="Itens Baixo Estoque"
-          value={dashboardData.itensBaixoEstoque}
-          description="Itens abaixo do nível mínimo"
-          icon={<AlertTriangle className="h-4 w-4" />}
-          className="border-red-200 bg-red-50"
-          animated={true}
-        />
+      {/* Cards de estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-700">
+        <Card className="border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-blue-800 dark:bg-blue-950">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Total de Peças Cortadas</CardTitle>
+            <Scissors className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{dashboardData.totalProdutos}</div>
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              Unidades cortadas para produção
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-purple-200 bg-purple-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-purple-800 dark:bg-purple-950">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-200">Total de Fichas Criadas</CardTitle>
+            <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{dashboardData.totalSaidas}</div>
+            <p className="text-xs text-purple-600 dark:text-purple-400">
+              Fichas registradas no sistema
+            </p>
+          </CardContent>
+        </Card>
+        <Card className="border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-green-800 dark:bg-green-950">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">Total de Fichas Concluídas</CardTitle>
+            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">{dashboardData.concluido}</div>
+            <p className="text-xs text-green-600 dark:text-green-400">
+              Fichas já finalizadas
+            </p>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Card de Rastreamento Geral */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Rastreamento Geral</CardTitle>
-          <CardDescription>
+      <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
+        <CardHeader className="bg-muted border-b">
+          <CardTitle className="text-foreground">Rastreamento Geral</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
             Fluxo de trabalho e situação atual das fichas. Clique em um status para ver detalhes.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
             <StatusTrackingCard 
               icon={<Clock className="h-10 w-10 text-amber-500" />}
-              count={dashboardData.aguardandoRetirada}
+              count={String(dashboardData.aguardandoRetirada)}
               label="Aguardando Retirada"
-              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors"
+              sublabel={`${dashboardData.aguardandoRetirada} fichas aguardando`}
+              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/5 cursor-pointer hover:bg-amber-100 transition-colors dark:bg-amber-950 dark:border-amber-800 dark:hover:bg-amber-900"
               onClick={() => handleOpenModal("aguardando_retirada")}
             />
             
-            <div className="hidden md:flex items-center justify-center w-1/6">
-              <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
+            <div className="hidden md:flex items-center justify-center w-1/10">
+              <MoveRight className="h-10 w-10 text-foreground font-bold stroke-2" />
             </div>
             
             <StatusTrackingCard 
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
-              count={dashboardData.emProducao}
+              count={String(dashboardData.emProducao)}
               label="Em Produção"
-              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
+              sublabel={`${dashboardData.emProducao} fichas em produção`}
+              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/5 cursor-pointer hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:border-blue-800 dark:hover:bg-blue-900"
               onClick={() => handleOpenModal("em_producao")}
             />
             
-            <div className="hidden md:flex items-center justify-center w-1/6">
-              <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
+            <div className="hidden md:flex items-center justify-center w-1/10">
+              <MoveRight className="h-10 w-10 text-foreground font-bold stroke-2" />
             </div>
             
             <StatusTrackingCard 
-              icon={<Truck className="h-10 w-10 text-green-500" />}
-              count={dashboardData.concluido}
+              icon={<Package className="h-10 w-10 text-yellow-500" />}
+              count={String(dashboardData.recebidoParcialmente)}
+              label="Recebido Parcialmente"
+              sublabel={`${dashboardData.recebidoParcialmente} fichas recebidas`}
+              className="bg-yellow-50 border-yellow-200 mb-4 md:mb-0 w-full md:w-1/5 cursor-pointer hover:bg-yellow-100 transition-colors dark:bg-yellow-950 dark:border-yellow-800 dark:hover:bg-yellow-900"
+              onClick={() => handleOpenModal("recebido_parcialmente")}
+            />
+            
+            <div className="hidden md:flex items-center justify-center w-1/10">
+              <MoveRight className="h-10 w-10 text-foreground font-bold stroke-2" />
+            </div>
+            
+            <StatusTrackingCard 
+              icon={<CheckCircle className="h-10 w-10 text-green-500" />}
+              count={String(dashboardData.concluido)}
               label="Concluídas"
-              className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors"
+              sublabel={`${dashboardData.concluido} fichas concluídas`}
+              className="bg-green-50 border-green-200 w-full md:w-1/5 cursor-pointer hover:bg-green-100 transition-colors dark:bg-green-950 dark:border-green-800 dark:hover:bg-green-900"
               onClick={() => handleOpenModal("concluido")}
             />
           </div>
         </CardContent>
       </Card>
       
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Produção por Período</CardTitle>
-            <CardDescription>
-              Volume de produção na semana atual
+      <div className="grid gap-4 md:grid-cols-2 animate-in fade-in duration-1000">
+        {/* Gráfico de Peças Cortadas */}
+        <Card className="border hover:shadow-md transition-all">
+          <CardHeader className="bg-muted border-b">
+            <CardTitle className="text-foreground">Peças Cortadas</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Quantidade de peças cortadas por mês
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className="h-80 pt-6">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={producaoSemanal}
-                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-              >
-                <defs>
-                  <linearGradient id="colorProducao" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#1177ee" stopOpacity={0.8} />
-                    <stop offset="95%" stopColor="#1177ee" stopOpacity={0.1} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Area
-                  type="monotone"
-                  dataKey="producao"
-                  stroke="#1177ee"
-                  fillOpacity={1}
-                  fill="url(#colorProducao)"
+              <BarChart data={[
+                { name: 'Jan', quantidade: 400 },
+                { name: 'Fev', quantidade: 300 },
+                { name: 'Mar', quantidade: 500 },
+                { name: 'Abr', quantidade: 450 },
+                { name: 'Mai', quantidade: 600 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--popover-foreground))'
+                  }}
                 />
-              </AreaChart>
+                <Legend />
+                <Bar dataKey="quantidade" name="Quantidade" fill="#1177ee" />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle>Top Produtos por Volume</CardTitle>
-            <CardDescription>
-              Produtos com maior quantidade em estoque
+        {/* Gráfico de Peças Perdidas */}
+        <Card className="border hover:shadow-md transition-all">
+          <CardHeader className="bg-muted border-b">
+            <CardTitle className="text-foreground">Peças Perdidas</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
+              Quantidade de peças perdidas por mês
             </CardDescription>
           </CardHeader>
-          <CardContent className="h-80">
+          <CardContent className="h-80 pt-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={productData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
+              <BarChart data={[
+                { name: 'Jan', quantidade: 40 },
+                { name: 'Fev', quantidade: 30 },
+                { name: 'Mar', quantidade: 50 },
+                { name: 'Abr', quantidade: 45 },
+                { name: 'Mai', quantidade: 60 },
+              ]}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--popover))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '6px',
+                    color: 'hsl(var(--popover-foreground))'
+                  }}
+                />
                 <Legend />
-                <Bar dataKey="quantidade" fill="#0a4f99" />
+                <Bar dataKey="quantidade" name="Quantidade" fill="#ff4d4d" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Alerta de Estoque Baixo</CardTitle>
-          <CardDescription>
+      <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
+        <CardHeader className="bg-muted border-b">
+          <CardTitle className="text-foreground">Alerta de Estoque Baixo</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
             Produtos que necessitam reposição urgente
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <div className="rounded-md border">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Produto
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Estoque Atual
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Mínimo Recomendado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Status
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-background divide-y divide-border">
                 {lowStockItems.map((item) => (
                   <tr key={item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
                       {item.name}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {item.current} unidades
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                       {item.min} unidades
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                         Crítico
                       </span>
                     </td>

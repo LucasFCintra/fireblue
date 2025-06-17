@@ -100,7 +100,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-20 flex flex-col w-64 bg-sidebar border-r border-gray-200 h-screen transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-20 flex flex-col w-64 bg-sidebar border-r border-sidebar-border h-screen transition-all duration-300 ease-in-out",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-16"
         )}
       >

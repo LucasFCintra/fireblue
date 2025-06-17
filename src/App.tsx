@@ -24,6 +24,7 @@ import Cadastro from "./pages/Cadastro";
 import RedefinirSenha from "./pages/RedefinirSenha";
 import SocketTest from "./pages/SocketTest";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Estoque from "./pages/Inventario";
 
 const queryClient = new QueryClient();
@@ -84,15 +85,17 @@ const AppRoutes = () => (
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
+    <ThemeProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 

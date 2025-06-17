@@ -31,14 +31,14 @@ export const StatusTrackingCard: React.FC<StatusTrackingCardProps> = ({
       <div className="mb-2">
         {icon}
       </div>
-      <div className="text-2xl font-bold">
+      <div className="text-2xl font-bold text-foreground">
         {count}
       </div>
-      <span className="text-sm font-bold text-gray-600">
+      <span className="text-sm font-bold text-muted-foreground">
         {label}
       </span>
       {sublabel && (
-        <span className="text-xs text-gray-500 mt-1">
+        <span className="text-xs text-muted-foreground/70 mt-1">
           {sublabel}
         </span>
       )}

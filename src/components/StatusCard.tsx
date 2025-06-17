@@ -21,28 +21,23 @@ interface StatusCardProps {
 }
 
 // Componente de contador animado
-function AnimatedCounter({ endValue, duration = 1500 }) {
+function AnimatedCounter({ endValue, duration = 1500 }: { endValue: number; duration?: number }) {
   const [count, setCount] = useState(0);
   
   useEffect(() => {
-    // Se o valor final não for um número, não animamos
-    if (isNaN(Number(endValue))) {
-      return;
-    }
+    let startTime: number;
+    let animationFrame: number;
     
-    let startTime;
-    let animationFrame;
-    
-    const updateCount = (timestamp) => {
+    const updateCount = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = timestamp - startTime;
       
       if (progress < duration) {
-        const newCount = Math.floor((progress / duration) * Number(endValue));
+        const newCount = Math.floor((progress / duration) * endValue);
         setCount(newCount);
         animationFrame = requestAnimationFrame(updateCount);
       } else {
-        setCount(Number(endValue));
+        setCount(endValue);
       }
     };
     
@@ -53,12 +48,7 @@ function AnimatedCounter({ endValue, duration = 1500 }) {
     };
   }, [endValue, duration]);
   
-  // Se o valor não for um número simples, retornamos o original
-  if (isNaN(Number(endValue)) || typeof endValue === 'string' && endValue.includes(',')) {
-    return <div className="text-2xl font-bold">{endValue}</div>;
-  }
-  
-  return <div className="text-2xl font-bold">{count}</div>;
+  return <span className="text-2xl font-bold text-foreground">{count}</span>;
 }
 
 export default function StatusCard({
@@ -71,7 +61,7 @@ export default function StatusCard({
   animated = false,
 }: StatusCardProps) {
   return (
-    <Card className={cn("overflow-hidden", className)}>
+    <Card className={cn("overflow-hidden bg-card text-card-foreground", className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
         <CardTitle className="text-sm font-medium text-muted-foreground">
           {title}
@@ -80,9 +70,9 @@ export default function StatusCard({
       </CardHeader>
       <CardContent>
         {animated ? (
-          <AnimatedCounter endValue={value} />
+          <AnimatedCounter endValue={typeof value === 'number' ? value : 0} />
         ) : (
-          <div className="text-2xl font-bold">{value}</div>
+          <div className="text-2xl font-bold text-foreground">{value}</div>
         )}
         {description && (
           <p className="text-xs text-muted-foreground mt-1">{description}</p>
@@ -91,7 +81,7 @@ export default function StatusCard({
           <div
             className={cn(
               "text-xs font-medium flex items-center mt-2",
-              trend.positive ? "text-green-600" : "text-red-600"
+              trend.positive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
             )}
           >
             {trend.positive ? (

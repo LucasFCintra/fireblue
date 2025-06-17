@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -590,7 +590,7 @@ export default function Fichas() {
             </div>
           )}
           {row.status === "concluido" && (
-            <div className="text-sm text-gray-500 space-y-1">
+            <div className="text-sm text-muted-foreground space-y-1">
               <div>
                 Recebido: {row.quantidade_recebida} unid.
               </div>
@@ -746,8 +746,8 @@ export default function Fichas() {
       <div className="flex justify-between items-center border-b pb-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-blue-900">Controle de Fichas</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Gerencie fichas de produção e acompanhe o fluxo de trabalho
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie as fichas de produção e acompanhe o status de cada item
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -843,11 +843,11 @@ export default function Fichas() {
       
       {/* Card de Rastreamento */}
       <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
-        <CardHeader className="bg-gray-50 border-b">
-          <CardTitle className="text-gray-800">Rastreamento Geral</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Fluxo de trabalho e situação atual das fichas. Clique em um status para filtrar.
-          </p>
+        <CardHeader className="bg-muted border-b">
+          <CardTitle className="text-foreground">Rastreamento Geral</CardTitle>
+          <CardDescription className="text-sm text-muted-foreground">
+            Fluxo de trabalho e situação atual das fichas. Clique em um status para ver detalhes.
+          </CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="flex flex-col md:flex-row items-center justify-between py-4">
@@ -855,26 +855,26 @@ export default function Fichas() {
               icon={<Clock className="h-10 w-10 text-amber-500" />}
               count={String(statusSummary.aguardando_retirada)}
               label="Aguardando Retirada"
-              sublabel={`${calcularQuantidadeAguardandoRetirada(filteredData)} itens`}
-              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors"
+              sublabel={`${calcularQuantidadeAguardandoRetirada(filteredData)} itens aguardando`}
+              className="bg-amber-50 border-amber-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-amber-100 transition-colors dark:bg-amber-950 dark:border-amber-800 dark:hover:bg-amber-900"
               onClick={() => handleAbrirPorStatus("aguardando_retirada")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
-              <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
+              <MoveRight className="h-10 w-10 text-foreground font-bold stroke-2" />
             </div>
             
             <StatusTrackingCard 
               icon={<CircleDot className="h-10 w-10 text-blue-500" />}
               count={String(statusSummary.em_producao)}
               label="Em Produção"
-              sublabel={`${calcularQuantidadeEmProducao(filteredData)} itens com bancas`}
-              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors"
+              sublabel={`${calcularQuantidadeEmProducao(filteredData)} itens em produção`}
+              className="bg-blue-50 border-blue-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-blue-100 transition-colors dark:bg-blue-950 dark:border-blue-800 dark:hover:bg-blue-900"
               onClick={() => handleAbrirPorStatus("em_producao")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
-              <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
+              <MoveRight className="h-10 w-10 text-foreground font-bold stroke-2" />
             </div>
             
             <StatusTrackingCard 
@@ -882,12 +882,12 @@ export default function Fichas() {
               count={String(todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0).length)}
               label="Recebido Parcialmente"
               sublabel={`${calcularQuantidadeRecebidaParcialmente(todasFichas)} itens recebidos`}
-              className="bg-yellow-50 border-yellow-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-yellow-100 transition-colors"
+              className="bg-yellow-50 border-yellow-200 mb-4 md:mb-0 w-full md:w-1/4 cursor-pointer hover:bg-yellow-100 transition-colors dark:bg-yellow-950 dark:border-yellow-800 dark:hover:bg-yellow-900"
               onClick={() => handleAbrirPorStatus("recebido_parcialmente")}
             />
             
             <div className="hidden md:flex items-center justify-center w-1/6">
-              <MoveRight className="h-10 w-10 text-gray-800 font-bold stroke-2" />
+              <MoveRight className="h-10 w-10 text-foreground font-bold stroke-2" />
             </div>
             
             <StatusTrackingCard 
@@ -895,7 +895,7 @@ export default function Fichas() {
               count={String(statusSummary.concluido)}
               label="Concluídas"
               sublabel={`${calcularQuantidadeConcluida(filteredData)} itens concluídos`}
-              className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors"
+              className="bg-green-50 border-green-200 w-full md:w-1/4 cursor-pointer hover:bg-green-100 transition-colors dark:bg-green-950 dark:border-green-800 dark:hover:bg-green-900"
               onClick={() => handleAbrirPorStatus("concluido")}
             />
           </div>
@@ -903,7 +903,7 @@ export default function Fichas() {
       </Card>
       
       {/* Tabela de Fichas */}
-      <div className="bg-white border rounded-lg shadow-sm hover:shadow-md transition-all animate-in fade-in duration-1000">
+      <div className="bg-background border rounded-lg shadow-sm hover:shadow-md transition-all animate-in fade-in duration-1000">
         <DataTable 
           data={filteredData}
           columns={columns}
@@ -966,147 +966,113 @@ export default function Fichas() {
           </DialogHeader>
           {fichaEditando && (
             <div className="grid gap-4 py-2">
-              <div className="p-3 bg-gray-50 rounded-md border">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-codigo" className="text-right font-medium">
-                    Código
-                  </Label>
-                  <Input
-                    id="edit-codigo"
-                    value={fichaEditando.codigo}
-                    onChange={(e) => setFichaEditando({ ...fichaEditando, codigo: e.target.value })}
-                    className="col-span-3 bg-white"
-                  />
+              <div className="p-3 bg-muted rounded-md border">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Código</label>
+                    <Input
+                      className="col-span-3 bg-background"
+                      placeholder="Digite o código da ficha"
+                      value={fichaEditando.codigo}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, codigo: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Banca</label>
+                    <Select value={fichaEditando.banca} onValueChange={(value) => setFichaEditando(fichaEditando ? { ...fichaEditando, banca: value } : null)}>
+                      <SelectTrigger className="col-span-3 bg-background">
+                        <SelectValue placeholder="Selecione uma banca" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredBancas.map((banca) => (
+                          <SelectItem key={banca.id} value={banca.nome}>
+                            {banca.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Produto</label>
+                    <Input
+                      className="col-span-3 bg-background"
+                      placeholder="Digite o nome do produto"
+                      value={fichaEditando.produto}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, produto: e.target.value } : null)}
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <div className="space-y-2 col-span-2">
-                <h3 className="font-semibold text-gray-700 text-sm">Dados da Produção</h3>
-                <div className="h-0.5 bg-gray-100 mb-2"></div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-banca" className="text-right font-medium">
-                  Banca
-                </Label>
-                <Select
-                  value={fichaEditando.banca}
-                  onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
-                >
-                  <SelectTrigger className="col-span-3 bg-white">
-                    <SelectValue placeholder="Selecione uma banca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 pb-2">
-                      <Input
-                        placeholder="Buscar banca..."
-                        value={bancaSearchQuery}
-                        onChange={(e) => setBancaSearchQuery(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                    {filteredBancas.map((banca) => (
-                      <SelectItem key={banca.id} value={banca.nome}>
-                        {banca.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-produto" className="text-right font-medium">
-                  Produto
-                </Label>
-                <Input
-                  id="edit-produto"
-                  value={fichaEditando.produto}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, produto: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-cor" className="text-right font-medium">
-                  Cor
-                </Label>
-                <Input
-                  id="edit-cor"
-                  value={fichaEditando.cor}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-tamanho" className="text-right font-medium">
-                  Tamanho
-                </Label>
-                <Select
-                  value={fichaEditando.tamanho}
-                  onValueChange={(value) => setFichaEditando({ ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" })}
-                >
-                  <SelectTrigger className="col-span-3 bg-white">
-                    <SelectValue placeholder="Selecione um tamanho" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="P">P</SelectItem>
-                    <SelectItem value="M">M</SelectItem>
-                    <SelectItem value="G">G</SelectItem>
-                    <SelectItem value="GG">GG</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-quantidade" className="text-right font-medium">
-                  Quantidade
-                </Label>
-                <Input
-                  id="edit-quantidade"
-                  type="number"
-                  value={fichaEditando.quantidade}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              
-              <div className="space-y-2 col-span-2 mt-2">
-                <h3 className="font-semibold text-gray-700 text-sm">Datas</h3>
-                <div className="h-0.5 bg-gray-100 mb-2"></div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-dataEntrada" className="text-right font-medium">
-                  Data Entrada
-                </Label>
-                <Input
-                  id="edit-dataEntrada"
-                  type="date"
-                  value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-dataPrevisao" className="text-right font-medium">
-                  Previsão
-                </Label>
-                <Input
-                  id="edit-dataPrevisao"
-                  type="date"
-                  value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-observacoes" className="text-right font-medium">
-                  Observações
-                </Label>
-                <Textarea
-                  id="edit-observacoes"
-                  value={fichaEditando.observacoes}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
+                
+                <h3 className="font-semibold text-foreground text-sm">Dados da Produção</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Quantidade</label>
+                    <Input
+                      type="number"
+                      className="col-span-3 bg-background"
+                      placeholder="Quantidade de peças"
+                      value={fichaEditando.quantidade}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, quantidade: parseInt(e.target.value) || 0 } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Cor</label>
+                    <Input
+                      className="col-span-3 bg-background"
+                      placeholder="Cor do produto"
+                      value={fichaEditando.cor}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, cor: e.target.value } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Tamanho</label>
+                    <Select value={fichaEditando.tamanho} onValueChange={(value) => setFichaEditando(fichaEditando ? { ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" } : null)}>
+                      <SelectTrigger className="col-span-3 bg-background">
+                        <SelectValue placeholder="Selecione o tamanho" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="P">P</SelectItem>
+                        <SelectItem value="M">M</SelectItem>
+                        <SelectItem value="G">G</SelectItem>
+                        <SelectItem value="GG">GG</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <h3 className="font-semibold text-foreground text-sm">Datas</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Data de Entrada</label>
+                    <Input
+                      type="date"
+                      className="col-span-3 bg-background"
+                      value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, data_entrada: new Date(e.target.value) } : null)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Data de Previsão</label>
+                    <Input
+                      type="date"
+                      className="col-span-3 bg-background"
+                      value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, data_previsao: new Date(e.target.value) } : null)}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Observações</label>
+                    <Textarea
+                      className="col-span-3 bg-background"
+                      placeholder="Digite algumas observações sobre a ficha"
+                      value={fichaEditando.observacoes}
+                      onChange={(e) => setFichaEditando(fichaEditando ? { ...fichaEditando, observacoes: e.target.value } : null)}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -1138,164 +1104,130 @@ export default function Fichas() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-2">
-            <div className="p-3 bg-gray-50 rounded-md border">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="codigo" className="text-right font-medium">
-                  Código
-                </Label>
-                <Input
-                  id="codigo"
-                  value={novaFicha.codigo}
-                  onChange={(e) => setNovaFicha({ ...novaFicha, codigo: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
+            <div className="p-3 bg-muted rounded-md border">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Código</label>
+                  <Input
+                    className="col-span-3 bg-background"
+                    placeholder="Digite o código da ficha"
+                    value={novaFicha.codigo}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, codigo: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Banca</label>
+                  <Select value={novaFicha.banca} onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}>
+                    <SelectTrigger className="col-span-3 bg-background">
+                      <SelectValue placeholder="Selecione uma banca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredBancas.map((banca) => (
+                        <SelectItem key={banca.id} value={banca.nome}>
+                          {banca.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Produto</label>
+                  <Input
+                    className="col-span-3 bg-background"
+                    placeholder="Digite o nome do produto"
+                    value={novaFicha.produto}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, produto: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <h3 className="font-semibold text-foreground text-sm">Dados da Produção</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Quantidade</label>
+                  <Input
+                    type="number"
+                    className="col-span-3 bg-background"
+                    placeholder="Quantidade de peças"
+                    value={novaFicha.quantidade}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) || 0 })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Cor</label>
+                  <Input
+                    className="col-span-3 bg-background"
+                    placeholder="Cor do produto"
+                    value={novaFicha.cor}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Tamanho</label>
+                  <Select value={novaFicha.tamanho} onValueChange={(value) => setNovaFicha({ ...novaFicha, tamanho: value as "P" | "M" | "G" | "GG" })}>
+                    <SelectTrigger className="col-span-3 bg-background">
+                      <SelectValue placeholder="Selecione o tamanho" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="P">P</SelectItem>
+                      <SelectItem value="M">M</SelectItem>
+                      <SelectItem value="G">G</SelectItem>
+                      <SelectItem value="GG">GG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <h3 className="font-semibold text-foreground text-sm">Datas</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Data de Entrada</label>
+                  <Input
+                    type="date"
+                    className="col-span-3 bg-background"
+                    value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Data de Previsão</label>
+                  <Input
+                    type="date"
+                    className="col-span-3 bg-background"
+                    value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Observações</label>
+                  <Textarea
+                    className="col-span-3 bg-background"
+                    placeholder="Digite algumas observações sobre a ficha"
+                    value={novaFicha.observacoes}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, observacoes: e.target.value })}
+                  />
+                </div>
               </div>
             </div>
-            
-            <div className="space-y-2 col-span-2">
-              <h3 className="font-semibold text-gray-700 text-sm">Dados da Produção</h3>
-              <div className="h-0.5 bg-gray-100 mb-2"></div>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="banca" className="text-right font-medium">
-                Banca
-              </Label>
-              <Select
-                value={novaFicha.banca}
-                onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}
-              >
-                <SelectTrigger className="col-span-3 bg-white">
-                  <SelectValue placeholder="Selecione uma banca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="px-2 pb-2">
-                    <Input
-                      placeholder="Buscar banca..."
-                      value={bancaSearchQuery}
-                      onChange={(e) => setBancaSearchQuery(e.target.value)}
-                      className="h-8"
-                    />
-                  </div>
-                  {filteredBancas.map((banca) => (
-                    <SelectItem key={banca.id} value={banca.nome}>
-                      {banca.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="produto" className="text-right font-medium">
-                Produto
-              </Label>
-              <Input
-                id="produto"
-                value={novaFicha.produto}
-                onChange={(e) => setNovaFicha({ ...novaFicha, produto: e.target.value })}
-                className="col-span-3 bg-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cor" className="text-right font-medium">
-                Cor
-              </Label>
-              <Input
-                id="cor"
-                value={novaFicha.cor}
-                onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
-                className="col-span-3 bg-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="tamanho" className="text-right font-medium">
-                Tamanho
-              </Label>
-              <Select
-                value={novaFicha.tamanho}
-                onValueChange={(value) => setNovaFicha({ ...novaFicha, tamanho: value as "P" | "M" | "G" | "GG" })}
-              >
-                <SelectTrigger className="col-span-3 bg-white">
-                  <SelectValue placeholder="Selecione um tamanho" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="P">P</SelectItem>
-                  <SelectItem value="M">M</SelectItem>
-                  <SelectItem value="G">G</SelectItem>
-                  <SelectItem value="GG">GG</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantidade" className="text-right font-medium">
-                Quantidade
-              </Label>
-              <Input
-                id="quantidade"
-                type="number"
-                value={novaFicha.quantidade}
-                onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) })}
-                className="col-span-3 bg-white"
-              />
-            </div>
-            
-            <div className="space-y-2 col-span-2 mt-2">
-              <h3 className="font-semibold text-gray-700 text-sm">Datas</h3>
-              <div className="h-0.5 bg-gray-100 mb-2"></div>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataEntrada" className="text-right font-medium">
-                Data Entrada
-              </Label>
-              <Input
-                id="dataEntrada"
-                type="date"
-                value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
-                onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
-                className="col-span-3 bg-white"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataPrevisao" className="text-right font-medium">
-                Previsão
-              </Label>
-              <Input
-                id="dataPrevisao"
-                type="date"
-                value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
-                onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
-                className="col-span-3 bg-white"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="observacoes" className="text-right font-medium">
-                Observações
-              </Label>
-              <Textarea
-                id="observacoes"
-                value={novaFicha.observacoes}
-                onChange={(e) => setNovaFicha({ ...novaFicha, observacoes: e.target.value })}
-                className="col-span-3 bg-white"
-              />
-            </div>
+            <DialogFooter className="mt-6">
+              <Button variant="outline" onClick={handleCloseNovaFichaDialog}>
+                Cancelar
+              </Button>
+              <Button onClick={handleCreateFicha} className="bg-blue-600 hover:bg-blue-700">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  "Criar Ficha"
+                )}
+              </Button>
+            </DialogFooter>
           </div>
-          <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={handleCloseNovaFichaDialog}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateFicha} className="bg-blue-600 hover:bg-blue-700">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                "Criar Ficha"
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

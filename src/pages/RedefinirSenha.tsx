@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -78,11 +77,11 @@ export default function RedefinirSenha() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary">SGEE Fire Blue</h1>
-          <p className="text-gray-600 mt-2">Sistema de Gestão de Estoque</p>
+          <p className="text-muted-foreground mt-2">Sistema de Gestão de Estoque</p>
         </div>
 
         <Card>
@@ -102,7 +101,7 @@ export default function RedefinirSenha() {
               )}
 
               <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-medium">
+                <label htmlFor="password" className="text-sm font-medium text-foreground">
                   Nova Senha
                 </label>
                 <Input
@@ -117,7 +116,7 @@ export default function RedefinirSenha() {
               </div>
 
               <div className="space-y-2">
-                <label htmlFor="confirmPassword" className="text-sm font-medium">
+                <label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                   Confirmar Nova Senha
                 </label>
                 <Input

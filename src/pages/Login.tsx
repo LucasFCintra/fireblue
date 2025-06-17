@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,11 +37,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md px-4">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary">SGEE Fire Blue</h1>
-          <p className="text-gray-600 mt-2">Sistema de Gestão de Estoque</p>
+          <p className="text-muted-foreground mt-2">Sistema de Gestão de Estoque</p>
         </div>
 
         <Card>
@@ -66,7 +65,7 @@ export default function Login() {
               )}
 
               <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-medium">
+                <label htmlFor="email" className="text-sm font-medium text-foreground">
                   E-mail
                 </label>
                 <Input
@@ -81,7 +80,7 @@ export default function Login() {
 
               {!isResetMode && (
                 <div className="space-y-2">
-                  <label htmlFor="password" className="text-sm font-medium">
+                  <label htmlFor="password" className="text-sm font-medium text-foreground">
                     Senha
                   </label>
                   <Input

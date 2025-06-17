@@ -1,8 +1,5 @@
-
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const NotFound = () => {
@@ -16,21 +13,19 @@ const NotFound = () => {
   }, [location.pathname]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="text-center max-w-md mx-auto p-6">
-        <div className="bg-primary/10 h-24 w-24 rounded-full flex items-center justify-center text-primary mb-6 mx-auto">
-          <span className="text-5xl font-bold">404</span>
-        </div>
-        <h1 className="text-3xl font-bold mb-4">Página não encontrada</h1>
-        <p className="text-lg text-gray-600 mb-8">
-          Não foi possível encontrar a página que você está procurando.
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="text-center">
+        <h1 className="text-6xl font-bold text-primary mb-4">404</h1>
+        <h2 className="text-2xl font-semibold text-foreground mb-4">Página não encontrada</h2>
+        <p className="text-lg text-muted-foreground mb-8">
+          A página que você está procurando não existe ou foi movida.
         </p>
-        <Button asChild size="lg">
-          <Link to="/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Voltar para o Dashboard
-          </Link>
-        </Button>
+        <Link 
+          to="/" 
+          className="inline-flex items-center px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+        >
+          Voltar ao Dashboard
+        </Link>
       </div>
     </div>
   );

@@ -221,7 +221,7 @@ export default function DataTable<T>({
         </div>
       )}
 
-      <div className="rounded-md border">
+      <div className="rounded-md border border-border">
         <Table>
           <TableHeader>
             <TableRow>
@@ -235,7 +235,7 @@ export default function DataTable<T>({
                 return (
                   <TableHead key={index} className="relative">
                     <div className="flex items-center gap-2">
-                      {column.header}
+                      <span className="text-foreground">{column.header}</span>
                       
                       {column.filterable !== false && typeof column.accessor !== 'function' && (
                         <Popover 
@@ -274,13 +274,13 @@ export default function DataTable<T>({
                                             className="pointer-events-none"
                                           />
                                         </div>
-                                        <span>{value}</span>
+                                        <span className="text-foreground">{value}</span>
                                       </div>
                                     </CommandItem>
                                   ))}
                                 </CommandGroup>
                               </CommandList>
-                              <div className="border-t p-2 flex justify-between">
+                              <div className="border-t border-border p-2 flex justify-between">
                                 <Button 
                                   variant="ghost" 
                                   size="sm" 
@@ -305,7 +305,7 @@ export default function DataTable<T>({
                   </TableHead>
                 );
               })}
-              {actions && <TableHead className="w-[80px]">Ações</TableHead>}
+              {actions && <TableHead className="w-[80px] text-foreground">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -317,7 +317,7 @@ export default function DataTable<T>({
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((column, colIndex) => (
-                    <TableCell key={colIndex}>
+                    <TableCell key={colIndex} className="text-foreground">
                       {column.cell
                         ? column.cell(row)
                         : typeof column.accessor === "function"
@@ -362,7 +362,7 @@ export default function DataTable<T>({
               <TableRow>
                 <TableCell
                   colSpan={columns.length + (actions ? 1 : 0)}
-                  className="h-24 text-center"
+                  className="h-24 text-center text-muted-foreground"
                 >
                   Nenhum resultado encontrado.
                 </TableCell>
@@ -415,7 +415,7 @@ export default function DataTable<T>({
               <span className="sr-only">Página anterior</span>
             </Button>
 
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-foreground">
               Página {currentPage} de {totalPages}
             </span>
 

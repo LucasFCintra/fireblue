@@ -1,4 +1,4 @@
-import { Menu, Bell, Search, Settings, LogOut } from "lucide-react";
+import { Menu, Bell, Search, Settings, LogOut, Sun, Moon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -19,6 +20,7 @@ interface HeaderProps {
 
 export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   const { profile, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   // Função para gerar as iniciais do nome
   const getInitials = (name: string) => {
@@ -32,7 +34,7 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 p-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+    <header className="bg-background border-b border-border p-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
       <div className="flex items-center gap-x-4">
         <Button
           variant="ghost"
@@ -46,6 +48,15 @@ export default function Header({ sidebarOpen, setSidebarOpen }: HeaderProps) {
       </div>
       
       <div className="flex items-center gap-x-4">
+        <Button variant="ghost" size="icon" onClick={toggleTheme}>
+          {theme === 'light' ? (
+            <Moon className="h-5 w-5" />
+          ) : (
+            <Sun className="h-5 w-5" />
+          )}
+          <span className="sr-only">Alternar tema</span>
+        </Button>
+        
         <Button variant="ghost" size="icon">
           <Bell className="h-5 w-5" />
           <span className="sr-only">Notifications</span>
