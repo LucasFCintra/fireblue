@@ -43,6 +43,7 @@ import { bancasService, Banca } from "@/services/bancasService";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecebimentoParcialModal } from "@/components/fichas/RecebimentoParcialModal";
+import { produtosService, Produto } from "@/services/produtosService";
 
 export default function Fichas() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -94,6 +95,9 @@ export default function Fichas() {
   // Estado para todas as fichas (sem filtros)
   const [todasFichas, setTodasFichas] = useState<Ficha[]>([]);
   
+  // Estado para produtos
+  const [produtos, setProdutos] = useState<Produto[]>([]);
+  
   // Estatísticas (agora usando todasFichas ao invés de filteredData)
   const totalPecasCortadas = todasFichas.reduce((total, ficha) => total + ficha.quantidade, 0);
   const totalFichasCriadas = todasFichas.length;
@@ -101,6 +105,9 @@ export default function Fichas() {
   
   // Estado para filtrar bancas
   const [bancaSearchQuery, setBancaSearchQuery] = useState("");
+  
+  // Estado para filtrar produtos
+  const [produtoSearchQuery, setProdutoSearchQuery] = useState("");
   
   // Estado para armazenar as perdas por ficha
   const [perdasPorFicha, setPerdasPorFicha] = useState<Record<number, number>>({});
@@ -163,10 +170,22 @@ export default function Fichas() {
     }
   };
   
+  // Função para carregar os produtos
+  const carregarProdutos = async () => {
+    try {
+      const data = await produtosService.listarProdutos();
+      setProdutos(data);
+    } catch (error) {
+      toast.error("Erro ao carregar produtos");
+      console.error(error);
+    }
+  };
+  
   // Carregar dados iniciais
   useEffect(() => {
     void carregarFichas();
     void carregarBancas();
+    void carregarProdutos();
   }, []);
   
   // Função para lidar com a pesquisa
@@ -218,6 +237,7 @@ export default function Fichas() {
   // Função para abrir o diálogo de edição
   const handleOpenEditDialog = (ficha: Ficha) => {
     setBancaSearchQuery("");
+    setProdutoSearchQuery("");
     setFichaEditando({...ficha});
     setIsEditDialogOpen(true);
   };
@@ -295,6 +315,7 @@ export default function Fichas() {
   // Função para lidar com a adição de uma nova ficha
   const handleAddFicha = () => {
     setBancaSearchQuery("");
+    setProdutoSearchQuery("");
     setIsNovaFichaDialogOpen(true);
   };
   
@@ -406,9 +427,15 @@ export default function Fichas() {
     banca.nome.toLowerCase().includes(bancaSearchQuery.toLowerCase())
   );
   
+  // Função para filtrar produtos
+  const filteredProdutos = produtos.filter(produto => 
+    produto.nome_produto.toLowerCase().includes(produtoSearchQuery.toLowerCase())
+  );
+  
   // Função para duplicar uma ficha
   const handleDuplicarFicha = (ficha: Ficha) => {
     setBancaSearchQuery("");
+    setProdutoSearchQuery("");
     setNovaFicha({
       codigo: `${ficha.codigo}-COPY`,
       banca: ficha.banca,
@@ -732,12 +759,14 @@ export default function Fichas() {
   // Função para fechar o modal de edição
   const handleCloseEditDialog = () => {
     setBancaSearchQuery("");
+    setProdutoSearchQuery("");
     setIsEditDialogOpen(false);
   };
 
   // Função para fechar o modal de nova ficha
   const handleCloseNovaFichaDialog = () => {
     setBancaSearchQuery("");
+    setProdutoSearchQuery("");
     setIsNovaFichaDialogOpen(false);
   };
   
@@ -957,159 +986,159 @@ export default function Fichas() {
       
       {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleCloseEditDialog}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-blue-800">Editar Ficha</DialogTitle>
+            <DialogTitle>Editar Ficha</DialogTitle>
             <DialogDescription>
-              Atualize os dados da ficha de produção
+              Edite os dados da ficha de produção.
             </DialogDescription>
           </DialogHeader>
-          {fichaEditando && (
-            <div className="grid gap-4 py-2">
-              <div className="p-3 bg-gray-50 rounded-md border">
+          <div className="grid gap-4 py-4">
+            {fichaEditando && (
+              <>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="edit-codigo" className="text-right font-medium">
-                    Código
+                  <Label htmlFor="banca" className="text-right">
+                    Banca
+                  </Label>
+                  <Select
+                    value={fichaEditando.banca}
+                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecione uma banca" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="px-2 pb-2">
+                        <Input
+                          placeholder="Buscar banca..."
+                          value={bancaSearchQuery}
+                          onChange={(e) => setBancaSearchQuery(e.target.value)}
+                          className="h-8"
+                        />
+                      </div>
+                      {filteredBancas.map((banca) => (
+                        <SelectItem key={banca.id} value={banca.nome}>
+                          {banca.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="produto" className="text-right">
+                    Produto
+                  </Label>
+                  <Select
+                    value={fichaEditando.produto}
+                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, produto: value })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecione um produto" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <div className="px-2 pb-2">
+                        <Input
+                          placeholder="Buscar produto..."
+                          value={produtoSearchQuery}
+                          onChange={(e) => setProdutoSearchQuery(e.target.value)}
+                          className="h-8"
+                        />
+                      </div>
+                      {filteredProdutos.map((produto) => (
+                        <SelectItem key={produto.id} value={produto.nome_produto}>
+                          {produto.nome_produto}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="cor" className="text-right">
+                    Cor
                   </Label>
                   <Input
-                    id="edit-codigo"
-                    value={fichaEditando.codigo}
-                    onChange={(e) => setFichaEditando({ ...fichaEditando, codigo: e.target.value })}
-                    className="col-span-3 bg-white"
+                    id="cor"
+                    value={fichaEditando.cor}
+                    onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
+                    className="col-span-3"
                   />
                 </div>
-              </div>
-              
-              <div className="space-y-2 col-span-2">
-                <h3 className="font-semibold text-gray-700 text-sm">Dados da Produção</h3>
-                <div className="h-0.5 bg-gray-100 mb-2"></div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-banca" className="text-right font-medium">
-                  Banca
-                </Label>
-                <Select
-                  value={fichaEditando.banca}
-                  onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
-                >
-                  <SelectTrigger className="col-span-3 bg-white">
-                    <SelectValue placeholder="Selecione uma banca" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <div className="px-2 pb-2">
-                      <Input
-                        placeholder="Buscar banca..."
-                        value={bancaSearchQuery}
-                        onChange={(e) => setBancaSearchQuery(e.target.value)}
-                        className="h-8"
-                      />
-                    </div>
-                    {filteredBancas.map((banca) => (
-                      <SelectItem key={banca.id} value={banca.nome}>
-                        {banca.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-produto" className="text-right font-medium">
-                  Produto
-                </Label>
-                <Input
-                  id="edit-produto"
-                  value={fichaEditando.produto}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, produto: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-cor" className="text-right font-medium">
-                  Cor
-                </Label>
-                <Input
-                  id="edit-cor"
-                  value={fichaEditando.cor}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-tamanho" className="text-right font-medium">
-                  Tamanho
-                </Label>
-                <Select
-                  value={fichaEditando.tamanho}
-                  onValueChange={(value) => setFichaEditando({ ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" })}
-                >
-                  <SelectTrigger className="col-span-3 bg-white">
-                    <SelectValue placeholder="Selecione um tamanho" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="P">P</SelectItem>
-                    <SelectItem value="M">M</SelectItem>
-                    <SelectItem value="G">G</SelectItem>
-                    <SelectItem value="GG">GG</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-quantidade" className="text-right font-medium">
-                  Quantidade
-                </Label>
-                <Input
-                  id="edit-quantidade"
-                  type="number"
-                  value={fichaEditando.quantidade}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              
-              <div className="space-y-2 col-span-2 mt-2">
-                <h3 className="font-semibold text-gray-700 text-sm">Datas</h3>
-                <div className="h-0.5 bg-gray-100 mb-2"></div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-dataEntrada" className="text-right font-medium">
-                  Data Entrada
-                </Label>
-                <Input
-                  id="edit-dataEntrada"
-                  type="date"
-                  value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-dataPrevisao" className="text-right font-medium">
-                  Previsão
-                </Label>
-                <Input
-                  id="edit-dataPrevisao"
-                  type="date"
-                  value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="edit-observacoes" className="text-right font-medium">
-                  Observações
-                </Label>
-                <Textarea
-                  id="edit-observacoes"
-                  value={fichaEditando.observacoes}
-                  onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-            </div>
-          )}
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="tamanho" className="text-right">
+                    Tamanho
+                  </Label>
+                  <Select
+                    value={fichaEditando.tamanho}
+                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecione um tamanho" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="P">P</SelectItem>
+                      <SelectItem value="M">M</SelectItem>
+                      <SelectItem value="G">G</SelectItem>
+                      <SelectItem value="GG">GG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="quantidade" className="text-right">
+                    Quantidade
+                  </Label>
+                  <Input
+                    id="quantidade"
+                    type="number"
+                    value={fichaEditando.quantidade}
+                    onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
+                    className="col-span-3"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="dataEntrada" className="text-right">
+                    Data Entrada
+                  </Label>
+                  <Input
+                    id="dataEntrada"
+                    type="date"
+                    value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
+                    onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
+                    className="col-span-3"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="dataPrevisao" className="text-right">
+                    Previsão
+                  </Label>
+                  <Input
+                    id="dataPrevisao"
+                    type="date"
+                    value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
+                    onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
+                    className="col-span-3"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="observacoes" className="text-right">
+                    Observações
+                  </Label>
+                  <Textarea
+                    id="observacoes"
+                    value={fichaEditando.observacoes}
+                    onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
+                    className="col-span-3"
+                  />
+                </div>
+              </>
+            )}
+          </div>
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={handleCloseEditDialog}>
               Cancelar
@@ -1130,42 +1159,23 @@ export default function Fichas() {
       
       {/* Modal de Nova Ficha */}
       <Dialog open={isNovaFichaDialogOpen} onOpenChange={handleCloseNovaFichaDialog}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-blue-800">Nova Ficha</DialogTitle>
+            <DialogTitle>Nova Ficha</DialogTitle>
             <DialogDescription>
-              Preencha os dados da nova ficha de produção
+              Preencha os dados da nova ficha de produção.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-2">
-            <div className="p-3 bg-gray-50 rounded-md border">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="codigo" className="text-right font-medium">
-                  Código
-                </Label>
-                <Input
-                  id="codigo"
-                  value={novaFicha.codigo}
-                  onChange={(e) => setNovaFicha({ ...novaFicha, codigo: e.target.value })}
-                  className="col-span-3 bg-white"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2 col-span-2">
-              <h3 className="font-semibold text-gray-700 text-sm">Dados da Produção</h3>
-              <div className="h-0.5 bg-gray-100 mb-2"></div>
-            </div>
-            
+          <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="banca" className="text-right font-medium">
+              <Label htmlFor="banca" className="text-right">
                 Banca
               </Label>
               <Select
                 value={novaFicha.banca}
                 onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}
               >
-                <SelectTrigger className="col-span-3 bg-white">
+                <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Selecione uma banca" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1185,37 +1195,57 @@ export default function Fichas() {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="produto" className="text-right font-medium">
+              <Label htmlFor="produto" className="text-right">
                 Produto
               </Label>
-              <Input
-                id="produto"
+              <Select
                 value={novaFicha.produto}
-                onChange={(e) => setNovaFicha({ ...novaFicha, produto: e.target.value })}
-                className="col-span-3 bg-white"
-              />
+                onValueChange={(value) => setNovaFicha({ ...novaFicha, produto: value })}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecione um produto" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="px-2 pb-2">
+                    <Input
+                      placeholder="Buscar produto..."
+                      value={produtoSearchQuery}
+                      onChange={(e) => setProdutoSearchQuery(e.target.value)}
+                      className="h-8"
+                    />
+                  </div>
+                  {filteredProdutos.map((produto) => (
+                    <SelectItem key={produto.id} value={produto.nome_produto}>
+                      {produto.nome_produto}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cor" className="text-right font-medium">
+              <Label htmlFor="cor" className="text-right">
                 Cor
               </Label>
               <Input
                 id="cor"
                 value={novaFicha.cor}
                 onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
-                className="col-span-3 bg-white"
+                className="col-span-3"
               />
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="tamanho" className="text-right font-medium">
+              <Label htmlFor="tamanho" className="text-right">
                 Tamanho
               </Label>
               <Select
                 value={novaFicha.tamanho}
                 onValueChange={(value) => setNovaFicha({ ...novaFicha, tamanho: value as "P" | "M" | "G" | "GG" })}
               >
-                <SelectTrigger className="col-span-3 bg-white">
+                <SelectTrigger className="col-span-3">
                   <SelectValue placeholder="Selecione um tamanho" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1226,8 +1256,9 @@ export default function Fichas() {
                 </SelectContent>
               </Select>
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantidade" className="text-right font-medium">
+              <Label htmlFor="quantidade" className="text-right">
                 Quantidade
               </Label>
               <Input
@@ -1235,17 +1266,12 @@ export default function Fichas() {
                 type="number"
                 value={novaFicha.quantidade}
                 onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) })}
-                className="col-span-3 bg-white"
+                className="col-span-3"
               />
             </div>
             
-            <div className="space-y-2 col-span-2 mt-2">
-              <h3 className="font-semibold text-gray-700 text-sm">Datas</h3>
-              <div className="h-0.5 bg-gray-100 mb-2"></div>
-            </div>
-            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataEntrada" className="text-right font-medium">
+              <Label htmlFor="dataEntrada" className="text-right">
                 Data Entrada
               </Label>
               <Input
@@ -1253,11 +1279,12 @@ export default function Fichas() {
                 type="date"
                 value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
                 onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
-                className="col-span-3 bg-white"
+                className="col-span-3"
               />
             </div>
+            
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataPrevisao" className="text-right font-medium">
+              <Label htmlFor="dataPrevisao" className="text-right">
                 Previsão
               </Label>
               <Input
@@ -1265,19 +1292,19 @@ export default function Fichas() {
                 type="date"
                 value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
                 onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
-                className="col-span-3 bg-white"
+                className="col-span-3"
               />
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="observacoes" className="text-right font-medium">
+              <Label htmlFor="observacoes" className="text-right">
                 Observações
               </Label>
               <Textarea
                 id="observacoes"
                 value={novaFicha.observacoes}
                 onChange={(e) => setNovaFicha({ ...novaFicha, observacoes: e.target.value })}
-                className="col-span-3 bg-white"
+                className="col-span-3"
               />
             </div>
           </div>

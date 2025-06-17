@@ -53,6 +53,7 @@ router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico)
 
 // ROTAS PRODUTOS
 router.get('/api/produtos', produtosController.index);
+router.get('/api/produtos/search', produtosController.search);
 router.get('/api/produtos/:idProduto', produtosController.indexOne);
 router.post('/api/produtos', produtosController.create);
 router.put('/api/produtos', produtosController.update);

@@ -138,7 +138,9 @@ class FichasModel {
     try {
       const { tipo, quantidade, descricao, responsavel } = movimentacao;
       
-      console.log( tipo, quantidade, descricao, responsavel)
+      console.log('Tipo da movimentação:', tipo);
+      console.log('Movimentação completa:', movimentacao);
+      
       // Inserir a movimentação
       const [id] = await knex('movimentacoes_fichas').insert({
         ficha_id: fichaId,

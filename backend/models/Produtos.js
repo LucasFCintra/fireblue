@@ -1,4 +1,5 @@
 const knex = require("../../backend/database/connection")
+const { v4: uuidv4 } = require('uuid');
 
 class ProdutosModel {
   async findAll() {
@@ -7,12 +8,13 @@ class ProdutosModel {
       return result
     } catch (err) {
       console.log(err)
+      throw err
     }
   }
 
-  async findById(idProduto) {
+  async findById(id) {
     try {
-      const result = await knex.select(["*"]).where({ idProduto }).table("produtos")
+      const result = await knex.select(["*"]).where({ id }).table("produtos")
       if (result.length > 0) {
         return result[0]
       } else {
@@ -20,56 +22,71 @@ class ProdutosModel {
       }
     } catch (err) {
       console.log(err)
+      throw err
     }
   }
 
   async create(produto) {
     try {
-      const ids = await knex.insert(produto).table("produtos")
-      // Após criar, buscar o produto completo para enviar via Socket
-      const novoProduto = await this.findById(ids[0])
-      // Emitir evento para todos os clientes conectados
-      if (global.io) {
-        global.io.emit('produto_criado', novoProduto)
-      }
-      return novoProduto
+      // Garantir que os campos numéricos sejam do tipo correto
+      const produtoFormatado = {
+        ...produto,
+        valor_unitario: produto.valor_unitario ? parseFloat(produto.valor_unitario) : 0,
+        quantidade: produto.quantidade ? parseInt(produto.quantidade) : 0,
+        estoque_minimo: produto.estoque_minimo ? parseInt(produto.estoque_minimo) : 0
+      };
+
+      const result = await knex.insert(produtoFormatado).table("produtos")
+      return await this.findById(result[0])
     } catch (err) {
       console.log(err)
+      throw err
     }
   }
 
-  async update(idProduto, produto) {
+  async update(id, dados) {
     try {
-      await knex.update(produto).where({ idProduto }).table("produtos")
-      
-      // Após atualizar, buscar o produto completo para enviar via Socket
-      const produtoAtualizado = await this.findById(idProduto)
-      // Emitir evento para todos os clientes conectados
-      if (global.io) {
-        global.io.emit('produto_atualizado', produtoAtualizado)
-      }
-      
-      return { status: true, data: produtoAtualizado }
+      // Garantir que os campos numéricos sejam do tipo correto
+      const dadosFormatados = {
+        ...dados,
+        valor_unitario: dados.valor_unitario ? parseFloat(dados.valor_unitario) : 0,
+        quantidade: dados.quantidade ? parseInt(dados.quantidade) : 0,
+        estoque_minimo: dados.estoque_minimo ? parseInt(dados.estoque_minimo) : 0
+      };
+
+      await knex.update(dadosFormatados).where({ id }).table("produtos")
+      return { status: true, data: await this.findById(id) }
     } catch (err) {
-      return { status: false, err }
+      console.log(err)
+      return { status: false, err: err.message }
     }
   }
 
-  async delete(idProduto) {
+  async delete(id) {
     try {
-      // Buscar o produto antes de excluir para poder enviar os dados via Socket
-      const produtoExcluido = await this.findById(idProduto)
-      
-      await knex.delete().where({ idProduto }).table("produtos")
-      
-      // Emitir evento para todos os clientes conectados
-      if (global.io && produtoExcluido) {
-        global.io.emit('produto_excluido', produtoExcluido)
+      const produto = await this.findById(id)
+      if (!produto) {
+        return { status: false, err: "Produto não encontrado" }
       }
-      
-      return { status: true, data: produtoExcluido }
+      await knex.delete().where({ id }).table("produtos")
+      return { status: true, data: produto }
     } catch (err) {
-      return { status: false, err }
+      console.log(err)
+      return { status: false, err: err.message }
+    }
+  }
+
+  async search(termo) {
+    try {
+      const result = await knex("produtos")
+        .where("nome_produto", "like", `%${termo}%`)
+        .orWhere("sku", "like", `%${termo}%`)
+        .orWhere("codigo_barras", "like", `%${termo}%`)
+        .select("*")
+      return result
+    } catch (err) {
+      console.log(err)
+      throw err
     }
   }
 }

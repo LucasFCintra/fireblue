@@ -35,7 +35,7 @@ class RecebimentosParciaisController {
 
       // Registra a movimentação
       await Fichas.registrarMovimentacao(ficha_id, {
-        tipo: 'Entrada',
+        tipo: 'Retorno',
         quantidade: quantidade_recebida,
         descricao: `Recebimento parcial: ${observacoes || 'Sem observações'}`,
         responsavel: req.body.responsavel || 'Sistema'

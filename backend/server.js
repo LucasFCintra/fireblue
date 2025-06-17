@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 // Servir arquivos estáticos da pasta imagens
-const imagensPath = 'C:/xampp/htdocs/fireblue/imagens';
+const imagensPath = path.join(__dirname, 'imagens');
 app.use('/imagens', express.static(imagensPath, {
   setHeaders: (res, path) => {
     res.set('Cross-Origin-Resource-Policy', 'cross-origin');

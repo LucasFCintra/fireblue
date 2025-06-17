@@ -53,6 +53,7 @@
     "embla-carousel-react": "^8.3.0",
     "express": "^5.1.0",
     "git": "^0.1.5",
+    "html5-qrcode": "^2.3.8",
     "input-otp": "^1.2.4",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
