@@ -65,7 +65,7 @@ export const fichasService = {
 
   async registrarMovimentacao(
     id: number, 
-    tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão", 
+    tipo:  "Entrada" | "Saída" | "Retorno" | "Conclusão", 
     quantidade: number, 
     descricao: string, 
     responsavel?: string
