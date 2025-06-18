@@ -80,6 +80,17 @@ export default function Dashboard() {
     itensBaixoEstoque: 0
   });
 
+  // Estado para os produtos com estoque baixo
+  const [lowStockItems, setLowStockItems] = useState<Array<{
+    id: number;
+    nome: string;
+    descricao: string;
+    quantidade_atual: number;
+    estoque_minimo: number;
+    unidade: string;
+    status: string;
+  }>>([]);
+
   // Estado para os dados de produção
   const [producaoSemanal, setProducaoSemanal] = useState([]);
 
@@ -89,36 +100,66 @@ export default function Dashboard() {
   const [fichasFiltradas, setFichasFiltradas] = useState<Ficha[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Estado para estatísticas mensais
+  const [monthlyStats, setMonthlyStats] = useState({
+    total_criadas: 0,
+    total_concluidas: 0,
+    total_recebidas: 0
+  });
+
+  // Estado para os dados de peças recebidas por mês
+  const [recebidosUltimosMeses, setRecebidosUltimosMeses] = useState<Array<{ mes: string, total_recebido: number }>>([]);
+
   // Função para carregar os dados do dashboard
   const carregarDashboard = async () => {
     try {
       setIsLoading(true);
       const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
       const data = await response.json();
-      
+
+
       // Buscar todas as fichas para calcular recebimento parcial
       const fichasResponse = await fetch('http://26.203.75.236:8687/api/fichas');
       const fichas = await fichasResponse.json();
       const fichasRecebidasParcialmente = fichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0).length;
+      
+      // Buscar produtos com estoque baixo
+      const lowStockResponse = await fetch('http://26.203.75.236:8687/api/produtos/low-stock');
+      const lowStockData = await lowStockResponse.json();
+      
+      // Buscar estatísticas mensais
+      const monthlyStatsResponse = await fetch('http://26.203.75.236:8687/api/fichas/stats/monthly');
+      const monthlyStatsData = await monthlyStatsResponse.json();
+
+      console.log(monthlyStats)
+      setMonthlyStats(monthlyStatsData);
       
       setDashboardData({
         aguardandoRetirada: data.aguardando_retirada || 0,
         emProducao: data.em_producao || 0,
         recebidoParcialmente: fichasRecebidasParcialmente,
         concluido: data.concluido || 0,
-        totalProdutos: 1234, // Dados mockados por enquanto
-        totalSaidas: 584,
-        totalEntradas: 356,
-        itensBaixoEstoque: 15
+        totalProdutos: monthlyStats.total_recebidas, // Dados mockados por enquanto
+        totalSaidas: monthlyStats.total_criadas,
+        totalEntradas: monthlyStats.total_recebidas,
+        itensBaixoEstoque: Array.isArray(lowStockData) ? lowStockData.length : 0
       });
+
+      setLowStockItems(Array.isArray(lowStockData) ? lowStockData : []);
 
       // Carregar dados de produção semanal
       const producaoResponse = await fetch('http://26.203.75.236:8687/api/dashboard/producao-semanal');
       const producaoData = await producaoResponse.json();
       setProducaoSemanal(producaoData);
+
+      // Buscar dados de peças recebidas por mês
+      const recebidosResponse = await fetch('http://26.203.75.236:8687/api/fichas/recebidos/ultimos-meses');
+      const recebidosData = await recebidosResponse.json();
+      setRecebidosUltimosMeses(recebidosData);
     } catch (error) {
       toast.error("Erro ao carregar dados do dashboard");
       console.error(error);
+      setLowStockItems([]);
     } finally {
       setIsLoading(false);
     }
@@ -154,6 +195,12 @@ export default function Dashboard() {
       setIsLoading(false);
     }
   };
+
+  // Montar os dados do gráfico de peças cortadas
+  const dadosGraficoCorte = recebidosUltimosMeses.map(item => ({
+    name: item.mes.split('-').reverse().join('/'), // Ex: 2024-06 -> 06/2024
+    quantidade: Number(item.total_recebido) || 0
+  }));
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -273,18 +320,12 @@ export default function Dashboard() {
           <CardHeader className="bg-muted border-b">
             <CardTitle className="text-foreground">Peças Cortadas</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
-              Quantidade de peças cortadas por mês
+              Quantidade de peças recebidas por mês
             </CardDescription>
           </CardHeader>
           <CardContent className="h-80 pt-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { name: 'Jan', quantidade: 400 },
-                { name: 'Fev', quantidade: 300 },
-                { name: 'Mar', quantidade: 500 },
-                { name: 'Abr', quantidade: 450 },
-                { name: 'Mai', quantidade: 600 },
-              ]}>
+              <BarChart data={dadosGraficoCorte}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -297,7 +338,7 @@ export default function Dashboard() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="quantidade" name="Quantidade" fill="#1177ee" />
+                <Bar dataKey="quantidade" name="Recebidas" fill="#1177ee" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -340,7 +381,7 @@ export default function Dashboard() {
       
       <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
         <CardHeader className="bg-muted border-b">
-          <CardTitle className="text-foreground">Alerta de Estoque Baixo</CardTitle>
+          <CardTitle className="text-foreground">Alerta de Produtos com Estoque Baixo</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             Produtos que necessitam reposição urgente
           </CardDescription>
@@ -365,29 +406,66 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="bg-background divide-y divide-border">
-                {lowStockItems.map((item) => (
-                  <tr key={item.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
-                      {item.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {item.current} unidades
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                      {item.min} unidades
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                        Crítico
-                      </span>
+                {lowStockItems.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-muted-foreground">
+                      Nenhum produto com estoque baixo
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  lowStockItems.map((item) => (
+                    <tr key={item.id}>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">
+                        {item.nome}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {item.quantidade_atual} {item.unidade}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
+                        {item.estoque_minimo} {item.unidade}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          item.status === 'Sem Estoque'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                            : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                        }`}>
+                          {item.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </CardContent>
       </Card>
+      
+      {/* Estatísticas Mensais */}
+      <div className="col-span-1">
+        <Card>
+          <CardHeader>
+            <CardTitle>Estatísticas do Mês</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Total de Fichas Criadas</span>
+                <span className="text-2xl font-bold">{monthlyStats.total_criadas}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Total de Fichas Concluídas</span>
+                <span className="text-2xl font-bold">{monthlyStats.total_concluidas}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Total de Fichas Recebidas</span>
+                <span className="text-2xl font-bold">{monthlyStats.total_recebidas}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
       
       {/* Modal para exibir os detalhes das fichas */}
       {statusSelecionado && (

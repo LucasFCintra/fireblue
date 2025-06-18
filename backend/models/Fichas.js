@@ -234,6 +234,50 @@ class FichasModel {
       return [];
     }
   }
+
+  async getMonthlyStats() {
+    try {
+      const currentDate = new Date();
+      const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const lastDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+
+      const [stats] = await knex.raw(`
+        SELECT 
+          COUNT(*) as total_criadas,
+          SUM(CASE WHEN status = 'concluido' THEN 1 ELSE 0 END) as total_concluidas,
+          SUM(quantidade_recebida) as total_recebidas
+        FROM fichas
+        WHERE data_entrada BETWEEN ? AND ?
+      `, [firstDayOfMonth, lastDayOfMonth]);
+
+      console.log(stats[0])
+      return stats[0];
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas mensais:', error);
+      throw error;
+    }
+  }
+
+  async getRecebidosUltimosMeses(qtdMeses = 5) {
+    try {
+      const result = await knex('fichas')
+        .select(
+          knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
+          knex.raw("SUM(quantidade_recebida) as total_recebido")
+        )
+        .whereNotNull('quantidade_recebida')
+        .andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`))
+        .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
+        .orderByRaw("mes DESC")
+        .limit(qtdMeses);
+
+      // Ordena do mais antigo para o mais recente
+      return result.reverse();
+    } catch (error) {
+      console.error('Erro ao buscar recebidos últimos meses:', error);
+      throw error;
+    }
+  }
 }
 
 module.exports = new FichasModel() 

@@ -154,13 +154,13 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             <NavItem to="/estoque" icon={Warehouse} label="Estoque" open={open} />
             <NavItem to="/materia-prima" icon={Cylinder} label="Materia Prima" open={open} />
             <NavItem to="/produtos" icon={Package} label="Produtos" open={open} />
-            <NavItem to="/vendas" icon={ShoppingCart} label="Vendas" open={open} />
-            <NavItem to="/compras" icon={Truck} label="Compras" open={open} />
-            <NavItem to="/clientes" icon={Users} label="Clientes" open={open} />
+            {/* <NavItem to="/vendas" icon={ShoppingCart} label="Vendas" open={open} /> */}
+            {/* <NavItem to="/compras" icon={Truck} label="Compras" open={open} /> */}
+            {/* <NavItem to="/clientes" icon={Users} label="Clientes" open={open} /> */}
             <NavItem to="/terceiros" icon={Building} label="Terceiros" open={open} />
             <NavItem to="/fichas" icon={ArrowUpDown} label="Fichas" open={open} />
             <NavItem to="/relatorios" icon={FileText} label="Relatórios" open={open} />
-            <NavItem to="/ordens" icon={ClipboardList} label="Ordens" open={open} />
+            {/* <NavItem to="/ordens" icon={ClipboardList} label="Ordens" open={open} /> */}
             <NavItem to="/fechamento-semanal" icon={CalendarCheck} label="Fechamento Semanal" open={open} />
             <NavItem to="/configuracoes" icon={Settings} label="Configurações" open={open} />
             
@@ -168,7 +168,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
               <div className="h-[1px] bg-sidebar-border/50 w-full"></div>
             </div>
             
-            <NavItem to="/socket-test" icon={Radio} label="Teste Socket" open={open} />
+            {/* <NavItem to="/socket-test" icon={Radio} label="Teste Socket" open={open} /> */}
           </nav>
         </TooltipProvider>
       </aside>

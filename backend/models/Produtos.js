@@ -8,7 +8,7 @@ class ProdutosModel {
       return result
     } catch (err) {
       console.log(err)
-      throw err
+      return []
     }
   }
 
@@ -22,7 +22,7 @@ class ProdutosModel {
       }
     } catch (err) {
       console.log(err)
-      throw err
+      return undefined
     }
   }
 
@@ -53,7 +53,7 @@ class ProdutosModel {
         quantidade: dados.quantidade ? parseInt(dados.quantidade) : 0,
         estoque_minimo: dados.estoque_minimo ? parseInt(dados.estoque_minimo) : 0
       };
-
+      console.log(id,dados)
       await knex.update(dadosFormatados).where({ id }).table("produtos")
       return { status: true, data: await this.findById(id) }
     } catch (err) {
@@ -87,6 +87,27 @@ class ProdutosModel {
     } catch (err) {
       console.log(err)
       throw err
+    }
+  }
+
+  async findLowStock() {
+    try {
+      const result = await knex('produtos')
+        .select('*')
+        .where('quantidade', '<=','estoque_minimo' )
+        .orderBy('quantidade', 'asc');
+ 
+      return result.map(item => ({
+        id: item.id,
+        nome: item.nome_produto,
+        descricao: item.descricao,
+        quantidade_atual: item.quantidade,
+        estoque_minimo: item.estoque_minimo, 
+        status: item.quantidade_atual === 0 ? 'Sem Estoque' : 'Baixo Estoque'
+      }));
+    } catch (err) {
+      console.log(err);
+      return [];
     }
   }
 }

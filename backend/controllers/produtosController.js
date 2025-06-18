@@ -55,6 +55,7 @@ class ProdutosController {
       const { id } = req.params
       const { nome_produto, sku, valor_unitario } = req.body
 
+      console.log(id +'  '+ req.body)
       // Validações básicas
       if (!nome_produto) {
         return res.status(400).json({ error: "Nome do produto é obrigatório" })
@@ -104,6 +105,16 @@ class ProdutosController {
     } catch (err) {
       console.error(err)
       res.status(500).json({ error: "Erro ao buscar produtos" })
+    }
+  }
+
+   async getLowStock(req, res) {
+    try {
+      const lowStockItems = await Produtos.findLowStock(); 
+      return res.json(lowStockItems);
+    } catch (error) {
+      console.error('Erro ao buscar produtos com estoque baixo:', error);
+      return res.status(500).json({ error: 'Erro ao buscar produtos com estoque baixo' });
     }
   }
 }

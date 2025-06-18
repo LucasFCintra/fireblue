@@ -69,7 +69,7 @@ export default function MateriaPrima() {
     unidade: "Bobina",
     localizacao: "",
     data_entrada: new Date(),
-    status: "Em Estoque",
+    status: "em_estoque",
     codigo_barras: "",
     observacoes: ""
   });
@@ -97,7 +97,7 @@ export default function MateriaPrima() {
       unidade: "Bobina",
       localizacao: "",
       data_entrada: new Date(),
-      status: "Em Estoque",
+      status: "em_estoque",
       codigo_barras: "",
       observacoes: ""
     });
@@ -382,15 +382,15 @@ export default function MateriaPrima() {
         let bgColor = "";
         let borderColor = "";
         
-        if (row.status === "Em Estoque") {
+        if (row.status === "em_estoque") {
           textColor = "text-green-700";
           bgColor = "bg-green-50";
           borderColor = "border-green-200";
-        } else if (row.status === "Baixo Estoque") {
+        } else if (row.status === "baixo_estoque") {
           textColor = "text-yellow-700";
           bgColor = "bg-yellow-50";
           borderColor = "border-yellow-200";
-        } else if (row.status === "Sem Estoque") {
+        } else if (row.status === "sem_estoque") {
           textColor = "text-red-700";
           bgColor = "bg-red-50";
           borderColor = "border-red-200";
@@ -423,13 +423,13 @@ export default function MateriaPrima() {
         let textColor = "";
         let bgColor = "";
         
-        if (row.status === "Em Estoque") {
+        if (row.status === "em_estoque") {
           textColor = "text-green-700";
           bgColor = "bg-green-50";
-        } else if (row.status === "Baixo Estoque") {
+        } else if (row.status === "baixo_estoque") {
           textColor = "text-yellow-700";
           bgColor = "bg-yellow-50";
-        } else if (row.status === "Sem Estoque") {
+        } else if (row.status === "sem_estoque") {
           textColor = "text-red-700";
           bgColor = "bg-red-50";
         }
@@ -446,8 +446,8 @@ export default function MateriaPrima() {
       header: "Status",
       cell: (row: Bobina) => {
         let color = "bg-green-100 text-green-800";
-        if (row.status === "Baixo Estoque") color = "bg-yellow-100 text-yellow-800";
-        if (row.status === "Sem Estoque") color = "bg-red-100 text-red-800";
+        if (row.status === "baixo_estoque") color = "bg-yellow-100 text-yellow-800";
+        if (row.status === "sem_estoque") color = "bg-red-100 text-red-800";
         
         return (
           <Badge variant="outline" className={`${color}`}>
@@ -464,15 +464,15 @@ export default function MateriaPrima() {
         let borderColor = "";
         let bgHoverColor = "";
         
-        if (row.status === "Em Estoque") {
+        if (row.status === "em_estoque") {
           iconColor = "text-green-600";
           borderColor = "border-green-200";
           bgHoverColor = "hover:bg-green-50";
-        } else if (row.status === "Baixo Estoque") {
+        } else if (row.status === "baixo_estoque") {
           iconColor = "text-yellow-600";
           borderColor = "border-yellow-200";
           bgHoverColor = "hover:bg-yellow-50";
-        } else if (row.status === "Sem Estoque") {
+        } else if (row.status === "sem_estoque") {
           iconColor = "text-red-600";
           borderColor = "border-red-200";
           bgHoverColor = "hover:bg-red-50";

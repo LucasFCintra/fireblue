@@ -19,7 +19,7 @@ const dashboardController = require("../controllers/dashboardController");
 const materiaPrimaController = require('../controllers/materiaPrimaController');
 const fichasController = require('../controllers/fichasController');
 const recebimentosParciaisController = require('../controllers/RecebimentosParciaisController');
-const estoqueController = require("../controllers/estoqueController");
+const estoqueController = require("../controllers/estoqueController"); 
 
 // ROTAS RECEBIMENTOS PARCIAIS
 router.post('/api/recebimentos-parciais', recebimentosParciaisController.create);
@@ -33,9 +33,11 @@ router.get('/api/fichas/:id', fichasController.indexOne);
 router.get('/api/fichas/status/:status', fichasController.indexByStatus);
 router.get('/api/fichas/summary/status', fichasController.getStatusSummary);
 router.get('/api/fichas/list/:status', fichasController.getFichasByStatus);
+router.get('/api/fichas/stats/monthly', fichasController.getMonthlyStats);
 router.post('/api/fichas', fichasController.create);
 router.put('/api/fichas/:id', fichasController.update);
 router.delete('/api/fichas/:id', fichasController.delete);
+router.get('/api/fichas/recebidos/ultimos-meses', fichasController.getRecebidosUltimosMeses);
 
 // Rotas para movimentações - IMPORTANTE: estas rotas devem vir ANTES das rotas com parâmetros
 router.post('/api/fichas/:id/movimentacao', fichasController.registrarMovimentacao);
@@ -54,9 +56,10 @@ router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico)
 // ROTAS PRODUTOS
 router.get('/api/produtos', produtosController.index);
 router.get('/api/produtos/search', produtosController.search);
+router.get('/api/produtos/low-stock', produtosController.getLowStock);
 router.get('/api/produtos/:idProduto', produtosController.indexOne);
 router.post('/api/produtos', produtosController.create);
-router.put('/api/produtos', produtosController.update);
+router.put('/api/produtos/:id', produtosController.update);
 router.delete('/api/produtos/:idProduto', produtosController.delete);
 
 // ROTAS CLIENTES
@@ -148,4 +151,5 @@ router.post('/api/estoque', estoqueController.create);
 router.put('/api/estoque', estoqueController.update);
 router.delete('/api/estoque/:id', estoqueController.delete);
  
+
 module.exports = router;

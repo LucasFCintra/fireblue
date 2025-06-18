@@ -13,7 +13,7 @@ export interface Bobina {
   unidade: string;
   localizacao: string;
   data_entrada: Date;
-  status: "Em Estoque" | "Baixo Estoque" | "Sem Estoque";
+  status: "em_estoque" | "baixo_estoque" | "sem_estoque";
   codigo_barras: string;
   observacoes?: string;
 }

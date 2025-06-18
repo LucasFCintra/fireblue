@@ -134,6 +134,25 @@ class FichasController {
       res.status(500).json({ error: "Erro ao buscar movimentações" });
     }
   }
+
+  async getMonthlyStats(req, res) {
+    try {
+      const stats = await Fichas.getMonthlyStats();
+      res.json(stats);
+    } catch (error) {
+      console.error('Erro ao buscar estatísticas mensais:', error);
+      res.status(500).json({ error: 'Erro ao buscar estatísticas mensais' });
+    }
+  }
+
+  async getRecebidosUltimosMeses(req, res) {
+    try {
+      const data = await Fichas.getRecebidosUltimosMeses(5);
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao buscar dados dos últimos meses' });
+    }
+  }
 }
 
 module.exports = new FichasController() 
