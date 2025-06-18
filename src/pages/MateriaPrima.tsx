@@ -140,9 +140,6 @@ export default function MateriaPrima() {
     void carregarEstoque();
   }, [filteredData]);
   
-  // Atualizado para usar a busca integrada do DataTable
-  // O componente DataTable agora gerencia a pesquisa e chama onFilterChange
-  
   // Função para lidar com a adição de uma nova bobina
   const handleAddBobina = () => {
     setIsNovaBobinaDialogOpen(true);
@@ -264,12 +261,7 @@ export default function MateriaPrima() {
       setIsLoading(false);
     }
   };
-  const retornaEstoque = async () => {
-    const estoque = await materiaPrimaService.retornaEstoque();
-    
-
-    console.log(estoque);
-  };  
+  
   // Função para carregar histórico 
   const carregarHistorico = async (id: string) => {
     try {
@@ -481,34 +473,38 @@ export default function MateriaPrima() {
         return (
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className={`${borderColor} ${bgHoverColor}`}
+              className={`${bgHoverColor}`}
               onClick={() => handleOpenHistoricoDialog(row)}
+              title="Histórico de Movimentações"
             >
               <History className={`h-4 w-4 ${iconColor}`} />
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className={`${borderColor} ${bgHoverColor}`}
+              className={`${bgHoverColor}`}
               onClick={() => handleOpenCorteDialog(row)}
+              title="Registrar Corte"
             >
               <Scissors className={`h-4 w-4 ${iconColor}`} />
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className={`${borderColor} ${bgHoverColor}`}
+              className={`${bgHoverColor}`}
               onClick={() => handleOpenEditDialog(row)}
+              title="Editar Bobina"
             >
               <Pencil className={`h-4 w-4 ${iconColor}`} />
             </Button>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
-              className={`${borderColor} ${bgHoverColor}`}
+              className={`${bgHoverColor}`}
               onClick={() => handleOpenDeleteDialog(row)}
+              title="Excluir Bobina"
             >
               <Trash2 className={`h-4 w-4 ${iconColor}`} />
             </Button>
@@ -561,9 +557,14 @@ export default function MateriaPrima() {
   }, []);
   
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Controle de Bobinas</h1>
+    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center border-b border-border pb-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Controle de Bobinas</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerencie bobinas de matéria-prima e controle o estoque
+          </p>
+        </div>
         <div className="flex items-center gap-4">
           <Button variant="outline" size="sm" onClick={handleOpenFilterDialog}>
             <Filter className="w-4 h-4 mr-2" />
@@ -586,77 +587,90 @@ export default function MateriaPrima() {
             size="sm"
             startIcon={<Plus className="h-4 w-4" />}
             onClick={handleAddBobina}
+            className="bg-blue-600 hover:bg-blue-700"
           >
             Nova Bobina
           </ActionButton>
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border-blue-200 bg-blue-50">
+      {/* Cards de estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 animate-in fade-in duration-700">
+        <Card className="border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-blue-800 dark:bg-blue-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Total de Bobinas</CardTitle>
-            <Package className="h-4 w-4 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Total de Bobinas</CardTitle>
+            <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{filteredData.length}</div>
-            <p className="text-xs text-blue-600">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{filteredData.length}</div>
+            <p className="text-xs text-blue-600 dark:text-blue-400">
               Bobinas cadastradas no sistema
             </p>
           </CardContent>
         </Card>
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-green-800 dark:bg-green-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Bobinas com Estoque</CardTitle>
-            <Package className="h-4 w-4 text-green-600" />
+            <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">Bobinas com Estoque</CardTitle>
+            <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">
               {estoque.emEstoque.length}
             </div>
-            <p className="text-xs text-green-600">
+            <p className="text-xs text-green-600 dark:text-green-400">
               Bobinas disponíveis para uso
             </p>
           </CardContent>
         </Card>
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-yellow-200 bg-yellow-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-yellow-800 dark:bg-yellow-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-yellow-800">Baixo Estoque</CardTitle>
-            <Package className="h-4 w-4 text-yellow-600" />
+            <CardTitle className="text-sm font-medium text-yellow-800 dark:text-yellow-200">Baixo Estoque</CardTitle>
+            <Package className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-700">
+            <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
               {estoque.baixoEstoque.length}
             </div>
-            <p className="text-xs text-yellow-600">
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">
               Bobinas com estoque baixo
             </p>
           </CardContent>
         </Card>
-        <Card className="border-red-200 bg-red-50">
+        <Card className="border-red-200 bg-red-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-red-800 dark:bg-red-950">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-800">Bobinas sem Estoque</CardTitle>
-            <Package className="h-4 w-4 text-red-600" />
+            <CardTitle className="text-sm font-medium text-red-800 dark:text-red-200">Bobinas sem Estoque</CardTitle>
+            <Package className="h-5 w-5 text-red-600 dark:text-red-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-700">
+            <div className="text-2xl font-bold text-red-700 dark:text-red-300">
               {estoque.semEstoque.length}
             </div>
-            <p className="text-xs text-red-600">
+            <p className="text-xs text-red-600 dark:text-red-400">
               Bobinas que precisam de reposição
             </p>
           </CardContent>
         </Card>
       </div>
 
-      <DataTable
-        data={bobinasOriginais}
-        columns={columns}
-        searchable={true}
-        pagination={true}
-        isLoading={isLoading}
-        onFilterChange={(filtered) => setFilteredData(filtered)}
-      />
+      {/* Tabela de Bobinas */}
+      <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
+        <CardHeader className="bg-muted border-b">
+          <CardTitle className="text-foreground">Lista de Bobinas</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Gerencie e visualize todas as bobinas de matéria-prima cadastradas no sistema
+          </p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <DataTable
+            data={bobinasOriginais}
+            columns={columns}
+            searchable={true}
+            pagination={true}
+            isLoading={isLoading}
+            onFilterChange={(filtered) => setFilteredData(filtered)}
+          />
+        </CardContent>
+      </Card>
 
       {/* Modal de Corte */}
       <Dialog open={isCorteDialogOpen} onOpenChange={setIsCorteDialogOpen}>

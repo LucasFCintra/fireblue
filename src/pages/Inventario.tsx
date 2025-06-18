@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
 import React from "react";
-import { Package, FileText, Download, Upload, Filter, Edit, Trash2, Plus, Search, Loader2, MoreHorizontal, BarChart3 } from "lucide-react";
+import { 
+  Package, FileText, Download, Upload, Filter, Edit, Trash2, Plus, Search, 
+  Loader2, MoreHorizontal, BarChart3, AlertTriangle, TrendingUp, TrendingDown,
+  Warehouse, Box, AlertCircle, CheckCircle, Clock, DollarSign, ArrowUpDown
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,7 +52,6 @@ const ImagemCell = ({ row }: { row: ItemEstoque }) => {
 };
 
 export default function Estoque() {
-  const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedRow, setSelectedRow] = useState<ItemEstoque | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -88,6 +91,9 @@ export default function Estoque() {
   const emEstoque = filteredData.filter(item => item.status === "ativo").length;
   const baixoEstoque = filteredData.filter(item => item.status === "baixo").length;
   const semEstoque = filteredData.filter(item => item.status === "inativo").length;
+  const totalValorEstoque = filteredData.reduce((total, item) => {
+    return total + ((item.preco_unitario || 0) * item.quantidade);
+  }, 0);
   
   // Atualizar os dados filtrados quando o estoque mudar
   useEffect(() => {
@@ -97,30 +103,6 @@ export default function Estoque() {
       setFilteredData(estoqueItems);
     }
   }, [estoqueItems, activeFilters]);
-  
-  // Função para lidar com a pesquisa
-  const handleSearch = () => {
-    setIsLoading(true);
-    
-    // Simulação de um atraso de carregamento
-    setTimeout(() => {
-      let filtered = estoqueItems;
-      
-      if (searchQuery.trim() !== "") {
-        filtered = estoqueItems.filter(item =>
-          item.nome_produto.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.sku?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.fornecedor?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.codigo_barras?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-      }
-      
-      setFilteredData(filtered);
-      setIsLoading(false);
-      
-      toast.success(`${filtered.length} item(s) encontrado(s)`);
-    }, 500);
-  };
   
   // Função para lidar com a adição de um novo item
   const handleAddItem = async (data: any) => {
@@ -434,9 +416,14 @@ export default function Estoque() {
   ];
   
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold tracking-tight">Estoque</h1>
+    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+      <div className="flex justify-between items-center border-b border-border pb-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Estoque</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Gerenciamento de produtos e controle de inventário
+          </p>
+        </div>
         <div className="flex items-center gap-4">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -492,90 +479,67 @@ export default function Estoque() {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Cards de estatísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in duration-700">
         <StatusCard
           title="Total de Itens"
           value={filteredData.length}
           description="Itens cadastrados no sistema"
-          icon={<Package className="h-4 w-4" />}
-          className="border-blue-200 bg-blue-50"
+          icon={<Warehouse className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+          className="border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-blue-800 dark:bg-blue-950"
           animated={true}
         />
         <StatusCard
           title="Em Estoque"
           value={emEstoque}
           description="Itens disponíveis para uso"
-          icon={<Package className="h-4 w-4" />}
-          className="border-green-200 bg-green-50"
+          icon={<CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />}
+          className="border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-green-800 dark:bg-green-950"
           animated={true}
         />
         <StatusCard
           title="Baixo Estoque"
           value={baixoEstoque}
           description="Itens com estoque baixo"
-          icon={<Package className="h-4 w-4" />}
-          className="border-yellow-200 bg-yellow-50"
+          icon={<AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />}
+          className="border-yellow-200 bg-yellow-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-yellow-800 dark:bg-yellow-950"
           animated={true}
         />
         <StatusCard
-          title="Sem Estoque"
-          value={semEstoque}
-          description="Itens que precisam de reposição"
-          icon={<Package className="h-4 w-4" />}
-          className="border-red-200 bg-red-50"
+          title="Valor Total"
+          value={`R$ ${totalValorEstoque.toFixed(2)}`}
+          description="Valor total em estoque"
+          icon={<DollarSign className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
+          className="border-purple-200 bg-purple-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-purple-800 dark:bg-purple-950"
           animated={true}
         />
       </div>
 
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Buscar por produto, SKU, código de barras ou fornecedor..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-          </div>
-        </div>
-        <Button variant="outline" onClick={handleSearch} disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Buscando...
-            </>
-          ) : (
-            "Buscar"
-          )}
-        </Button>
-        <Button 
-          variant="outline" 
-          onClick={() => setIsFiltrosOpen(true)}
-        >
-          <Filter className="mr-2 h-4 w-4" />
-          Filtros
-          {activeFilters && (
-            <span className="ml-1 text-xs bg-primary text-primary-foreground rounded-full h-5 w-5 flex items-center justify-center">
-              {Object.keys(activeFilters).filter(key => 
-                Array.isArray(activeFilters[key]) 
-                  ? activeFilters[key].length > 0 
-                  : activeFilters[key] !== undefined
-              ).length}
-            </span>
-          )}
-        </Button>
-      </div>
-
-      <DataTable
-        data={filteredData}
-        columns={columns}
-        searchable={false}
-        pagination={true}
-        isLoading={isLoading}
-      />
+      {/* Tabela de dados */}
+      <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
+        <CardHeader className="bg-muted border-b">
+          <CardTitle className="text-foreground flex items-center gap-2">
+            <Box className="h-5 w-5" />
+            Itens em Estoque
+            <Badge variant="secondary" className="ml-2">
+              {filteredData.length} item(s)
+            </Badge>
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Gerencie e visualize todos os itens cadastrados no inventário
+          </p>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <DataTable
+            data={estoqueItems}
+            columns={columns}
+            searchable={true}
+            pagination={true}
+            isLoading={isLoading}
+            onFilterChange={(filtered) => setFilteredData(filtered)}
+          />
+        </CardContent>
+      </Card>
       
       {/* Diálogo de confirmação de exclusão */}
       <ConfirmDialog
@@ -647,14 +611,16 @@ export default function Estoque() {
         />
       )}
       
-      {/* Painel de filtros */}
-      <InventarioFiltros 
-        isOpen={isFiltrosOpen}
-        onClose={() => setIsFiltrosOpen(false)}
-        onApplyFilters={applyFilters}
-        initialFilters={activeFilters}
-        itemsCount={filteredData.length}
-      />
+      {/* Filtros avançados */}
+      {isFiltrosOpen && (
+        <InventarioFiltros
+          isOpen={isFiltrosOpen}
+          onClose={() => setIsFiltrosOpen(false)}
+          onApplyFilters={applyFilters}
+          initialFilters={activeFilters}
+          itemsCount={filteredData.length}
+        />
+      )}
     </div>
   );
 }
