@@ -257,6 +257,27 @@ class FichasModel {
       throw error;
     }
   }
+  async getRelatorio(dataInicio, dataFim) {
+    try {
+      // Se não vierem datas, usa o mês atual como padrão
+      let firstDay = dataInicio ? new Date(dataInicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+      let lastDay = dataFim ? new Date(dataFim) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+
+      const [stats] = await knex.raw(`
+        SELECT 
+          COUNT(*) as total_criadas,
+          SUM(CASE WHEN status = 'concluido' THEN 1 ELSE 0 END) as total_concluidas,
+          SUM(quantidade_recebida) as total_recebidas
+        FROM fichas
+        WHERE data_entrada BETWEEN ? AND ?
+      `, [firstDay, lastDay]);
+
+      return stats[0];
+    } catch (error) {
+      console.error('Erro ao buscar relatório:', error);
+      throw error;
+    }
+  }
 
   async getRecebidosUltimosMeses(qtdMeses = 5) {
     try {
@@ -275,6 +296,48 @@ class FichasModel {
       return result.reverse();
     } catch (error) {
       console.error('Erro ao buscar recebidos últimos meses:', error);
+      throw error;
+    }
+  }
+
+  async getPerdidasUltimosMeses(qtdMeses = 5) {
+    try {
+      const result = await knex('fichas')
+        .select(
+          knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
+          knex.raw("SUM(quantidade_perdida) as total_perdido")
+        )
+        .whereNotNull('quantidade_perdida')
+        .andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`))
+        .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
+        .orderByRaw("mes DESC")
+        .limit(qtdMeses);
+
+      // Ordena do mais antigo para o mais recente
+      return result.reverse();
+    } catch (error) {
+      console.error('Erro ao buscar perdidos últimos meses:', error);
+      throw error;
+    }
+  }
+
+  async getCortadasUltimosMeses(qtdMeses = 5) {
+    try {
+      const result = await knex('fichas')
+        .select(
+          knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
+          knex.raw("SUM(quantidade) as total_cortada")
+        )
+        .whereNotNull('quantidade')
+        .andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`))
+        .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
+        .orderByRaw("mes DESC")
+        .limit(qtdMeses);
+
+      // Ordena do mais antigo para o mais recente
+      return result.reverse();
+    } catch (error) {
+      console.error('Erro ao buscar cortadas últimos meses:', error);
       throw error;
     }
   }

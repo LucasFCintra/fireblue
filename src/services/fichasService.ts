@@ -104,5 +104,33 @@ export const fichasService = {
   async buscarMovimentacoes(id: number): Promise<Movimentacao[]> {
     const response = await axios.get(`${API_URL}/fichas/${id}/movimentacoes`);
     return response.data;
+  },
+
+  async buscarRelatorio(dataInicio?: string, dataFim?: string): Promise<any> {
+    let url = `${API_URL}/fichas/relatorio`;
+    if (dataInicio && dataFim) {
+      url += `?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}`;
+    } else if (dataInicio) {
+      url += `?dataInicio=${encodeURIComponent(dataInicio)}`;
+    } else if (dataFim) {
+      url += `?dataFim=${encodeURIComponent(dataFim)}`;
+    }
+    const response = await axios.get(url);
+    return response.data;
+  },
+
+  async buscarRecebidosUltimosMeses(): Promise<any[]> {
+    const response = await axios.get(`${API_URL}/fichas/recebidos/ultimos-meses`);
+    return response.data;
+  },
+
+  async buscarPerdidasUltimosMeses(): Promise<any[]> {
+    const response = await axios.get(`${API_URL}/fichas/perdidas/ultimos-meses`);
+    return response.data;
+  },
+
+  async buscarCortadasUltimosMeses(): Promise<any[]> {
+    const response = await axios.get(`${API_URL}/fichas/cortadas/ultimos-meses`);
+    return response.data;
   }
 }; 

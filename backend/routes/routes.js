@@ -29,16 +29,18 @@ router.delete('/api/recebimentos-parciais/:id', recebimentosParciaisController.d
 
 // ROTAS FICHAS
 router.get('/api/fichas', fichasController.index);
-router.get('/api/fichas/:id', fichasController.indexOne);
-router.get('/api/fichas/status/:status', fichasController.indexByStatus);
 router.get('/api/fichas/summary/status', fichasController.getStatusSummary);
-router.get('/api/fichas/list/:status', fichasController.getFichasByStatus);
 router.get('/api/fichas/stats/monthly', fichasController.getMonthlyStats);
+router.get('/api/fichas/relatorio', fichasController.getRecebidosUltimosMeses);
+router.get('/api/fichas/recebidos/ultimos-meses', fichasController.getRecebidosUltimosMeses);
+router.get('/api/fichas/perdidas/ultimos-meses', fichasController.getPerdidasUltimosMeses);
+router.get('/api/fichas/cortadas/ultimos-meses', fichasController.getCortadasUltimosMeses);
+router.get('/api/fichas/:id', fichasController.indexOne);
+router.get('/api/fichas/list/:status', fichasController.getFichasByStatus);
+router.get('/api/fichas/status/:status', fichasController.indexByStatus);
 router.post('/api/fichas', fichasController.create);
 router.put('/api/fichas/:id', fichasController.update);
 router.delete('/api/fichas/:id', fichasController.delete);
-router.get('/api/fichas/recebidos/ultimos-meses', fichasController.getRecebidosUltimosMeses);
-
 // Rotas para movimentações - IMPORTANTE: estas rotas devem vir ANTES das rotas com parâmetros
 router.post('/api/fichas/:id/movimentacao', fichasController.registrarMovimentacao);
 router.get('/api/fichas/:id/movimentacoes', fichasController.buscarMovimentacoes);

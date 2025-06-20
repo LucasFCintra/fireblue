@@ -1,5 +1,6 @@
 const { Console } = require("console")
 const Fichas = require("../models/Fichas")
+const { Controller } = require("react-hook-form")
 
 class FichasController {
   async index(req, res) {   
@@ -151,6 +152,35 @@ class FichasController {
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: 'Erro ao buscar dados dos últimos meses' });
+    }
+  }
+
+  async getRelatorio(req, res) {
+    try {
+      const { dataInicio, dataFim } = req.query;
+      const relatorio = await Fichas.getRelatorio(dataInicio, dataFim);
+      res.json(relatorio);
+    } catch (error) {
+      console.error('Erro ao buscar relatório:', error);
+      res.status(500).json({ error: 'Erro ao buscar relatório' });
+    }
+  }
+
+  async getPerdidasUltimosMeses(req, res) {
+    try {
+      const data = await Fichas.getPerdidasUltimosMeses();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao buscar peças perdidas dos últimos meses' });
+    }
+  }
+
+  async getCortadasUltimosMeses(req, res) {
+    try {
+      const data = await Fichas.getCortadasUltimosMeses();
+      res.json(data);
+    } catch (error) {
+      res.status(500).json({ error: 'Erro ao buscar peças cortadas dos últimos meses' });
     }
   }
 }

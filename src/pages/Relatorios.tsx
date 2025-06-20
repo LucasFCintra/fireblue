@@ -149,12 +149,12 @@ export default function Relatorios() {
                 Exportar
               </ActionButton>
             </CardHeader>
-            <CardContent>
+            {/* <CardContent>
               <ReportChart 
                 type="consertos" 
                 dateRange={dateRange} 
               />
-            </CardContent>
+            </CardContent> */}
           </Card>
         </TabsContent>
 

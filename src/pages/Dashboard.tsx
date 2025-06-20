@@ -131,7 +131,7 @@ export default function Dashboard() {
       const monthlyStatsResponse = await fetch('http://26.203.75.236:8687/api/fichas/stats/monthly');
       const monthlyStatsData = await monthlyStatsResponse.json();
 
-      console.log(monthlyStats)
+      console.log(monthlyStatsData)
       setMonthlyStats(monthlyStatsData);
       
       setDashboardData({
@@ -139,9 +139,9 @@ export default function Dashboard() {
         emProducao: data.em_producao || 0,
         recebidoParcialmente: fichasRecebidasParcialmente,
         concluido: data.concluido || 0,
-        totalProdutos: monthlyStats.total_recebidas, // Dados mockados por enquanto
-        totalSaidas: monthlyStats.total_criadas,
-        totalEntradas: monthlyStats.total_recebidas,
+        totalProdutos: monthlyStatsData.total_recebidas, // Dados mockados por enquanto
+        totalSaidas: monthlyStatsData.total_criadas,
+        totalEntradas: monthlyStatsData.total_recebidas,
         itensBaixoEstoque: Array.isArray(lowStockData) ? lowStockData.length : 0
       });
 
