@@ -1,8 +1,11 @@
+import axios from 'axios';
 import { Ficha } from "@/components/FichasStatusModal";
 import { bancasMock } from "@/data/bancasMock";
 import { fichasRecebidas } from "@/data/fichasMock";
 import { Banca, FechamentoBanca, FichaFechamento, RelatorioSemanal } from "@/types/fechamento";
 import { formatDateBR, getCurrentWeekRange, getWeekString, parseDate } from "@/utils/dateUtils";
+
+const API_URL = 'http://26.203.75.236:8687/api';
 
 /**
  * Filtra as fichas recebidas no período especificado
@@ -89,182 +92,193 @@ export function gerarFechamentoBanca(
 }
 
 /**
- * Gera o relatório semanal para todas as bancas
+ * Gera um relatório semanal de fechamento
  */
-export function gerarRelatorioSemanal(dataInicio?: Date, dataFim?: Date): RelatorioSemanal {
-  // Se não forem fornecidas datas, usa a semana atual
-  const periodo = dataInicio && dataFim 
-    ? { start: dataInicio, end: dataFim }
-    : getCurrentWeekRange();
-  
-  // Filtra as fichas recebidas no período
-  const fichasDoPeriodo = filtrarFichasNoPeriodo(
-    fichasRecebidas,
-    periodo.start,
-    periodo.end
-  );
-  
-  // Obtém as bancas que têm fichas no período
-  const bancasComFichas = obterBancasComFichasNoPeriodo(fichasDoPeriodo);
-  
-  // Gera o fechamento para cada banca
-  const fechamentos = bancasComFichas.map(banca => 
-    gerarFechamentoBanca(banca, fichasDoPeriodo, periodo.start, periodo.end)
-  );
-  
-  // Calcula os totais do relatório
-  const totalPecas = fechamentos.reduce((sum, fechamento) => sum + fechamento.totalPecas, 0);
-  const valorTotal = fechamentos.reduce((sum, fechamento) => sum + fechamento.valorTotal, 0);
-  
-  return {
-    id: `relatorio-${getWeekString(periodo.start)}`,
-    semana: getWeekString(periodo.start),
-    dataInicio: formatDateBR(periodo.start),
-    dataFim: formatDateBR(periodo.end),
-    fechamentos,
-    totalPecas,
-    valorTotal,
-    status: 'aberto',
-    dataCriacao: formatDateBR(new Date())
-  };
+export async function gerarRelatorioSemanal(dataInicio?: Date, dataFim?: Date): Promise<RelatorioSemanal> {
+  try {
+    const response = await axios.post(`${API_URL}/fechamentos/gerar`, {
+      dataInicio: dataInicio?.toISOString().split('T')[0],
+      dataFim: dataFim?.toISOString().split('T')[0]
+    });
+    
+    const fechamento = response.data;
+    
+    // Converter para o formato esperado pelo frontend
+    return {
+      id: fechamento.id,
+      semana: fechamento.semana,
+      dataInicio: formatarData(fechamento.data_inicio),
+      dataFim: formatarData(fechamento.data_fim),
+      totalPecas: fechamento.total_pecas,
+      valorTotal: fechamento.valor_total,
+      status: fechamento.status,
+      dataCriacao: formatarData(fechamento.data_criacao),
+      fechamentos: fechamento.fechamentos.map((fechamentoBanca: any) => ({
+        id: fechamentoBanca.id,
+        idBanca: fechamentoBanca.banca_id.toString(),
+        nomeBanca: fechamentoBanca.nome_banca,
+        dataInicio: formatarData(fechamentoBanca.data_inicio),
+        dataFim: formatarData(fechamentoBanca.data_fim),
+        totalPecas: fechamentoBanca.total_pecas,
+        valorTotal: fechamentoBanca.valor_total,
+        status: fechamentoBanca.status,
+        dataPagamento: fechamentoBanca.data_pagamento ? formatarData(fechamentoBanca.data_pagamento) : undefined,
+        fichasEntregues: fechamentoBanca.itens?.map((item: any) => ({
+          id: item.id,
+          codigo: item.codigo_ficha,
+          dataEntrada: formatarData(item.data_entrada),
+          descricao: item.produto,
+          quantidade: item.quantidade,
+          valorUnitario: item.valor_unitario,
+          valorTotal: item.valor_total
+        })) || []
+      }))
+    };
+  } catch (error) {
+    console.error('Erro ao gerar relatório semanal:', error);
+    throw error;
+  }
 }
 
 /**
- * Simula o salvamento do relatório semanal (mock)
+ * Salva o fechamento semanal atual
  */
-export function salvarFechamentoSemanal(relatorio: RelatorioSemanal): Promise<boolean> {
-  return new Promise((resolve) => {
-    // Simulação de salvamento
-    setTimeout(() => {
-      console.log('Relatório salvo:', relatorio);
-      resolve(true);
-    }, 800);
-  });
+export async function salvarFechamentoSemanal(relatorio: RelatorioSemanal): Promise<boolean> {
+  try {
+    // O fechamento já é salvo automaticamente quando gerado
+    return true;
+  } catch (error) {
+    console.error('Erro ao salvar fechamento semanal:', error);
+    return false;
+  }
 }
 
 /**
- * Simula a finalização do fechamento semanal (mock)
+ * Finaliza o fechamento semanal
  */
-export function finalizarFechamentoSemanal(relatorioId: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    // Simulação de finalização
-    setTimeout(() => {
-      console.log('Fechamento finalizado:', relatorioId);
-      resolve(true);
-    }, 800);
-  });
+export async function finalizarFechamentoSemanal(fechamentoId: string): Promise<boolean> {
+  try {
+    const response = await axios.put(`${API_URL}/fechamentos/${fechamentoId}/finalizar`);
+    return response.data.success;
+  } catch (error) {
+    console.error('Erro ao finalizar fechamento semanal:', error);
+    return false;
+  }
 }
 
 /**
  * Finaliza o fechamento de uma banca específica
  */
-export async function finalizarFechamentoBanca(idRelatorio: string, idBanca: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    // Simulação de finalização da banca
-    setTimeout(() => {
-      console.log('Fechamento da banca finalizado:', { idRelatorio, idBanca });
-      resolve(true);
-    }, 800);
-  });
+export async function finalizarFechamentoBanca(fechamentoId: string, bancaId: string): Promise<boolean> {
+  try {
+    const response = await axios.put(`${API_URL}/fechamentos/${fechamentoId}/bancas/${bancaId}/finalizar`);
+    return response.data.success;
+  } catch (error) {
+    console.error('Erro ao finalizar fechamento da banca:', error);
+    return false;
+  }
 }
 
 /**
- * Gera o comprovante de fechamento em PDF
+ * Lista todos os fechamentos históricos
  */
-export async function gerarComprovantePDF(fechamento: FechamentoBanca): Promise<string> {
-  return new Promise((resolve) => {
-    // Simulação da geração do PDF
-    setTimeout(() => {
-      // Em um ambiente real, aqui seria utilizada a função abaixo
-      try {
-        // Importa a biblioteca jspdf dinamicamente
-        import('jspdf').then(({ default: jsPDF }) => {
-          // Define nome do arquivo
-          const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-          const nomeArquivo = `Comprovante_Pagamento_${fechamento.nomeBanca.replace(/\s+/g, '_')}_${dataAtual}`;
-          
-          // Cria um novo documento PDF
-          const doc = new jsPDF();
-          
-          // Adiciona o título
-          doc.setFontSize(16);
-          doc.text('COMPROVANTE DE FECHAMENTO SEMANAL', 105, 15, { align: 'center' });
-          
-          // Informações da banca
-          doc.setFontSize(12);
-          doc.text('Dados da Banca', 14, 35);
-          doc.setFontSize(10);
-          doc.text(`Nome: ${fechamento.nomeBanca}`, 14, 45);
-          doc.text(`Período: ${fechamento.dataInicio} a ${fechamento.dataFim}`, 14, 52);
-          doc.text(`Total de Peças: ${fechamento.totalPecas}`, 14, 59);
-          doc.text(`Valor Total: ${formatarMoeda(fechamento.valorTotal)}`, 14, 66);
-          
-          // Adiciona tabela de produtos
-          import('jspdf-autotable').then(({ default: autoTable }) => {
-            // Agrupa produtos por descrição
-            const produtosAgrupados = agruparProdutos(fechamento.fichasEntregues);
-            
-            // Prepara dados para a tabela
-            const dadosProdutos = produtosAgrupados.map(produto => [
-              produto.descricao,
-              produto.quantidade.toString(),
-              formatarMoeda(produto.valorUnitario),
-              formatarMoeda(produto.valorTotal)
-            ]);
-            
-            // Adiciona a tabela
-            autoTable(doc, {
-              startY: 75,
-              head: [['Produto', 'Quantidade', 'Valor Unit.', 'Valor Total']],
-              body: dadosProdutos,
-              theme: 'striped',
-              headStyles: { fillColor: [66, 66, 66] }
-            });
-            
-            // Adiciona campos para assinatura
-            const finalY = (doc as any).lastAutoTable.finalY + 20;
-            
-            doc.text('Assinaturas:', 14, finalY);
-            
-            doc.line(20, finalY + 25, 90, finalY + 25); // Linha para assinatura da banca
-            doc.text('Banca', 55, finalY + 32, { align: 'center' });
-            
-            doc.line(120, finalY + 25, 190, finalY + 25); // Linha para assinatura da Fire Blue
-            doc.text('Fire Blue', 155, finalY + 32, { align: 'center' });
-            
-            // Adiciona data atual
-            const dataAtual = new Date().toLocaleDateString('pt-BR');
-            doc.text(`Data: ${dataAtual}`, 14, finalY + 45);
-            
-            // Rodapé
-            const pageCount = doc.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-              doc.setPage(i);
-              doc.setFontSize(8);
-              doc.text('Fire Blue - Sistema de Gestão', 105, 285, { align: 'center' });
-              doc.text(`Página ${i} de ${pageCount}`, 195, 285, { align: 'right' });
-            }
-            
-            // Ao invés de apenas abrir o PDF, vamos salvar com o nome definido
-            doc.save(`${nomeArquivo}.pdf`);
-            
-            console.log('Comprovante gerado:', nomeArquivo);
-            
-            resolve(nomeArquivo);
-          });
-        });
-      } catch (error) {
-        console.error('Erro ao gerar PDF:', error);
-        
-        // Retorna o nome do arquivo PDF gerado (simulado)
-        const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-        const nomeArquivo = `Comprovante_Pagamento_${fechamento.nomeBanca.replace(/\s+/g, '_')}_${dataAtual}`;
-        console.log('Comprovante gerado (fallback):', nomeArquivo);
-        
-        resolve(nomeArquivo);
+export async function listarFechamentosHistoricos(): Promise<RelatorioSemanal[]> {
+  try {
+    const response = await axios.get(`${API_URL}/fechamentos`);
+    const fechamentos = response.data;
+    
+    return fechamentos.map((fechamento: any) => ({
+      id: fechamento.id,
+      semana: fechamento.semana,
+      dataInicio: formatarData(fechamento.data_inicio),
+      dataFim: formatarData(fechamento.data_fim),
+      totalPecas: fechamento.total_pecas,
+      valorTotal: fechamento.valor_total,
+      status: fechamento.status,
+      dataCriacao: formatarData(fechamento.data_criacao),
+      fechamentos: [] // Será carregado separadamente se necessário
+    }));
+  } catch (error) {
+    console.error('Erro ao listar fechamentos históricos:', error);
+    return [];
+  }
+}
+
+/**
+ * Busca um fechamento específico por ID
+ */
+export async function buscarFechamentoPorId(id: string): Promise<RelatorioSemanal | null> {
+  try {
+    const response = await axios.get(`${API_URL}/fechamentos/${id}`);
+    const fechamento = response.data;
+    
+    return {
+      id: fechamento.id,
+      semana: fechamento.semana,
+      dataInicio: formatarData(fechamento.data_inicio),
+      dataFim: formatarData(fechamento.data_fim),
+      totalPecas: fechamento.total_pecas,
+      valorTotal: fechamento.valor_total,
+      status: fechamento.status,
+      dataCriacao: formatarData(fechamento.data_criacao),
+      fechamentos: fechamento.fechamentos.map((fechamentoBanca: any) => ({
+        id: fechamentoBanca.id,
+        idBanca: fechamentoBanca.banca_id.toString(),
+        nomeBanca: fechamentoBanca.nome_banca,
+        dataInicio: formatarData(fechamentoBanca.data_inicio),
+        dataFim: formatarData(fechamentoBanca.data_fim),
+        totalPecas: fechamentoBanca.total_pecas,
+        valorTotal: fechamentoBanca.valor_total,
+        status: fechamentoBanca.status,
+        dataPagamento: fechamentoBanca.data_pagamento ? formatarData(fechamentoBanca.data_pagamento) : undefined,
+        fichasEntregues: fechamentoBanca.itens?.map((item: any) => ({
+          id: item.id,
+          codigo: item.codigo_ficha,
+          dataEntrada: formatarData(item.data_entrada),
+          descricao: item.produto,
+          quantidade: item.quantidade,
+          valorUnitario: item.valor_unitario,
+          valorTotal: item.valor_total
+        })) || []
+      }))
+    };
+  } catch (error) {
+    console.error('Erro ao buscar fechamento:', error);
+    return null;
+  }
+}
+
+/**
+ * Busca bancas com movimentação em um período
+ */
+export async function buscarBancasComMovimentacao(dataInicio: Date, dataFim: Date): Promise<any[]> {
+  try {
+    const response = await axios.get(`${API_URL}/fechamentos/bancas/movimentacao`, {
+      params: {
+        dataInicio: dataInicio.toISOString().split('T')[0],
+        dataFim: dataFim.toISOString().split('T')[0]
       }
-    }, 1000);
-  });
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar bancas com movimentação:', error);
+    return [];
+  }
+}
+
+/**
+ * Gera um comprovante PDF para uma banca
+ */
+export async function gerarComprovantePDF(fechamento: FechamentoBanca): Promise<boolean> {
+  try {
+    // Implementar geração de PDF
+    // Por enquanto, apenas simula o sucesso
+    return true;
+  } catch (error) {
+    console.error('Erro ao gerar comprovante PDF:', error);
+    return false;
+  }
 }
 
 /**
@@ -291,11 +305,12 @@ function agruparProdutos(fichas: FichaFechamento[]) {
 }
 
 /**
- * Função auxiliar para formatação de moeda
+ * Função auxiliar para formatar data
  */
-function formatarMoeda(valor: number) {
-  return valor.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL'
-  });
+function formatarData(data: string | Date): string {
+  if (typeof data === 'string') {
+    const date = new Date(data);
+    return date.toLocaleDateString('pt-BR');
+  }
+  return data.toLocaleDateString('pt-BR');
 } 

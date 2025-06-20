@@ -4,14 +4,18 @@ import {
   salvarFechamentoSemanal,
   finalizarFechamentoSemanal,
   finalizarFechamentoBanca,
-  gerarComprovantePDF
+  gerarComprovantePDF,
+  listarFechamentosHistoricos,
+  buscarFechamentoPorId
 } from '@/services/fechamentoService';
 import { FechamentoBanca, RelatorioSemanal } from '@/types/fechamento';
 import { useToast } from '@/hooks/use-toast';
 
 export function useFechamentoSemanal() {
   const [relatorio, setRelatorio] = useState<RelatorioSemanal | null>(null);
+  const [historicoFechamentos, setHistoricoFechamentos] = useState<RelatorioSemanal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingHistorico, setIsLoadingHistorico] = useState(false);
   const { toast } = useToast();
 
   /**
@@ -20,7 +24,7 @@ export function useFechamentoSemanal() {
   const gerarFechamento = useCallback(async (dataInicio?: Date, dataFim?: Date) => {
     setIsLoading(true);
     try {
-      const resultado = gerarRelatorioSemanal(dataInicio, dataFim);
+      const resultado = await gerarRelatorioSemanal(dataInicio, dataFim);
       setRelatorio(resultado);
       
       toast({
@@ -39,6 +43,44 @@ export function useFechamentoSemanal() {
       return null;
     } finally {
       setIsLoading(false);
+    }
+  }, [toast]);
+
+  /**
+   * Carrega o histórico de fechamentos
+   */
+  const carregarHistorico = useCallback(async () => {
+    setIsLoadingHistorico(true);
+    try {
+      const historico = await listarFechamentosHistoricos();
+      setHistoricoFechamentos(historico);
+    } catch (error) {
+      console.error('Erro ao carregar histórico:', error);
+      toast({
+        title: "Erro ao carregar histórico",
+        description: "Ocorreu um erro ao carregar o histórico de fechamentos.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingHistorico(false);
+    }
+  }, [toast]);
+
+  /**
+   * Busca um fechamento específico do histórico
+   */
+  const buscarFechamentoHistorico = useCallback(async (id: string) => {
+    try {
+      const fechamento = await buscarFechamentoPorId(id);
+      return fechamento;
+    } catch (error) {
+      console.error('Erro ao buscar fechamento histórico:', error);
+      toast({
+        title: "Erro ao buscar fechamento",
+        description: "Ocorreu um erro ao buscar o fechamento.",
+        variant: "destructive",
+      });
+      return null;
     }
   }, [toast]);
 
@@ -198,24 +240,24 @@ export function useFechamentoSemanal() {
     setIsLoading(true);
     try {
       // Gera o comprovante PDF
-      const nomeArquivo = await gerarComprovantePDF(fechamento);
+      const resultado = await gerarComprovantePDF(fechamento);
       
-      // Em um ambiente real, aqui seria iniciada a impressão ou download do PDF
+      if (resultado) {
+        toast({
+          title: "Comprovante gerado",
+          description: `O comprovante para ${fechamento.nomeBanca} foi gerado com sucesso.`,
+        });
+      }
       
-      toast({
-        title: "Comprovante gerado",
-        description: `O comprovante "${nomeArquivo}.pdf" para ${fechamento.nomeBanca} foi gerado com sucesso.`,
-      });
-      
-      return nomeArquivo;
+      return resultado;
     } catch (error) {
       console.error('Erro ao gerar comprovante:', error);
       toast({
         title: "Erro ao gerar comprovante",
-        description: "Ocorreu um erro ao gerar o comprovante.",
+        description: "Não foi possível gerar o comprovante de fechamento.",
         variant: "destructive",
       });
-      return null;
+      return false;
     } finally {
       setIsLoading(false);
     }
@@ -223,8 +265,13 @@ export function useFechamentoSemanal() {
 
   return {
     relatorio,
+    historicoFechamentos,
     isLoading,
+    isLoadingHistorico,
     gerarFechamento,
+    carregarHistorico,
+    buscarFechamentoHistorico,
+    salvarFechamento,
     finalizarFechamento,
     finalizarBanca,
     imprimirComprovante

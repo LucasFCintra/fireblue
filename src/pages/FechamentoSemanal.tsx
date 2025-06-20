@@ -15,7 +15,19 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 export default function FechamentoSemanal() {
-  const { relatorio, isLoading, gerarFechamento, finalizarFechamento, finalizarBanca, imprimirComprovante } = useFechamentoSemanal();
+  const { 
+    relatorio, 
+    historicoFechamentos,
+    isLoading, 
+    isLoadingHistorico,
+    gerarFechamento, 
+    carregarHistorico,
+    buscarFechamentoHistorico,
+    finalizarFechamento, 
+    finalizarBanca, 
+    imprimirComprovante 
+  } = useFechamentoSemanal();
+  
   const [selectedFechamento, setSelectedFechamento] = useState<FechamentoBanca | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [dateRange, setDateRange] = useState<DateRange>({
@@ -31,116 +43,14 @@ export default function FechamentoSemanal() {
   const [selectedHistoricoRelatorio, setSelectedHistoricoRelatorio] = useState<RelatorioSemanal | null>(null);
   const [isHistoricoDetailOpen, setIsHistoricoDetailOpen] = useState(false);
   const [isGerandoRelatorio, setIsGerandoRelatorio] = useState(false);
-  
-  // Mock para histórico de fechamentos (substituir por dados reais)
-  const [historicoFechamentos, setHistoricoFechamentos] = useState<RelatorioSemanal[]>([]);
 
   // Gera o fechamento inicial ao carregar a página
   useEffect(() => {
     if (activeTab === 'atual') {
       handleGerarFechamento();
     } else {
-      // Aqui seria o carregamento do histórico de fechamentos
-      // Por enquanto vamos usar um mock
-      const mockHistorico = [
-        {
-          id: 'relatorio-2023-W25',
-          semana: '2023-W25',
-          dataInicio: '19/06/2023',
-          dataFim: '25/06/2023',
-          fechamentos: [
-            {
-              id: 'fechamento-banca1-2023-W25',
-              idBanca: 'banca1',
-              nomeBanca: 'Costura Rápida',
-              dataInicio: '19/06/2023',
-              dataFim: '25/06/2023',
-              fichasEntregues: [],
-              totalPecas: 520,
-              valorTotal: 7800.50,
-              status: 'pago',
-              dataPagamento: '26/06/2023'
-            },
-            {
-              id: 'fechamento-banca2-2023-W25',
-              idBanca: 'banca2',
-              nomeBanca: 'Bordados Maria',
-              dataInicio: '19/06/2023',
-              dataFim: '25/06/2023',
-              fichasEntregues: [],
-              totalPecas: 420,
-              valorTotal: 5300.20,
-              status: 'pago',
-              dataPagamento: '26/06/2023'
-            },
-            {
-              id: 'fechamento-banca3-2023-W25',
-              idBanca: 'banca3',
-              nomeBanca: 'Jeans Premium',
-              dataInicio: '19/06/2023',
-              dataFim: '25/06/2023',
-              fichasEntregues: [],
-              totalPecas: 303,
-              valorTotal: 2578.20,
-              status: 'pago',
-              dataPagamento: '26/06/2023'
-            }
-          ],
-          totalPecas: 1243,
-          valorTotal: 15678.90,
-          status: 'pago',
-          dataCriacao: '26/06/2023'
-        },
-        {
-          id: 'relatorio-2023-W24',
-          semana: '2023-W24',
-          dataInicio: '12/06/2023',
-          dataFim: '18/06/2023',
-          fechamentos: [
-            {
-              id: 'fechamento-banca1-2023-W24',
-              idBanca: 'banca1',
-              nomeBanca: 'Costura Rápida',
-              dataInicio: '12/06/2023',
-              dataFim: '18/06/2023',
-              fichasEntregues: [],
-              totalPecas: 410,
-              valorTotal: 6200.30,
-              status: 'pago',
-              dataPagamento: '19/06/2023'
-            },
-            {
-              id: 'fechamento-banca2-2023-W24',
-              idBanca: 'banca2',
-              nomeBanca: 'Bordados Maria',
-              dataInicio: '12/06/2023',
-              dataFim: '18/06/2023',
-              fichasEntregues: [],
-              totalPecas: 370,
-              valorTotal: 4580.40,
-              status: 'pago',
-              dataPagamento: '19/06/2023'
-            },
-            {
-              id: 'fechamento-banca4-2023-W24',
-              idBanca: 'banca4',
-              nomeBanca: 'Acabamentos Finos',
-              dataInicio: '12/06/2023',
-              dataFim: '18/06/2023',
-              fichasEntregues: [],
-              totalPecas: 207,
-              valorTotal: 1564.97,
-              status: 'pago',
-              dataPagamento: '19/06/2023'
-            }
-          ],
-          totalPecas: 987,
-          valorTotal: 12345.67,
-          status: 'pago',
-          dataCriacao: '19/06/2023'
-        }
-      ] as RelatorioSemanal[];
-      setHistoricoFechamentos(mockHistorico);
+      // Carregar histórico de fechamentos
+      carregarHistorico();
     }
   }, [activeTab]);
 
@@ -179,16 +89,31 @@ export default function FechamentoSemanal() {
   };
   
   // Manipulador para ver detalhes do relatório histórico
-  const handleVerDetalhesHistorico = (relatorio: RelatorioSemanal) => {
+  const handleVerDetalhesHistorico = async (relatorio: RelatorioSemanal) => {
     console.log("Abrindo detalhes do relatório histórico:", relatorio);
     
-    // Definimos o relatório histórico selecionado
-    setSelectedHistoricoRelatorio(relatorio);
-    
-    // Abrimos o modal após uma pequena pausa
-    setTimeout(() => {
-      setIsHistoricoDetailOpen(true);
-    }, 10);
+    try {
+      // Buscar detalhes completos do fechamento
+      const fechamentoCompleto = await buscarFechamentoHistorico(relatorio.id);
+      
+      if (fechamentoCompleto) {
+        setSelectedHistoricoRelatorio(fechamentoCompleto);
+        setIsHistoricoDetailOpen(true);
+      } else {
+        toast({
+          title: "Erro ao carregar detalhes",
+          description: "Não foi possível carregar os detalhes do fechamento.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do fechamento:', error);
+      toast({
+        title: "Erro ao carregar detalhes",
+        description: "Ocorreu um erro ao carregar os detalhes do fechamento.",
+        variant: "destructive",
+      });
+    }
   };
   
   // Manipulador para fechar o modal de detalhes do histórico
@@ -199,7 +124,6 @@ export default function FechamentoSemanal() {
   
   // Manipulador para finalizar o fechamento de uma banca específica
   const handleFinalizarFechamentoBanca = async (idBanca: string) => {
-    // Implementar a lógica para finalizar o fechamento de uma banca específica
     const resultado = await finalizarBanca(idBanca);
     
     if (resultado) {
@@ -218,7 +142,6 @@ export default function FechamentoSemanal() {
   
   // Manipulador para imprimir o comprovante de uma banca
   const handleImprimirComprovante = async (fechamento: FechamentoBanca) => {
-    // Implementar a lógica para gerar e imprimir o comprovante
     try {
       const resultado = await imprimirComprovante(fechamento);
       
@@ -501,7 +424,14 @@ export default function FechamentoSemanal() {
               </div>
             </CardHeader>
             <CardContent className="px-0 pb-0">
-              {historicoFechamentos.length > 0 ? (
+              {isLoadingHistorico ? (
+                <div className="p-8 text-center">
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <RefreshCw className="h-12 w-12 text-gray-400 animate-spin" />
+                    <h3 className="text-lg font-medium">Carregando histórico...</h3>
+                  </div>
+                </div>
+              ) : historicoFechamentos.length > 0 ? (
                 <div className="space-y-6">
                   {historicoFechamentos.map((relatorio) => (
                     <Card key={relatorio.id} className="overflow-hidden">

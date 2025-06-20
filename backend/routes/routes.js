@@ -19,7 +19,8 @@ const dashboardController = require("../controllers/dashboardController");
 const materiaPrimaController = require('../controllers/materiaPrimaController');
 const fichasController = require('../controllers/fichasController');
 const recebimentosParciaisController = require('../controllers/RecebimentosParciaisController');
-const estoqueController = require("../controllers/estoqueController"); 
+const estoqueController = require("../controllers/estoqueController");
+const fechamentoController = require("../controllers/fechamentoController");
 
 // ROTAS RECEBIMENTOS PARCIAIS
 router.post('/api/recebimentos-parciais', recebimentosParciaisController.create);
@@ -152,6 +153,13 @@ router.get('/api/estoque/:id', estoqueController.indexOne);
 router.post('/api/estoque', estoqueController.create);
 router.put('/api/estoque', estoqueController.update);
 router.delete('/api/estoque/:id', estoqueController.delete);
- 
+
+// ROTAS FECHAMENTO SEMANAL
+router.post('/api/fechamentos/gerar', fechamentoController.gerarFechamento);
+router.get('/api/fechamentos', fechamentoController.listarFechamentos);
+router.get('/api/fechamentos/:id', fechamentoController.buscarFechamento);
+router.put('/api/fechamentos/:id/finalizar', fechamentoController.finalizarFechamentoSemanal);
+router.put('/api/fechamentos/:fechamentoId/bancas/:bancaId/finalizar', fechamentoController.finalizarFechamentoBanca);
+router.get('/api/fechamentos/bancas/movimentacao', fechamentoController.buscarBancasComMovimentacao);
 
 module.exports = router;
