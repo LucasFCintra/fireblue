@@ -14,20 +14,20 @@ import { useToast } from "@/components/ui/use-toast";
 import axios from 'axios';
 import { fichasService } from '@/services/fichasService';
 
-interface RecebimentoParcialModalProps {
+interface RegistroPerdaModalProps {
   isOpen: boolean;
   onClose: () => void;
   ficha: any;
-  onRecebimentoRegistrado: () => void;
+  onPerdaRegistrada: () => void;
 }
 
-export function RecebimentoParcialModal({
+export function RegistroPerdaModal({
   isOpen,
   onClose,
   ficha,
-  onRecebimentoRegistrado
-}: RecebimentoParcialModalProps) {
-  const [quantidadeRecebida, setQuantidadeRecebida] = useState('');
+  onPerdaRegistrada
+}: RegistroPerdaModalProps) {
+  const [quantidadePerdida, setQuantidadePerdida] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [responsavel, setResponsavel] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +36,7 @@ export function RecebimentoParcialModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!quantidadeRecebida || parseInt(quantidadeRecebida) <= 0) {
+    if (!quantidadePerdida || parseInt(quantidadePerdida) <= 0) {
       toast({
         title: "Erro",
         description: "Por favor, informe uma quantidade válida",
@@ -45,13 +45,13 @@ export function RecebimentoParcialModal({
       return;
     }
 
-    const quantidadeRecebidaNum = parseInt(quantidadeRecebida);
-    const quantidadeRestante = ficha.quantidade - (ficha.quantidade_recebida || 0);
+    const quantidadePerdidaNum = parseInt(quantidadePerdida);
+    const quantidadeDisponivel = ficha.quantidade - (ficha.quantidade_perdida || 0);
 
-    if (quantidadeRecebidaNum > quantidadeRestante) {
+    if (quantidadePerdidaNum > quantidadeDisponivel) {
       toast({
         title: "Erro",
-        description: "A quantidade recebida não pode ser maior que a quantidade restante",
+        description: "A quantidade perdida não pode ser maior que a quantidade disponível",
         variant: "destructive",
       });
       return;
@@ -60,26 +60,33 @@ export function RecebimentoParcialModal({
     setIsLoading(true);
 
     try {
-      // Registrar o recebimento parcial
-      await axios.post('http://26.203.75.236:8687/api/recebimentos-parciais', {
-        ficha_id: ficha.id,
-        quantidade_recebida: quantidadeRecebidaNum,
-        observacoes,
+      // Registrar a perda como uma movimentação do tipo "Perda"
+      await axios.post(`http://26.203.75.236:8687/api/fichas/${ficha.id}/movimentacao`, {
+        tipo: 'Perda',
+        quantidade: quantidadePerdidaNum,
+        descricao: observacoes,
         responsavel
       });
 
+      // Atualizar a quantidade_perdida na ficha
+      const fichaAtualizada = {
+        ...ficha,
+        quantidade_perdida: (ficha.quantidade_perdida || 0) + quantidadePerdidaNum
+      };
+      await fichasService.atualizarFicha(fichaAtualizada);
+
       toast({
         title: "Sucesso",
-        description: "Recebimento parcial registrado com sucesso",
+        description: "Perda registrada com sucesso",
       });
 
-      onRecebimentoRegistrado();
+      onPerdaRegistrada();
       onClose();
     } catch (error) {
-      console.error('Erro ao registrar recebimento parcial:', error);
+      console.error('Erro ao registrar perda:', error);
       toast({
         title: "Erro",
-        description: "Erro ao registrar recebimento parcial",
+        description: "Erro ao registrar perda",
         variant: "destructive",
       });
     } finally {
@@ -91,7 +98,7 @@ export function RecebimentoParcialModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Registrar Recebimento Parcial</DialogTitle>
+          <DialogTitle>Registrar Perda</DialogTitle>
         </DialogHeader>
 
         {ficha ? (
@@ -106,30 +113,30 @@ export function RecebimentoParcialModal({
             </div>
 
             <div className="space-y-2">
-              <Label>Quantidade Já Recebida</Label>
+              <Label>Quantidade Já Perdida</Label>
               <Input
                 type="number"
-                value={ficha.quantidade_recebida || 0}
+                value={ficha.quantidade_perdida || 0}
                 disabled
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Quantidade Restante</Label>
+              <Label>Quantidade Disponível</Label>
               <Input
                 type="number"
-                value={ficha.quantidade - (ficha.quantidade_recebida || 0)}
+                value={ficha.quantidade - (ficha.quantidade_perdida || 0)}
                 disabled
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Quantidade Recebida Agora</Label>
+              <Label>Quantidade Perdida Agora</Label>
               <Input
                 type="number"
-                value={quantidadeRecebida}
-                onChange={(e) => setQuantidadeRecebida(e.target.value)}
-                placeholder="Informe a quantidade recebida"
+                value={quantidadePerdida}
+                onChange={(e) => setQuantidadePerdida(e.target.value)}
+                placeholder="Informe a quantidade perdida"
                 required
               />
             </div>
@@ -139,7 +146,7 @@ export function RecebimentoParcialModal({
               <Input
                 value={responsavel}
                 onChange={(e) => setResponsavel(e.target.value)}
-                placeholder="Informe o responsável pelo recebimento"
+                placeholder="Informe o responsável pelo registro"
                 required
               />
             </div>
@@ -149,7 +156,7 @@ export function RecebimentoParcialModal({
               <Textarea
                 value={observacoes}
                 onChange={(e) => setObservacoes(e.target.value)}
-                placeholder="Informe observações sobre o recebimento"
+                placeholder="Informe o motivo da perda e outras observações"
               />
             </div>
 
@@ -163,7 +170,7 @@ export function RecebimentoParcialModal({
                 Cancelar
               </Button>
               <Button type="submit" disabled={isLoading}>
-                {isLoading ? "Registrando..." : "Registrar Recebimento"}
+                {isLoading ? "Registrando..." : "Registrar Perda"}
               </Button>
             </DialogFooter>
           </form>

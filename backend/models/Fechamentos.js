@@ -105,8 +105,7 @@ class FechamentosModel {
       const fichas = await knex('fichas as f')
         .join('movimentacoes_fichas as mf', 'f.id', 'mf.ficha_id')
         .leftJoin('produtos as p', function() {
-          this.on('f.produto', '=', 'p.nome')
-            .orOn('f.produto', '=', 'p.nome_produto');
+          this.on('f.produto', '=', 'p.nome_produto');
         })
         .where('f.banca', banca.nome)
         .where('mf.tipo', 'Retorno')
@@ -118,7 +117,7 @@ class FechamentosModel {
           'f.produto',
           'f.quantidade',
           'f.data_entrada',
-          knex.raw('COALESCE(p.valor_unitario, p.preco_venda, 0) as valor_unitario'),
+          knex.raw('COALESCE(p.valor_unitario, 0) as valor_unitario'),
           'mf.quantidade as quantidade_movimentada'
         );
       

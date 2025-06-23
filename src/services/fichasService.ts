@@ -11,8 +11,10 @@ export type Ficha = {
   data_previsao: Date | string;
   quantidade: number;
   quantidade_recebida: number;
+  quantidade_perdida: number;
   status: "aguardando_retirada" | "em_producao" | "concluido" | "recebido_parcialmente";
   produto: string;
+  produto_id: string;
   cor: string;
   tamanho: "P" | "M" | "G" | "GG";
   observacoes: string;

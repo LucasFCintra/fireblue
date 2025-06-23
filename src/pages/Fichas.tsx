@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { 
   Package, FileText, Download, Filter, Edit, Trash2, Plus, 
-  Search, Loader2, Scissors, History, CheckCircle, Clock, CircleDot, Truck, MoveRight, Copy 
+  Search, Loader2, Scissors, History, CheckCircle, Clock, CircleDot, Truck, MoveRight, Copy, AlertTriangle, MoreVertical 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +44,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RecebimentoParcialModal } from "@/components/fichas/RecebimentoParcialModal";
 import { produtosService, Produto } from "@/services/produtosService";
+import { RegistroPerdaModal } from "@/components/fichas/RegistroPerdaModal";
 
 export default function Fichas() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -55,6 +56,7 @@ export default function Fichas() {
   const [isConcluirFichaDialogOpen, setIsConcluirFichaDialogOpen] = useState(false);
   const [isNovaFichaDialogOpen, setIsNovaFichaDialogOpen] = useState(false);
   const [isRecebimentoParcialDialogOpen, setIsRecebimentoParcialDialogOpen] = useState(false);
+  const [isRegistroPerdaDialogOpen, setIsRegistroPerdaDialogOpen] = useState(false);
   const [filteredData, setFilteredData] = useState<Ficha[]>([]);
   const [statusSummary, setStatusSummary] = useState({
     'aguardando_retirada': 0,
@@ -71,8 +73,10 @@ export default function Fichas() {
     data_previsao: new Date(),
     quantidade: 0,
     quantidade_recebida: 0,
+    quantidade_perdida: 0,
     status: "aguardando_retirada",
     produto: "",
+    produto_id: "",
     cor: "",
     tamanho: "M",
     observacoes: ""
@@ -341,8 +345,10 @@ export default function Fichas() {
         data_previsao: new Date(),
         quantidade: 0,
         quantidade_recebida: 0,
+        quantidade_perdida: 0,
         status: "aguardando_retirada",
         produto: "",
+        produto_id: "",
         cor: "",
         tamanho: "M",
         observacoes: ""
@@ -443,8 +449,10 @@ export default function Fichas() {
       data_previsao: new Date(),
       quantidade: ficha.quantidade,
       quantidade_recebida: 0,
+      quantidade_perdida: 0,
       status: "aguardando_retirada",
       produto: ficha.produto,
+      produto_id: ficha.produto_id,
       cor: ficha.cor,
       tamanho: ficha.tamanho,
       observacoes: ficha.observacoes
@@ -717,7 +725,7 @@ export default function Fichas() {
               className="hover:bg-yellow-50 text-yellow-600"
               title="Recebimento Parcial"
             >
-              <Package className="h-4 w-4" />
+              <Truck className="h-4 w-4" />
             </Button>
           )}
           {row.status !== "concluido" && (
@@ -738,18 +746,28 @@ export default function Fichas() {
               {row.status === "aguardando_retirada" ? <CircleDot className="h-4 w-4" /> : <CheckCircle className="h-4 w-4" />}
             </Button>
           )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenDeleteDialog(row);
-            }}
-            className="hover:bg-red-50 text-red-500"
-            title="Excluir Ficha"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hover:bg-red-50 text-red-500"
+                title="Mais Ações"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={() => handleOpenRegistroPerdaDialog(row)}>
+                <AlertTriangle className="mr-2 h-4 w-4" />
+                Registrar Perda
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleOpenDeleteDialog(row)}>
+                <Trash2 className="mr-2 h-4 w-4" />
+                Excluir Ficha
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       ),
       header: "Ações",
@@ -768,6 +786,16 @@ export default function Fichas() {
     setBancaSearchQuery("");
     setProdutoSearchQuery("");
     setIsNovaFichaDialogOpen(false);
+  };
+  
+  const handleOpenRegistroPerdaDialog = (ficha: Ficha) => {
+    setSelectedFicha(ficha);
+    setIsRegistroPerdaDialogOpen(true);
+  };
+
+  const handlePerdaRegistrada = () => {
+    void carregarFichas();
+    setIsRegistroPerdaDialogOpen(false);
   };
   
   return (
@@ -975,14 +1003,20 @@ export default function Fichas() {
       )}
       
       {/* Modal de Recebimento Parcial */}
-      {selectedFicha && (
-        <RecebimentoParcialModal
-          isOpen={isRecebimentoParcialDialogOpen}
-          onClose={() => setIsRecebimentoParcialDialogOpen(false)}
-          ficha={selectedFicha}
-          onRecebimentoRegistrado={handleRecebimentoParcialRegistrado}
-        />
-      )}
+      <RecebimentoParcialModal
+        isOpen={isRecebimentoParcialDialogOpen}
+        onClose={() => setIsRecebimentoParcialDialogOpen(false)}
+        ficha={selectedFicha}
+        onRecebimentoRegistrado={handleRecebimentoParcialRegistrado}
+      />
+      
+      {/* Modal de Registro de Perda */}
+      <RegistroPerdaModal
+        isOpen={isRegistroPerdaDialogOpen}
+        onClose={() => setIsRegistroPerdaDialogOpen(false)}
+        ficha={selectedFicha}
+        onPerdaRegistrada={handlePerdaRegistrada}
+      />
       
       {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleCloseEditDialog}>
@@ -1026,28 +1060,20 @@ export default function Fichas() {
                 </div>
                 
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="produto" className="text-right">
-                    Produto
+                  <Label htmlFor="produto_id" className="text-right">
+                    Produto (ID)
                   </Label>
                   <Select
-                    value={fichaEditando.produto}
-                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, produto: value })}
+                    value={fichaEditando?.produto_id || ''}
+                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, produto_id: value })}
                   >
                     <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Selecione um produto" />
+                      <SelectValue placeholder="Selecione o produto pelo ID" />
                     </SelectTrigger>
                     <SelectContent>
-                      <div className="px-2 pb-2">
-                        <Input
-                          placeholder="Buscar produto..."
-                          value={produtoSearchQuery}
-                          onChange={(e) => setProdutoSearchQuery(e.target.value)}
-                          className="h-8"
-                        />
-                      </div>
-                      {filteredProdutos.map((produto) => (
-                        <SelectItem key={produto.id} value={produto.nome_produto}>
-                          {produto.nome_produto}
+                      {produtos.map((produto) => (
+                        <SelectItem key={produto.id} value={produto.id}>
+                          {produto.nome_produto} (ID: {produto.id})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1197,28 +1223,20 @@ export default function Fichas() {
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="produto" className="text-right">
-                Produto
+              <Label htmlFor="produto_id" className="text-right">
+                Produto (ID)
               </Label>
               <Select
-                value={novaFicha.produto}
-                onValueChange={(value) => setNovaFicha({ ...novaFicha, produto: value })}
+                value={novaFicha.produto_id || ''}
+                onValueChange={(value) => setNovaFicha({ ...novaFicha, produto_id: value })}
               >
                 <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Selecione um produto" />
+                  <SelectValue placeholder="Selecione o produto pelo ID" />
                 </SelectTrigger>
                 <SelectContent>
-                  <div className="px-2 pb-2">
-                    <Input
-                      placeholder="Buscar produto..."
-                      value={produtoSearchQuery}
-                      onChange={(e) => setProdutoSearchQuery(e.target.value)}
-                      className="h-8"
-                    />
-                  </div>
-                  {filteredProdutos.map((produto) => (
-                    <SelectItem key={produto.id} value={produto.nome_produto}>
-                      {produto.nome_produto}
+                  {produtos.map((produto) => (
+                    <SelectItem key={produto.id} value={produto.id}>
+                      {produto.nome_produto} (ID: {produto.id})
                     </SelectItem>
                   ))}
                 </SelectContent>

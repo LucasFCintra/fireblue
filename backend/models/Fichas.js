@@ -1,4 +1,5 @@
 const knex = require("../database/connection")
+const Produtos = require("./Produtos")
 
 class FichasModel {
   async findAll() {
@@ -140,6 +141,7 @@ class FichasModel {
       
       console.log('Tipo da movimentação:', tipo);
       console.log('Movimentação completa:', movimentacao);
+      console.log('idF:', fichaId);
       
       // Inserir a movimentação
       const [id] = await knex('movimentacoes_fichas').insert({
@@ -158,6 +160,20 @@ class FichasModel {
           .update({ status: 'concluido' });
       }
 
+      // Atualizar a quantidade do produto relacionado
+      const ficha = await this.findById(fichaId);
+      console.log('1',ficha,ficha.produto_id)
+      if (ficha && ficha.produto_id && quantidade > 0) {
+        const produto = await Produtos.findById(ficha.produto_id);
+        console.log(produto)
+        console.log('RM: '+ficha.produto_id)        
+        if (produto) {
+          const novaQuantidade = (produto.quantidade || 0) + quantidade;
+          console.log('5',novaQuantidade)
+          const attProd = await Produtos.update(ficha.produto_id, { ...produto, quantidade: novaQuantidade });
+          console.log(attProd)
+        }
+      }
       return id;
     } catch (err) {
       console.log(err);
@@ -182,6 +198,7 @@ class FichasModel {
     try {
       const { quantidade_recebida, observacoes, data_recebimento } = dados;
       
+      console.log('1',dados, fichaId)
       // Buscar a ficha atual
       const ficha = await this.findById(fichaId);
       if (!ficha) {
@@ -201,10 +218,26 @@ class FichasModel {
       });
 
       // Se a quantidade restante for 0, atualizar o status para concluído
-      if (quantidade_restante === 0) {
+      if (quantidade_restante === 0) { 
         await knex('fichas')
           .where({ id: fichaId })
           .update({ status: 'concluido' });
+      }
+
+      // Atualizar a quantidade do produto relacionado
+
+      console.log('2',ficha.produto_id, ' ', quantidade_recebida)
+      if (ficha.produto_id && quantidade_recebida > 0) {
+        const Produtos = require('./Produtos');
+        const produto = await Produtos.findById(ficha.produto_id);
+        console.log("3",produto)
+        if (produto) {
+          const novaQuantidade = (produto.quantidade || 0) + quantidade_recebida;
+          console.log('4:',novaQuantidade)
+        const attProd =  await Produtos.update(ficha.produto_id, { ...produto, quantidade: novaQuantidade });
+          console.log('5:',attProd)
+
+        }
       }
 
       // Buscar a ficha atualizada
