@@ -7,7 +7,7 @@ class FechamentoController {
   async gerarFechamento(req, res) {
     try {
       const { dataInicio, dataFim } = req.body;
-      
+      console.log(dataInicio,dataFim)
       if (!dataInicio || !dataFim) {
         return res.status(400).json({
           error: 'Data de início e fim são obrigatórias'
@@ -125,7 +125,7 @@ class FechamentoController {
   async buscarBancasComMovimentacao(req, res) {
     try {
       const { dataInicio, dataFim } = req.query;
-      
+      console.log('Controller: '+JSON.stringify(req.query))
       if (!dataInicio || !dataFim) {
         return res.status(400).json({
           error: 'Data de início e fim são obrigatórias'
@@ -133,7 +133,7 @@ class FechamentoController {
       }
       
       const bancas = await FechamentosModel.buscarBancasComMovimentacao(dataInicio, dataFim);
-      
+      console.log('Controleer 2: '+bancas)
       res.json(bancas);
     } catch (error) {
       console.error('Erro ao buscar bancas com movimentação:', error);

@@ -155,11 +155,11 @@ router.put('/api/estoque', estoqueController.update);
 router.delete('/api/estoque/:id', estoqueController.delete);
 
 // ROTAS FECHAMENTO SEMANAL
+router.get('/api/fechamentos/bancas/movimentacao', fechamentoController.buscarBancasComMovimentacao);
 router.post('/api/fechamentos/gerar', fechamentoController.gerarFechamento);
 router.get('/api/fechamentos', fechamentoController.listarFechamentos);
 router.get('/api/fechamentos/:id', fechamentoController.buscarFechamento);
 router.put('/api/fechamentos/:id/finalizar', fechamentoController.finalizarFechamentoSemanal);
 router.put('/api/fechamentos/:fechamentoId/bancas/:bancaId/finalizar', fechamentoController.finalizarFechamentoBanca);
-router.get('/api/fechamentos/bancas/movimentacao', fechamentoController.buscarBancasComMovimentacao);
 
 module.exports = router;

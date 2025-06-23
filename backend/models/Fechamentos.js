@@ -11,6 +11,7 @@ class FechamentosModel {
       // Buscar bancas que tiveram movimentação de entrada na semana
       const bancasComMovimentacao = await this.buscarBancasComMovimentacao(dataInicio, dataFim);
       
+      console.log("gerarFechamentoSemanal "+dataInicio, dataFim)
       // Criar o fechamento semanal
       const fechamentoSemanal = {
         semana: semana,
@@ -73,22 +74,78 @@ class FechamentosModel {
    */
   async buscarBancasComMovimentacao(dataInicio, dataFim) {
     try {
-      const bancas = await knex('fichas as f')
+      const bancas = await knex('movimentacoes_fichas as mf')
+      .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
+      .leftJoin('terceiros as t', 't.nome', 'f.banca')
+      .leftJoin('produtos as p', 'p.id', 'f.produto_id')
+      .where('mf.data', '>=', dataInicio)
+      .andWhere('mf.data', '<=', dataFim
+
+      )
+      .andWhere('mf.tipo', 'retorno')
+      .orderBy('t.idTerceiro')
+      .select([
+        'mf.id',
+        'mf.ficha_id',
+        'mf.data',
+        'mf.tipo',
+        'mf.quantidade',
+        'mf.descricao',
+        'mf.responsavel',
+        'mf.created_at',
+    
+        'f.codigo',
+        'f.banca',
+        'f.data_entrada',
+        'f.data_previsao',
+        'f.quantidade_recebida',
+        'f.quantidade_perdida',
+        'f.status',
+        { produto: 'f.produto' },
+        'f.produto_id',
+        'f.sku',
+        { 'valor unitario': 'p.valor_unitario' },
+        'f.tamanho',
+        'f.cor',
+        'f.observacoes',
+        'f.updated_at',
+    
+        { idTerceiro: 't.idTerceiro' },
+        { nome: 't.nome' },
+        't.cnpj',
+        't.email',
+        't.telefone',
+        't.endereco',
+        't.cidade',
+        't.estado',
+        't.cep',
+        't.complemento',
+        't.numero',
+    
+        { nome_produto: 'p.nome_produto' },
+        'p.categoria',
+        { valor_unitario: 'p.valor_unitario' },
+        'p.estoque_minimo',
+        'p.localizacao',
+        'p.unidade_medida'
+      ]);
+    
+      
+      /*knex('fichas as f')
         .join('movimentacoes_fichas as mf', 'f.id', 'mf.ficha_id')
         .join('terceiros as t', 'f.banca', 't.nome')
         .where('mf.tipo', 'Retorno')
-        .whereIn('f.status', ['em-producao', 'recebido', 'concluido'])
+      //  .whereIn('f.status', ['em-producao', 'recebido', 'concluido'])
         .whereBetween('mf.data', [dataInicio, dataFim])
-        .where('t.tipo', 'banca')
-        .select(
-          't.idTerceiro as id',
-          't.nome as nome',
-          't.cnpj',
-          't.telefone',
-          't.email'
-        )
-        .distinct();
-      
+       // .where('t.tipo', 'banca')
+        // .select(
+        //   't.idTerceiro as id',
+        //   't.nome as nome',
+        //   't.cnpj',
+        //   't.telefone',
+        //   't.email'
+        // )
+        // .distinct();*/
       return bancas;
     } catch (err) {
       console.error('Erro ao buscar bancas com movimentação:', err);
@@ -155,7 +212,7 @@ class FechamentosModel {
       // Criar fechamento da banca
       const fechamentoBanca = {
         fechamento_semanal_id: fechamentoId,
-        banca_id: banca.id,
+       // banca_id: banca.id,
         nome_banca: banca.nome,
         data_inicio: dataInicio,
         data_fim: dataFim,
@@ -164,7 +221,7 @@ class FechamentosModel {
         status: 'pendente'
       };
       
-      const [fechamentoBancaId] = await knex('fechamentos_bancas').insert(fechamentoBanca);
+     const [fechamentoBancaId] =  await knex('fechamentos_bancas').insert(fechamentoBanca);
       
       // Inserir itens do fechamento
       if (itens.length > 0) {

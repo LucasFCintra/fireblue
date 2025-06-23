@@ -96,12 +96,14 @@ export function gerarFechamentoBanca(
  */
 export async function gerarRelatorioSemanal(dataInicio?: Date, dataFim?: Date): Promise<RelatorioSemanal> {
   try {
+    console.log('gerarRelatorioSemanal: '+ dataInicio + ' '+ dataFim)
     const response = await axios.post(`${API_URL}/fechamentos/gerar`, {
       dataInicio: dataInicio?.toISOString().split('T')[0],
       dataFim: dataFim?.toISOString().split('T')[0]
     });
     
     const fechamento = response.data;
+    console.log(fechamento)
     
     // Converter para o formato esperado pelo frontend
     return {
@@ -185,6 +187,7 @@ export async function finalizarFechamentoBanca(fechamentoId: string, bancaId: st
 export async function listarFechamentosHistoricos(): Promise<RelatorioSemanal[]> {
   try {
     const response = await axios.get(`${API_URL}/fechamentos`);
+    console.log(response)
     const fechamentos = response.data;
     
     return fechamentos.map((fechamento: any) => ({
@@ -308,9 +311,13 @@ function agruparProdutos(fichas: FichaFechamento[]) {
  * Função auxiliar para formatar data
  */
 function formatarData(data: string | Date): string {
+  if (!data) return '';
+  let date: Date;
   if (typeof data === 'string') {
-    const date = new Date(data);
-    return date.toLocaleDateString('pt-BR');
+    date = new Date(data);
+  } else {
+    date = data;
   }
-  return data.toLocaleDateString('pt-BR');
+  if (isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('pt-BR');
 } 
