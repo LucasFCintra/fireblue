@@ -35,6 +35,17 @@ class TerceirosModel {
     }
   }
 
+  async findByNome(nome) {
+    try {
+      const result = await knex.select(["idTerceiro"]).where({ nome }).table("terceiros")
+      return JSON.stringify(result[0].idTerceiro)
+    } catch (err) {
+      console.log(err)
+      return []
+    }
+  }
+
+
   async create(terceiro) {
     try {
       const ids = await knex.insert(terceiro).table("terceiros")

@@ -1,4 +1,5 @@
 const knex = require('../database/connection');
+const Terceiros = require('./Terceiros')
 
 class FechamentosModel {
   /**
@@ -79,9 +80,7 @@ class FechamentosModel {
       .leftJoin('terceiros as t', 't.nome', 'f.banca')
       .leftJoin('produtos as p', 'p.id', 'f.produto_id')
       .where('mf.data', '>=', dataInicio)
-      .andWhere('mf.data', '<=', dataFim
-
-      )
+      .andWhere('mf.data', '<=', dataFim)
       .andWhere('mf.tipo', 'retorno')
       .orderBy('t.idTerceiro')
       .select([
@@ -92,8 +91,7 @@ class FechamentosModel {
         'mf.quantidade',
         'mf.descricao',
         'mf.responsavel',
-        'mf.created_at',
-    
+        'mf.created_at',    
         'f.codigo',
         'f.banca',
         'f.data_entrada',
@@ -146,6 +144,8 @@ class FechamentosModel {
         //   't.email'
         // )
         // .distinct();*/
+
+        console.log(bancas)
       return bancas;
     } catch (err) {
       console.error('Erro ao buscar bancas com movimentação:', err);
@@ -159,7 +159,60 @@ class FechamentosModel {
   async processarFechamentoBanca(fechamentoId, banca, dataInicio, dataFim) {
     try {
       // Buscar fichas da banca com movimentação de retorno na semana
-      const fichas = await knex('fichas as f')
+      const fichas =
+      await knex('movimentacoes_fichas as mf')
+      .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
+      .leftJoin('terceiros as t', 't.nome', 'f.banca')
+      .leftJoin('produtos as p', 'p.id', 'f.produto_id')
+      .where('mf.data', '>=', dataInicio)
+      .andWhere('mf.data', '<=', dataFim)
+      .andWhere('mf.tipo', 'retorno')
+      .orderBy('t.idTerceiro')
+      .select([
+        'mf.id',
+        'mf.ficha_id',
+        'mf.data',
+        'mf.tipo',
+        'mf.quantidade',
+        'mf.descricao',
+        'mf.responsavel',
+        'mf.created_at',    
+        'f.codigo',
+        'f.banca',
+        'f.data_entrada',
+        'f.data_previsao',
+        'f.quantidade_recebida',
+        'f.quantidade_perdida',
+        'f.status',
+        { produto: 'f.produto' },
+        'f.produto_id',
+        'f.sku',
+        { 'valor unitario': 'p.valor_unitario' },
+        'f.tamanho',
+        'f.cor',
+        'f.observacoes',
+        'f.updated_at',
+    
+        { idTerceiro: 't.idTerceiro' },
+        { nome: 't.nome' },
+        't.cnpj',
+        't.email',
+        't.telefone',
+        't.endereco',
+        't.cidade',
+        't.estado',
+        't.cep',
+        't.complemento',
+        't.numero',
+    
+        { nome_produto: 'p.nome_produto' },
+        'p.categoria',
+        { valor_unitario: 'p.valor_unitario' },
+        'p.estoque_minimo',
+        'p.localizacao',
+        'p.unidade_medida'
+      ]);
+       /*await knex('fichas as f')
         .join('movimentacoes_fichas as mf', 'f.id', 'mf.ficha_id')
         .leftJoin('produtos as p', function() {
           this.on('f.produto', '=', 'p.nome_produto');
@@ -172,11 +225,11 @@ class FechamentosModel {
           'f.id as ficha_id',
           'f.codigo as codigo_ficha',
           'f.produto',
-          'f.quantidade',
+          'mf.quantidade',
           'f.data_entrada',
           knex.raw('COALESCE(p.valor_unitario, 0) as valor_unitario'),
           'mf.quantidade as quantidade_movimentada'
-        );
+        );*/
       
       if (fichas.length === 0) {
         return null;
@@ -193,6 +246,8 @@ class FechamentosModel {
         const valorTotalItem = quantidade * valorUnitario;
         
         totalPecas += quantidade;
+        console.log(  JSON.stringify(ficha)+'\n | '+totalPecas+' | '+quantidade+'| '+ficha.quantidade_movimentada+' | '+ficha.quantidade)
+
         valorTotal += valorTotalItem;
         
         // Criar item do fechamento
@@ -209,10 +264,12 @@ class FechamentosModel {
         itens.push(item);
       }
       
+      const bancaId =JSON.parse( await Terceiros.findByNome(banca.nome));
+       
       // Criar fechamento da banca
       const fechamentoBanca = {
         fechamento_semanal_id: fechamentoId,
-       // banca_id: banca.id,
+        banca_id: bancaId,
         nome_banca: banca.nome,
         data_inicio: dataInicio,
         data_fim: dataFim,
@@ -220,7 +277,7 @@ class FechamentosModel {
         valor_total: valorTotal,
         status: 'pendente'
       };
-      
+      console.log('fechamentoBanca: '+JSON.stringify(fechamentoBanca))
      const [fechamentoBancaId] =  await knex('fechamentos_bancas').insert(fechamentoBanca);
       
       // Inserir itens do fechamento
