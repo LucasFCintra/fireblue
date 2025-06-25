@@ -76,76 +76,27 @@ class FechamentosModel {
   async buscarBancasComMovimentacao(dataInicio, dataFim) {
     try {
       const bancas = await knex('movimentacoes_fichas as mf')
-      .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
-      .leftJoin('terceiros as t', 't.nome', 'f.banca')
-      .leftJoin('produtos as p', 'p.id', 'f.produto_id')
-      .where('mf.data', '>=', dataInicio)
-      .andWhere('mf.data', '<=', dataFim)
-      .andWhere('mf.tipo', 'retorno')
-      .orderBy('t.idTerceiro')
-      .select([
-        'mf.id',
-        'mf.ficha_id',
-        'mf.data',
-        'mf.tipo',
-        'mf.quantidade',
-        'mf.descricao',
-        'mf.responsavel',
-        'mf.created_at',    
-        'f.codigo',
-        'f.banca',
-        'f.data_entrada',
-        'f.data_previsao',
-        'f.quantidade_recebida',
-        'f.quantidade_perdida',
-        'f.status',
-        { produto: 'f.produto' },
-        'f.produto_id',
-        'f.sku',
-        { 'valor unitario': 'p.valor_unitario' },
-        'f.tamanho',
-        'f.cor',
-        'f.observacoes',
-        'f.updated_at',
-    
-        { idTerceiro: 't.idTerceiro' },
-        { nome: 't.nome' },
-        't.cnpj',
-        't.email',
-        't.telefone',
-        't.endereco',
-        't.cidade',
-        't.estado',
-        't.cep',
-        't.complemento',
-        't.numero',
-    
-        { nome_produto: 'p.nome_produto' },
-        'p.categoria',
-        { valor_unitario: 'p.valor_unitario' },
-        'p.estoque_minimo',
-        'p.localizacao',
-        'p.unidade_medida'
-      ]);
-    
+        .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
+        .leftJoin('terceiros as t', 't.nome', 'f.banca')
+        .where('mf.data', '>=', dataInicio)
+        .andWhere('mf.data', '<=', dataFim)
+        .andWhere('mf.tipo', 'retorno')
+        .groupBy('t.idTerceiro', 't.nome')
+        .select([
+          't.idTerceiro as idTerceiro',
+          't.nome as nome',
+          't.cnpj',
+          't.email',
+          't.telefone',
+          't.endereco',
+          't.cidade',
+          't.estado',
+          't.cep',
+          't.complemento',
+          't.numero'
+        ]);
       
-      /*knex('fichas as f')
-        .join('movimentacoes_fichas as mf', 'f.id', 'mf.ficha_id')
-        .join('terceiros as t', 'f.banca', 't.nome')
-        .where('mf.tipo', 'Retorno')
-      //  .whereIn('f.status', ['em-producao', 'recebido', 'concluido'])
-        .whereBetween('mf.data', [dataInicio, dataFim])
-       // .where('t.tipo', 'banca')
-        // .select(
-        //   't.idTerceiro as id',
-        //   't.nome as nome',
-        //   't.cnpj',
-        //   't.telefone',
-        //   't.email'
-        // )
-        // .distinct();*/
-
-        console.log(bancas)
+      console.log('Bancas únicas encontradas:', bancas.length);
       return bancas;
     } catch (err) {
       console.error('Erro ao buscar bancas com movimentação:', err);
@@ -158,80 +109,28 @@ class FechamentosModel {
    */
   async processarFechamentoBanca(fechamentoId, banca, dataInicio, dataFim) {
     try {
-      // Buscar fichas da banca com movimentação de retorno na semana
-      const fichas =
-      await knex('movimentacoes_fichas as mf')
-      .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
-      .leftJoin('terceiros as t', 't.nome', 'f.banca')
-      .leftJoin('produtos as p', 'p.id', 'f.produto_id')
-      .where('mf.data', '>=', dataInicio)
-      .andWhere('mf.data', '<=', dataFim)
-      .andWhere('mf.tipo', 'retorno')
-      .orderBy('t.idTerceiro')
-      .select([
-        'mf.id',
-        'mf.ficha_id',
-        'mf.data',
-        'mf.tipo',
-        'mf.quantidade',
-        'mf.descricao',
-        'mf.responsavel',
-        'mf.created_at',    
-        'f.codigo',
-        'f.banca',
-        'f.data_entrada',
-        'f.data_previsao',
-        'f.quantidade_recebida',
-        'f.quantidade_perdida',
-        'f.status',
-        { produto: 'f.produto' },
-        'f.produto_id',
-        'f.sku',
-        { 'valor unitario': 'p.valor_unitario' },
-        'f.tamanho',
-        'f.cor',
-        'f.observacoes',
-        'f.updated_at',
-    
-        { idTerceiro: 't.idTerceiro' },
-        { nome: 't.nome' },
-        't.cnpj',
-        't.email',
-        't.telefone',
-        't.endereco',
-        't.cidade',
-        't.estado',
-        't.cep',
-        't.complemento',
-        't.numero',
-    
-        { nome_produto: 'p.nome_produto' },
-        'p.categoria',
-        { valor_unitario: 'p.valor_unitario' },
-        'p.estoque_minimo',
-        'p.localizacao',
-        'p.unidade_medida'
-      ]);
-       /*await knex('fichas as f')
-        .join('movimentacoes_fichas as mf', 'f.id', 'mf.ficha_id')
-        .leftJoin('produtos as p', function() {
-          this.on('f.produto', '=', 'p.nome_produto');
-        })
+      // Buscar movimentações de retorno da banca específica no período
+      const movimentacoes = await knex('movimentacoes_fichas as mf')
+        .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
+        .leftJoin('produtos as p', 'p.id', 'f.produto_id')
         .where('f.banca', banca.nome)
-        .where('mf.tipo', 'Retorno')
-        .whereIn('f.status', ['em-producao', 'recebido', 'concluido'])
+        .where('mf.tipo', 'retorno')
         .whereBetween('mf.data', [dataInicio, dataFim])
-        .select(
-          'f.id as ficha_id',
+        .select([
+          'mf.id as movimentacao_id',
+          'mf.ficha_id',
+          'mf.quantidade as quantidade_movimentada',
+          'mf.data as data_movimentacao',
           'f.codigo as codigo_ficha',
           'f.produto',
-          'mf.quantidade',
           'f.data_entrada',
-          knex.raw('COALESCE(p.valor_unitario, 0) as valor_unitario'),
-          'mf.quantidade as quantidade_movimentada'
-        );*/
+          'f.status',
+          knex.raw('COALESCE(p.valor_unitario, 0) as valor_unitario')
+        ]);
       
-      if (fichas.length === 0) {
+      console.log(`Movimentações encontradas para ${banca.nome}:`, movimentacoes.length);
+      
+      if (movimentacoes.length === 0) {
         return null;
       }
       
@@ -240,36 +139,41 @@ class FechamentosModel {
       let valorTotal = 0;
       const itens = [];
       
-      for (const ficha of fichas) {
-        const quantidade = ficha.quantidade_movimentada || ficha.quantidade;
-        const valorUnitario = parseFloat(ficha.valor_unitario) || 0;
+      for (const mov of movimentacoes) {
+        const quantidade = parseInt(mov.quantidade_movimentada) || 0;
+        const valorUnitario = parseFloat(mov.valor_unitario) || 0;
         const valorTotalItem = quantidade * valorUnitario;
         
         totalPecas += quantidade;
-        console.log(  JSON.stringify(ficha)+'\n | '+totalPecas+' | '+quantidade+'| '+ficha.quantidade_movimentada+' | '+ficha.quantidade)
-
         valorTotal += valorTotalItem;
+        
+        console.log(`${banca.nome} - Movimentação: ${quantidade} peças, R$ ${valorTotalItem.toFixed(2)}`);
         
         // Criar item do fechamento
         const item = {
-          ficha_id: ficha.ficha_id,
-          codigo_ficha: ficha.codigo_ficha,
-          produto: ficha.produto,
+          ficha_id: mov.ficha_id,
+          codigo_ficha: mov.codigo_ficha,
+          produto: mov.produto,
           quantidade: quantidade,
           valor_unitario: valorUnitario,
           valor_total: valorTotalItem,
-          data_entrada: ficha.data_entrada
+          data_entrada: mov.data_entrada,
+        //  data_movimentacao: mov.data_movimentacao
         };
         
         itens.push(item);
       }
       
-      const bancaId =JSON.parse( await Terceiros.findByNome(banca.nome));
-       
+      console.log(`TOTAIS para ${banca.nome}: ${totalPecas} peças, R$ ${valorTotal.toFixed(2)}`);
+      
+      const bancaObj = await Terceiros.findByNome(banca.nome);
+      const bancaId = Array.isArray(bancaObj) ? bancaObj[0]?.idTerceiro : bancaObj?.idTerceiro;
+      
+      console.log('bancaId: '+bancaId+ ' | ' + bancaObj )
       // Criar fechamento da banca
       const fechamentoBanca = {
         fechamento_semanal_id: fechamentoId,
-        banca_id: bancaId,
+        banca_id: bancaObj,
         nome_banca: banca.nome,
         data_inicio: dataInicio,
         data_fim: dataFim,
@@ -277,8 +181,10 @@ class FechamentosModel {
         valor_total: valorTotal,
         status: 'pendente'
       };
-      console.log('fechamentoBanca: '+JSON.stringify(fechamentoBanca))
-     const [fechamentoBancaId] =  await knex('fechamentos_bancas').insert(fechamentoBanca);
+      
+      console.log('fechamentoBanca:', JSON.stringify(fechamentoBanca));
+      
+      const [fechamentoBancaId] = await knex('fechamentos_bancas').insert(fechamentoBanca);
       
       // Inserir itens do fechamento
       if (itens.length > 0) {
