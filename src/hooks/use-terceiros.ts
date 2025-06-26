@@ -17,6 +17,7 @@ export interface Terceiro {
   observacoes?: string;
   numero?: string;
   complemento?: string;
+  chave_pix?: string;
 }
 
 const api = 'http://26.203.75.236:8687';

@@ -48,10 +48,10 @@ const NavItem = ({ to, icon: Icon, label, end, open }: NavItemProps) => {
       end={end}
       className={({ isActive }) =>
         cn(
-          "flex items-center gap-x-2 py-2 px-3 rounded-md text-sm font-medium transition-colors",
+          "flex items-center gap-x-2 py-2 px-3 rounded-md text-sm font-medium transition-all duration-200",
           isActive
-            ? "bg-sidebar-primary text-sidebar-primary-foreground"
-            : "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-sidebar-foreground"
+            ? "bg-sidebar-primary text-sidebar-primary-foreground shadow-sm dark:shadow-lg dark:shadow-black/20"
+            : "hover:bg-sidebar-accent/80 hover:text-sidebar-accent-foreground text-sidebar-foreground hover:shadow-sm dark:hover:shadow-black/10"
         )
       }
     >
@@ -59,7 +59,7 @@ const NavItem = ({ to, icon: Icon, label, end, open }: NavItemProps) => {
         <>
           <Icon 
             className={cn(
-              "flex-shrink-0 h-5 w-5", 
+              "flex-shrink-0 h-5 w-5 transition-colors", 
               !open && "mx-auto",
               !open && isActive && "text-white"
             )} 
@@ -100,18 +100,18 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-20 flex flex-col w-64 bg-sidebar border-r border-sidebar-border h-screen transition-all duration-300 ease-in-out",
+          "fixed inset-y-0 left-0 z-20 flex flex-col w-64 bg-sidebar border-r border-sidebar-border h-screen transition-all duration-300 ease-in-out shadow-lg dark:shadow-xl dark:shadow-black/30",
           open ? "translate-x-0" : "-translate-x-full md:translate-x-0 md:w-16"
         )}
       >
-        <div className="p-4 border-b border-sidebar-border">
+        <div className="p-4 border-b border-sidebar-border/50 bg-sidebar-primary/10 dark:bg-sidebar-primary/5">
           <div className="flex items-center justify-between">
             {/* Logo */}
             {!open ? (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button 
-                    className="flex items-center justify-center w-full"
+                    className="flex items-center justify-center w-full hover:bg-sidebar-primary/20 rounded-md p-1 transition-colors"
                     onClick={toggleSidebar}
                   >
                     <Flame className="h-8 w-8 text-white cursor-pointer" />
@@ -130,7 +130,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-sidebar-foreground"
+                      className="text-sidebar-foreground hover:bg-sidebar-accent/50 dark:hover:bg-sidebar-accent/30 transition-colors"
                       onClick={toggleSidebar}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
@@ -165,7 +165,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
             <NavItem to="/configuracoes" icon={Settings} label="Configurações" open={open} />
             
             <div className="py-2">
-              <div className="h-[1px] bg-sidebar-border/50 w-full"></div>
+              <div className="h-[1px] bg-sidebar-border/30 w-full"></div>
             </div>
             
             {/* <NavItem to="/socket-test" icon={Radio} label="Teste Socket" open={open} /> */}

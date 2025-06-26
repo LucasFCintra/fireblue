@@ -14,7 +14,7 @@ export default function Layout() {
   }, [isMobile]);
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background dark:bg-gradient-subtle flex">
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       <div 
@@ -25,7 +25,7 @@ export default function Layout() {
       >
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
         
-        <main className="flex-1 p-4 md:p-6 overflow-y-auto">
+        <main className="flex-1 p-4 md:p-6 overflow-y-auto scrollbar-thin">
           <Outlet />
         </main>
       </div>

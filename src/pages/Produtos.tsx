@@ -512,7 +512,13 @@ export default function Produtos() {
       await ajustarEstoque(currentProduto?.id, {
         tipoAjuste: data.tipoAjuste,
         quantidade: data.quantidade,
-        observacao: data.observacao
+        motivo: data.motivo || data.observacao,
+        documento: data.documento,
+        quantidadeAnterior: data.quantidadeAnterior,
+        novaQuantidade: data.novaQuantidade,
+        novoStatus: data.novoStatus,
+        dataAjuste: data.dataAjuste,
+        usuario: data.usuario
       });
       
       console.log("Ajuste de estoque realizado com sucesso!");
@@ -657,7 +663,7 @@ export default function Produtos() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <BarChart3 className="w-4 h-4 mr-2" />
-                Relatórios
+                Exportar Relatório
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -1068,9 +1074,9 @@ export default function Produtos() {
                         />
                       </div>
                     ) : (
-                      <div className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-4 bg-gray-50">
-                        <Image className="h-10 w-10 text-gray-400 mb-2" />
-                        <p className="text-sm text-gray-500 text-center">Sem imagem</p>
+                      <div className="w-full aspect-square border-2 border-dashed border-muted-foreground/20 rounded-md flex flex-col items-center justify-center p-4 bg-muted/30">
+                        <Image className="h-10 w-10 text-muted-foreground mb-2" />
+                        <p className="text-sm text-muted-foreground text-center">Sem imagem</p>
                       </div>
                     )}
                   </div>
@@ -1098,37 +1104,47 @@ export default function Produtos() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">SKU</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.sku || 'Não informado'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.sku || 'Não informado'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium mb-1">Código de Barras</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.codigo_barras || 'Não informado'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.codigo_barras || 'Não informado'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Nome do Produto</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm font-medium">{currentProduto.nome_produto}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.nome_produto}
+                    disabled
+                    className="bg-muted/50 text-foreground border-muted font-medium"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Categoria</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.categoria || 'Não informado'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.categoria || 'Não informado'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Descrição</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.descricao || 'Não informado'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.descricao || 'Não informado'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
               </div>
 
@@ -1136,54 +1152,66 @@ export default function Produtos() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Valor Unitário</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm font-medium">{formatCurrency(parseFloat(currentProduto.valor_unitario || 0))}</p>
-                  </div>
+                  <Input
+                    value={formatCurrency(parseFloat(currentProduto.valor_unitario || 0))}
+                    disabled
+                    className="bg-muted/50 text-foreground border-muted font-medium"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Quantidade em Estoque</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm font-medium">{currentProduto.quantidade || 0} {currentProduto.unidade_medida || 'un'}</p>
-                  </div>
+                  <Input
+                    value={`${currentProduto.quantidade || 0} ${currentProduto.unidade_medida || 'un'}`}
+                    disabled
+                    className="bg-muted/50 text-foreground border-muted font-medium"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Estoque Mínimo</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.estoque_minimo || 0} {currentProduto.unidade_medida || 'un'}</p>
-                  </div>
+                  <Input
+                    value={`${currentProduto.estoque_minimo || 0} ${currentProduto.unidade_medida || 'un'}`}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Localização</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.localizacao || 'Não informado'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.localizacao || 'Não informado'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Unidade de Medida</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.unidade_medida || 'Unidade (un)'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.unidade_medida || 'Unidade (un)'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium mb-1">Fornecedor</label>
-                  <div className="p-2 bg-gray-50 rounded-md border">
-                    <p className="text-sm">{currentProduto.fornecedor || 'Não informado'}</p>
-                  </div>
+                  <Input
+                    value={currentProduto.fornecedor || 'Não informado'}
+                    disabled
+                    className="bg-muted/50 text-muted-foreground border-muted"
+                  />
                 </div>
                 
                 {/* Valor Total em Estoque */}
                 <div>
                   <label className="block text-sm font-medium mb-1">Valor Total em Estoque</label>
-                  <div className="p-2 bg-blue-50 rounded-md border border-blue-200">
-                    <p className="text-sm font-bold text-blue-800">
-                      {formatCurrency((currentProduto.quantidade || 0) * parseFloat(currentProduto.valor_unitario || 0))}
-                    </p>
-                  </div>
+                  <Input
+                    value={formatCurrency((currentProduto.quantidade || 0) * parseFloat(currentProduto.valor_unitario || 0))}
+                    disabled
+                    className="bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-200 border-blue-200 dark:border-blue-800 font-bold"
+                  />
                 </div>
               </div>
             </div>

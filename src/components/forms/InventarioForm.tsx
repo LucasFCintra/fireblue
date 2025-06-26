@@ -41,7 +41,6 @@ const formSchema = z.object({
   quantidade: z.coerce.number().min(0, "A quantidade não pode ser negativa"),
   preco_unitario: z.coerce.number().min(0, "O valor unitário não pode ser negativo"),
   localizacao: z.string().min(1, "Informe a localização do produto"),
-  observacoes: z.string().optional(),
   fornecedor: z.string().optional(),
   codigo_barras: z.string().optional(),
   unidade: z.string().optional(),
@@ -109,7 +108,6 @@ export function InventarioForm({
       preco_unitario: itemData?.preco_unitario || 0,
       codigo_barras: itemData?.codigo_barras || "",
       fornecedor: itemData?.fornecedor || "",
-      observacoes: itemData?.observacoes || "",
       status: itemData?.status || "ativo",
       estoque_minimo: itemData?.estoque_minimo || 0,
       imagem_url: itemData?.imagem_url || "",
@@ -126,7 +124,6 @@ export function InventarioForm({
         quantidade: itemData.quantidade || 0,
         preco_unitario: itemData.preco_unitario || 0,
         localizacao: itemData.localizacao || "",
-        observacoes: itemData.observacoes || "",
         fornecedor: itemData.fornecedor || "",
         codigo_barras: itemData.codigo_barras || "",
         unidade: itemData.unidade || "Unidade",
@@ -189,300 +186,291 @@ export function InventarioForm({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{title || (mode === "create" ? "Novo Item" : "Editar Item")}</DialogTitle>
+          <DialogTitle>
+            {title || (mode === "create" ? "Novo Item" : "Editar Item")}
+          </DialogTitle>
         </DialogHeader>
-
+        
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <FormLabel>Imagem do Produto</FormLabel>
-                <div className="mt-2 flex flex-col items-center">
-                  {imagePreview ? (
-                    <div className="relative w-full">
-                      <img 
-                        src={imagePreview} 
-                        alt="Prévia da imagem" 
-                        className="w-full h-auto object-contain rounded-md border border-input aspect-square" 
-                      />
-                      <button 
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
-                        aria-label="Remover imagem"
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            {/* Layout responsivo: 1 coluna em mobile, 3 colunas em desktop */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Seção de Imagem */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">Imagem do Produto</label>
+                  <div className="mt-2 flex flex-col items-center">
+                    {imagePreview ? (
+                      <div className="relative w-full max-w-[200px]">
+                        <img 
+                          src={imagePreview} 
+                          alt="Prévia da imagem" 
+                          className="w-full h-auto object-contain rounded-md border border-input aspect-square" 
+                        />
+                        <button 
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                          aria-label="Remover imagem"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div 
+                        className="w-full max-w-[200px] aspect-square border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-4 hover:bg-gray-50 cursor-pointer transition-colors" 
+                        onClick={() => document.getElementById('product-image')?.click()}
                       >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-md flex flex-col items-center justify-center p-4 hover:bg-gray-50 cursor-pointer" onClick={() => document.getElementById('product-image')?.click()}>
-                      <Image className="h-10 w-10 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-500 text-center">Clique para adicionar uma imagem</p>
-                      <p className="text-xs text-gray-400 mt-1 text-center">PNG, JPG ou JPEG (máx. 5MB)</p>
-                    </div>
-                  )}
-                  
-                  <input
-                    id="product-image"
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        handleImageUpload(file);
-                      }
-                    }}
-                    className="hidden"
-                    disabled={isUploading}
-                  />
-                  
-                  {!imagePreview && (
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      size="sm" 
-                      className="mt-4" 
-                      onClick={() => document.getElementById('product-image')?.click()}
+                        <Image className="h-10 w-10 text-gray-400 mb-2" />
+                        <p className="text-sm text-gray-500 text-center">Clique para adicionar uma imagem</p>
+                        <p className="text-xs text-gray-400 mt-1 text-center">PNG, JPG ou JPEG (máx. 5MB)</p>
+                      </div>
+                    )}
+                    
+                    <input
+                      id="product-image"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file);
+                        }
+                      }}
+                      className="hidden"
                       disabled={isUploading}
-                    >
-                      {isUploading ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Enviando...
-                        </>
-                      ) : (
-                        <>
-                          <Upload className="h-4 w-4 mr-2" />
-                          Selecionar Imagem
-                        </>
-                      )}
-                    </Button>
-                  )}
+                    />
+                    
+                    {!imagePreview && (
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-4 w-full max-w-[200px]" 
+                        onClick={() => document.getElementById('product-image')?.click()}
+                        disabled={isUploading}
+                      >
+                        {isUploading ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Selecionar Imagem
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <FormField
-                control={form.control}
-                name="nome_produto"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do Produto</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={form.control}
-                name="sku"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>SKU</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="categoria"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+              {/* Seção de Informações Básicas */}
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="sku"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">SKU *</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria" />
-                        </SelectTrigger>
+                        <Input placeholder="Código SKU" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {categorias.map((categoria) => (
-                          <SelectItem key={categoria} value={categoria}>
-                            {categoria}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="quantidade"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Quantidade</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="preco_unitario"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor Unitário</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="localizacao"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Localização</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="unidade"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unidade de Medida</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="codigo_barras"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Código de Barras</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma unidade" />
-                        </SelectTrigger>
+                        <Input placeholder="Código de Barras" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {unidadesMedida.map((unidade) => (
-                          <SelectItem key={unidade} value={unidade}>
-                            {unidade}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="estoque_minimo"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Estoque Mínimo</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormField
+                  control={form.control}
+                  name="nome_produto"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Nome do Produto *</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
+                        <Input placeholder="Nome do Produto" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="ativo">Em Estoque</SelectItem>
-                        <SelectItem value="baixo">Baixo Estoque</SelectItem>
-                        <SelectItem value="inativo">Sem Estoque</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="categoria"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Categoria *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {categorias.map((categoria) => (
+                            <SelectItem key={categoria} value={categoria}>
+                              {categoria}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="fornecedor"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Fornecedor</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Nome do Fornecedor" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Seção de Estoque e Valores */}
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="preco_unitario"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Valor Unitário *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" min="0" placeholder="0,00" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="quantidade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Quantidade *</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="1" min="0" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="estoque_minimo"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Estoque Mínimo</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="1" min="0" placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="localizacao"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Localização *</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Localização no Estoque" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="unidade"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Unidade de Medida</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a unidade" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {unidadesMedida.map((unidade) => (
+                            <SelectItem key={unidade} value={unidade}>
+                              {unidade}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="block text-sm font-medium mb-1">Status</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="ativo">Ativo</SelectItem>
+                          <SelectItem value="inativo">Inativo</SelectItem>
+                          <SelectItem value="baixo">Baixo Estoque</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <FormLabel>Observações</FormLabel>
-              <FormField
-                control={form.control}
-                name="observacoes"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <FormLabel>Fornecedor</FormLabel>
-              <FormField
-                control={form.control}
-                name="fornecedor"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <FormLabel>Código de Barras</FormLabel>
-              <FormField
-                control={form.control}
-                name="codigo_barras"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onClose}>
+            <DialogFooter className="pt-6 border-t">
+              <Button variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  "Salvar"
-                )}
-              </Button>
+              <ActionButton
+                type="submit"
+                isLoading={isLoading}
+              >
+                {mode === "create" ? "Cadastrar Item" : "Salvar Alterações"}
+              </ActionButton>
             </DialogFooter>
           </form>
         </Form>

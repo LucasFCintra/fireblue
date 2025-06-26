@@ -221,7 +221,7 @@ export default function DataTable<T>({
         </div>
       )}
 
-      <div className="rounded-md border border-border">
+      <div className="rounded-md border border-border shadow-sm dark:shadow-md dark:shadow-black/10">
         <Table>
           <TableHeader>
             <TableRow>
@@ -235,7 +235,7 @@ export default function DataTable<T>({
                 return (
                   <TableHead key={index} className="relative">
                     <div className="flex items-center gap-2">
-                      <span className="text-foreground">{column.header}</span>
+                      <span className="text-foreground font-medium">{column.header}</span>
                       
                       {column.filterable !== false && typeof column.accessor !== 'function' && (
                         <Popover 
@@ -248,7 +248,7 @@ export default function DataTable<T>({
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className={`p-0 h-7 w-7 rounded-full ${hasFilter ? 'bg-primary text-primary-foreground hover:bg-primary/90' : ''}`}
+                              className={`p-0 h-7 w-7 rounded-full transition-colors ${hasFilter ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'hover:bg-accent hover:text-accent-foreground'}`}
                             >
                               <Filter className="h-3.5 w-3.5" />
                               <span className="sr-only">Filtrar {column.header}</span>
@@ -286,6 +286,7 @@ export default function DataTable<T>({
                                   size="sm" 
                                   onClick={() => clearColumnFilter(accessor)}
                                   disabled={!hasFilter}
+                                  className="hover:bg-accent hover:text-accent-foreground"
                                 >
                                   Limpar
                                 </Button>
@@ -305,7 +306,7 @@ export default function DataTable<T>({
                   </TableHead>
                 );
               })}
-              {actions && <TableHead className="w-[80px] text-foreground">Ações</TableHead>}
+              {actions && <TableHead className="w-[80px] text-foreground font-medium">Ações</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -313,7 +314,7 @@ export default function DataTable<T>({
               paginatedData.map((row, rowIndex) => (
                 <TableRow
                   key={rowIndex}
-                  className={onRowClick ? "cursor-pointer" : ""}
+                  className={`${onRowClick ? "cursor-pointer" : ""} hover:bg-muted/50 transition-colors`}
                   onClick={() => onRowClick && onRowClick(row)}
                 >
                   {columns.map((column, colIndex) => (
@@ -331,7 +332,7 @@ export default function DataTable<T>({
                         <DropdownMenuTrigger asChild>
                           <Button
                             variant="ghost"
-                            className="h-8 w-8 p-0"
+                            className="h-8 w-8 p-0 hover:bg-accent hover:text-accent-foreground"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreHorizontal className="h-4 w-4" />
@@ -348,6 +349,7 @@ export default function DataTable<T>({
                                 e.stopPropagation();
                                 action.onClick(row);
                               }}
+                              className="hover:bg-accent hover:text-accent-foreground"
                             >
                               {action.label}
                             </DropdownMenuItem>
@@ -385,7 +387,7 @@ export default function DataTable<T>({
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-8 gap-1"
+              className="h-8 gap-1 hover:bg-accent hover:text-accent-foreground"
               onClick={() => setColumnFilters({})}
             >
               <X className="h-3.5 w-3.5" />

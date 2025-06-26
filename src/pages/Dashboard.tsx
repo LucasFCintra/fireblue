@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { StatusTrackingCard } from "@/components/StatusTrackingCard";
 import { FichasStatusModal, Ficha } from "@/components/FichasStatusModal";
 import { toast } from "@/components/ui/sonner";
+import { Button } from "@/components/ui/button";
+import { useNotificationToast } from '@/hooks/useNotificationToast';
 // import { fichasAguardandoRetirada, fichasEmProducao, fichasRecebidas } from "@/data/fichasMock";
 
 // Dados fictícios para os gráficos
@@ -109,6 +111,8 @@ export default function Dashboard() {
 
   // Estado para os dados de peças recebidas por mês
   const [recebidosUltimosMeses, setRecebidosUltimosMeses] = useState<Array<{ mes: string, total_recebido: number }>>([]);
+
+  const { showSuccess, showError, showWarning, showInfo } = useNotificationToast();
 
   // Função para carregar os dados do dashboard
   const carregarDashboard = async () => {
@@ -212,6 +216,7 @@ export default function Dashboard() {
           </p>
         </div>
       </div>
+      
       
       {/* Cards de estatísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 animate-in fade-in duration-700">

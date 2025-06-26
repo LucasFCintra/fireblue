@@ -343,15 +343,25 @@ class FichasModel {
     }
   }
 
-  async getRecebidosUltimosMeses(qtdMeses = 5) {
+  async getRecebidosUltimosMeses(qtdMeses = 5, dataInicio = null, dataFim = null) {
     try {
-      const result = await knex('fichas')
+      let query = knex('fichas')
         .select(
           knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
           knex.raw("SUM(quantidade_recebida) as total_recebido")
         )
-        .whereNotNull('quantidade_recebida')
-        .andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`))
+        .whereNotNull('quantidade_recebida');
+
+      // Se foram fornecidas datas específicas, usar elas
+      if (dataInicio && dataFim) {
+        query = query.andWhere('data_entrada', '>=', dataInicio)
+                    .andWhere('data_entrada', '<=', dataFim);
+      } else {
+        // Caso contrário, usar os últimos X meses
+        query = query.andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
+      }
+
+      const result = await query
         .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
         .orderByRaw("mes DESC")
         .limit(qtdMeses);
@@ -364,15 +374,25 @@ class FichasModel {
     }
   }
 
-  async getPerdidasUltimosMeses(qtdMeses = 5) {
+  async getPerdidasUltimosMeses(qtdMeses = 5, dataInicio = null, dataFim = null) {
     try {
-      const result = await knex('fichas')
+      let query = knex('fichas')
         .select(
           knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
           knex.raw("SUM(quantidade_perdida) as total_perdido")
         )
-        .whereNotNull('quantidade_perdida')
-        .andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`))
+        .whereNotNull('quantidade_perdida');
+
+      // Se foram fornecidas datas específicas, usar elas
+      if (dataInicio && dataFim) {
+        query = query.andWhere('data_entrada', '>=', dataInicio)
+                    .andWhere('data_entrada', '<=', dataFim);
+      } else {
+        // Caso contrário, usar os últimos X meses
+        query = query.andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
+      }
+
+      const result = await query
         .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
         .orderByRaw("mes DESC")
         .limit(qtdMeses);
@@ -385,15 +405,25 @@ class FichasModel {
     }
   }
 
-  async getCortadasUltimosMeses(qtdMeses = 5) {
+  async getCortadasUltimosMeses(qtdMeses = 5, dataInicio = null, dataFim = null) {
     try {
-      const result = await knex('fichas')
+      let query = knex('fichas')
         .select(
           knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
           knex.raw("SUM(quantidade) as total_cortada")
         )
-        .whereNotNull('quantidade')
-        .andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`))
+        .whereNotNull('quantidade');
+
+      // Se foram fornecidas datas específicas, usar elas
+      if (dataInicio && dataFim) {
+        query = query.andWhere('data_entrada', '>=', dataInicio)
+                    .andWhere('data_entrada', '<=', dataFim);
+      } else {
+        // Caso contrário, usar os últimos X meses
+        query = query.andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
+      }
+
+      const result = await query
         .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
         .orderByRaw("mes DESC")
         .limit(qtdMeses);

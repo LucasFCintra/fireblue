@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { FileText, Download, Filter, Trash2, Plus, Search, Pencil, Store, Users, Loader2, Building, User, UserCircle, ArrowRight } from "lucide-react";
+import { FileText, Download, Filter, Trash2, Plus, Search, Pencil, Store, Users, Loader2, Building, User, UserCircle, ArrowRight, BarChart3 } from "lucide-react";
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -395,7 +395,7 @@ export default function Terceiros() {
       header: "CEP", 
       filterable: true,
       cell: (row: Terceiro) => (
-        <span className="font-mono text-gray-600">
+        <span className="font-mono">
           {row.cep || '-'}
         </span>
       )
@@ -437,10 +437,10 @@ export default function Terceiros() {
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center border-b pb-4">
+      <div className="flex justify-between items-center border-b border-border pb-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-indigo-900">Terceiros</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Terceiros</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Gerencie fornecedores e bancas para sua empresa
           </p>
         </div>
@@ -448,8 +448,8 @@ export default function Terceiros() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <FileText className="w-4 h-4 mr-2" />
-                Exportar
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Exportar Relatório
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -462,7 +462,7 @@ export default function Terceiros() {
             size="sm"
             startIcon={<Plus className="h-4 w-4" />}
             onClick={handleAddItem}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-primary hover:bg-primary/90"
           >
             Novo Terceiro
           </ActionButton>
@@ -471,64 +471,64 @@ export default function Terceiros() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in duration-700">
         <Card 
-          className={`border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer ${activeTab === "todos" ? "ring-2 ring-blue-400" : "shadow-sm"}`}
+          className={`border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-blue-800 dark:bg-blue-950 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "todos" ? "ring-2 ring-blue-400 dark:ring-blue-500" : "shadow-sm"}`}
           onClick={() => handleTabChange("todos")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Total de Terceiros</CardTitle>
-            <UserCircle className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Total de Terceiros</CardTitle>
+            <UserCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">{todosTerceiros.length}</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{todosTerceiros.length}</div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-blue-600">
+              <p className="text-xs text-blue-600 dark:text-blue-400">
                 Fornecedores e Bancas cadastrados
               </p>
-              <span className="text-xs text-blue-600 font-medium flex items-center">
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center">
                 {activeTab === "todos" ? "Visualizando" : "Ver todos"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
           </CardContent>
         </Card>
         <Card 
-          className={`border-indigo-200 bg-indigo-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer ${activeTab === "fornecedor" ? "ring-2 ring-indigo-400" : ""}`}
+          className={`border-indigo-200 bg-indigo-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-indigo-800 dark:bg-indigo-950 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "fornecedor" ? "ring-2 ring-indigo-400 dark:ring-indigo-500" : ""}`}
           onClick={() => handleTabChange("fornecedor")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-indigo-800">Fornecedores</CardTitle>
-            <Building className="h-5 w-5 text-indigo-600" />
+            <CardTitle className="text-sm font-medium text-indigo-800 dark:text-indigo-200">Fornecedores</CardTitle>
+            <Building className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-700">
+            <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
               {todosTerceiros.filter(t => t.tipo === 'fornecedor').length}
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-indigo-600">
+              <p className="text-xs text-indigo-600 dark:text-indigo-400">
                 Fornecedores cadastrados
               </p>
-              <span className="text-xs text-indigo-600 font-medium flex items-center">
+              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium flex items-center">
                 {activeTab === "fornecedor" ? "Visualizando" : "Ver lista"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
           </CardContent>
         </Card>
         <Card 
-          className={`border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer ${activeTab === "banca" ? "ring-2 ring-green-400" : ""}`}
+          className={`border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-green-800 dark:bg-green-950 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "banca" ? "ring-2 ring-green-400 dark:ring-green-500" : ""}`}
           onClick={() => handleTabChange("banca")}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Bancas</CardTitle>
-            <Store className="h-5 w-5 text-green-600" />
+            <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">Bancas</CardTitle>
+            <Store className="h-5 w-5 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">
+            <div className="text-2xl font-bold text-green-700 dark:text-green-300">
               {todosTerceiros.filter(t => t.tipo === 'banca').length}
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-green-600">
+              <p className="text-xs text-green-600 dark:text-green-400">
                 Bancas cadastradas
               </p>
-              <span className="text-xs text-green-600 font-medium flex items-center">
+              <span className="text-xs text-green-600 dark:text-green-400 font-medium flex items-center">
                 {activeTab === "banca" ? "Visualizando" : "Ver lista"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
@@ -536,26 +536,26 @@ export default function Terceiros() {
         </Card>
       </div>
       
-      <div className="text-center text-xs text-gray-500 -mt-2 mb-4 animate-in fade-in">
+      <div className="text-center text-xs text-muted-foreground -mt-2 mb-4 animate-in fade-in">
         Clique nos cards acima para filtrar os terceiros por categoria
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-1000 hover:shadow-md transition-all">
+      <div className="bg-card p-6 rounded-lg shadow-sm border border-border animate-in fade-in duration-1000 hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-medium text-gray-800 flex items-center">
+          <h2 className="text-lg font-medium text-foreground flex items-center">
             {activeTab === "todos" ? (
               <>
-                <UserCircle className="h-5 w-5 text-blue-600 mr-2" />
+                <UserCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
                 Todos os Terceiros
               </>
             ) : activeTab === "fornecedor" ? (
               <>
-                <Building className="h-5 w-5 text-indigo-600 mr-2" />
+                <Building className="h-5 w-5 text-indigo-600 dark:text-indigo-400 mr-2" />
                 Fornecedores
               </>
             ) : (
               <>
-                <Store className="h-5 w-5 text-green-600 mr-2" />
+                <Store className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
                 Bancas
               </>
             )}
@@ -565,7 +565,7 @@ export default function Terceiros() {
               variant="outline" 
               size="sm" 
               onClick={() => handleTabChange("todos")}
-              className="text-gray-600 hover:bg-gray-100"
+              className="text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             >
               Ver todos
             </Button>
@@ -603,18 +603,18 @@ export default function Terceiros() {
       }}>
         <DialogContent className="max-w-5xl max-h-[85vh] w-[95vw] overflow-y-auto p-4 sm:p-6 md:p-8">
           <DialogHeader className="mb-2">
-            <DialogTitle className="text-xl font-semibold text-indigo-800">Novo Terceiro</DialogTitle>
-            <p className="text-sm text-gray-500 mt-1">Preencha os dados do novo terceiro</p>
+            <DialogTitle className="text-xl font-semibold text-foreground">Novo Terceiro</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">Preencha os dados do novo terceiro</p>
           </DialogHeader>
           
           {/* Tipo de Terceiro */}
-          <div className="bg-gray-50 p-3 rounded-md mb-4">
-            <Label htmlFor="tipo" className="font-medium">Tipo de Terceiro</Label>
+          <div className="bg-muted/50 p-3 rounded-md mb-4 border border-border">
+            <Label htmlFor="tipo" className="font-medium text-foreground">Tipo de Terceiro</Label>
             <Select 
               value={newItem.tipo} 
               onValueChange={(value: 'fornecedor' | 'banca') => setNewItem({...newItem, tipo: value})}
             >
-              <SelectTrigger className="bg-white max-w-xs">
+              <SelectTrigger className="bg-background max-w-xs">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -626,51 +626,51 @@ export default function Terceiros() {
             
           {/* Dados Principais */}
           <div>
-            <h3 className="font-semibold text-gray-700 text-sm mb-2">Dados Principais</h3>
-            <div className="h-0.5 bg-gray-100 mb-4"></div>
+            <h3 className="font-semibold text-foreground text-sm mb-2">Dados Principais</h3>
+            <div className="h-0.5 bg-border mb-4"></div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
               <div className="space-y-2">
-                <Label htmlFor="nome" className="font-medium">Nome</Label>
+                <Label htmlFor="nome" className="font-medium text-foreground">Nome</Label>
                 <Input 
                   id="nome" 
                   placeholder="Nome" 
                   value={newItem.nome} 
                   onChange={e => setNewItem({...newItem, nome: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="cnpj" className="font-medium">CNPJ</Label>
+                <Label htmlFor="cnpj" className="font-medium text-foreground">CNPJ</Label>
                 <Input 
                   id="cnpj" 
                   placeholder="CNPJ" 
                   value={newItem.cnpj} 
                   onChange={e => setNewItem({...newItem, cnpj: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="telefone" className="font-medium">Telefone</Label>
+                <Label htmlFor="telefone" className="font-medium text-foreground">Telefone</Label>
                 <Input 
                   id="telefone" 
                   placeholder="Telefone" 
                   value={newItem.telefone} 
                   onChange={e => setNewItem({...newItem, telefone: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="email" className="font-medium">Email</Label>
+                <Label htmlFor="email" className="font-medium text-foreground">Email</Label>
                 <Input 
                   id="email" 
                   placeholder="Email" 
                   value={newItem.email} 
                   onChange={e => setNewItem({...newItem, email: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
             </div>
@@ -678,12 +678,12 @@ export default function Terceiros() {
             
           {/* Endereço */}
           <div className="mt-6">
-            <h3 className="font-semibold text-gray-700 text-sm mb-2">Endereço</h3>
-            <div className="h-0.5 bg-gray-100 mb-4"></div>
+            <h3 className="font-semibold text-foreground text-sm mb-2">Endereço</h3>
+            <div className="h-0.5 bg-border mb-4"></div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
               <div className="space-y-2">
-                <Label htmlFor="cep" className="font-medium">CEP</Label>
+                <Label htmlFor="cep" className="font-medium text-foreground">CEP</Label>
                 <div className="flex gap-2">
                   <Input 
                     id="cep"
@@ -691,7 +691,7 @@ export default function Terceiros() {
                     value={newItem.cep} 
                     onChange={e => setNewItem({...newItem, cep: e.target.value})}
                     onBlur={e => handleCepChange(e.target.value)}
-                    className="bg-white"
+                    className="bg-background"
                   />
                   {loadingCep && <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
@@ -699,75 +699,75 @@ export default function Terceiros() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="estado" className="font-medium">Estado</Label>
+                <Label htmlFor="estado" className="font-medium text-foreground">Estado</Label>
                 <Input 
                   id="estado" 
                   placeholder="Estado" 
                   value={newItem.estado} 
                   onChange={e => setNewItem({...newItem, estado: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="cidade" className="font-medium">Cidade</Label>
+                <Label htmlFor="cidade" className="font-medium text-foreground">Cidade</Label>
                 <Input 
                   id="cidade" 
                   placeholder="Cidade" 
                   value={newItem.cidade} 
                   onChange={e => setNewItem({...newItem, cidade: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2 sm:col-span-2 md:col-span-3">
-                <Label htmlFor="endereco" className="font-medium">Endereço</Label>
+                <Label htmlFor="endereco" className="font-medium text-foreground">Endereço</Label>
                 <Input 
                   id="endereco" 
                   placeholder="Endereço" 
                   value={newItem.endereco} 
                   onChange={e => setNewItem({...newItem, endereco: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="numero" className="font-medium">Número</Label>
+                <Label htmlFor="numero" className="font-medium text-foreground">Número</Label>
                 <Input 
                   id="numero" 
                   placeholder="Número" 
                   value={newItem.numero} 
                   onChange={e => setNewItem({...newItem, numero: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
               
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="complemento" className="font-medium">Complemento</Label>
+                <Label htmlFor="complemento" className="font-medium text-foreground">Complemento</Label>
                 <Input 
                   id="complemento" 
                   placeholder="Complemento" 
                   value={newItem.complemento} 
                   onChange={e => setNewItem({...newItem, complemento: e.target.value})}
-                  className="bg-white" 
+                  className="bg-background" 
                 />
               </div>
 
               <div className="space-y-2 sm:col-span-2 md:col-span-3">
-                <Label htmlFor="chave_pix" className="font-medium">Chave Pix</Label>
+                <Label htmlFor="chave_pix" className="font-medium text-foreground">Chave Pix</Label>
                 <Input
                   id="chave_pix"
                   placeholder="Chave Pix"
                   value={newItem.chave_pix || ""}
                   onChange={e => setNewItem({...newItem, chave_pix: e.target.value})}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
             </div>
           </div>
           
-          <DialogFooter className="mt-6 pt-4 border-t border-gray-100">
-            <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="focus:ring-2 focus:ring-gray-300">Cancelar</Button>
+          <DialogFooter className="mt-6 pt-4 border-t border-border">
+            <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="focus:ring-2 focus:ring-ring">Cancelar</Button>
             <Button onClick={handleInsertItem} disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-300">
               {isLoading ? (
                 <>
@@ -791,18 +791,18 @@ export default function Terceiros() {
       }}>
         <DialogContent className="max-w-5xl max-h-[85vh] w-[95vw] overflow-y-auto p-4 sm:p-6 md:p-8">
           <DialogHeader className="mb-2">
-            <DialogTitle className="text-xl font-semibold text-indigo-800">Editar Terceiro</DialogTitle>
-            <p className="text-sm text-gray-500 mt-1">Edite os dados do terceiro</p>
+            <DialogTitle className="text-xl font-semibold text-foreground">Editar Terceiro</DialogTitle>
+            <p className="text-sm text-muted-foreground mt-1">Edite os dados do terceiro</p>
           </DialogHeader>
           
           {/* Tipo de Terceiro */}
-          <div className="bg-gray-50 p-3 rounded-md mb-4">
-            <Label htmlFor="tipo" className="font-medium">Tipo de Terceiro</Label>
+          <div className="bg-muted/50 p-3 rounded-md mb-4 border border-border">
+            <Label htmlFor="tipo" className="font-medium text-foreground">Tipo de Terceiro</Label>
             <Select 
               value={editItem?.tipo || "fornecedor"} 
               onValueChange={(value: 'fornecedor' | 'banca') => setEditItem(prev => prev ? {...prev, tipo: value} : null)}
             >
-              <SelectTrigger className="bg-white max-w-xs">
+              <SelectTrigger className="bg-background max-w-xs">
                 <SelectValue placeholder="Selecione o tipo" />
               </SelectTrigger>
               <SelectContent>
@@ -814,51 +814,51 @@ export default function Terceiros() {
             
           {/* Dados Principais */}
           <div>
-            <h3 className="font-semibold text-gray-700 text-sm mb-2">Dados Principais</h3>
-            <div className="h-0.5 bg-gray-100 mb-4"></div>
+            <h3 className="font-semibold text-foreground text-sm mb-2">Dados Principais</h3>
+            <div className="h-0.5 bg-border mb-4"></div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-3">
               <div className="space-y-2">
-                <Label htmlFor="edit-nome" className="font-medium">Nome</Label>
+                <Label htmlFor="edit-nome" className="font-medium text-foreground">Nome</Label>
                 <Input 
                   id="edit-nome" 
                   placeholder="Nome" 
                   value={editItem?.nome || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, nome: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="edit-cnpj" className="font-medium">CNPJ</Label>
+                <Label htmlFor="edit-cnpj" className="font-medium text-foreground">CNPJ</Label>
                 <Input 
                   id="edit-cnpj" 
                   placeholder="CNPJ" 
                   value={editItem?.cnpj || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, cnpj: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="edit-telefone" className="font-medium">Telefone</Label>
+                <Label htmlFor="edit-telefone" className="font-medium text-foreground">Telefone</Label>
                 <Input 
                   id="edit-telefone" 
                   placeholder="Telefone" 
                   value={editItem?.telefone || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, telefone: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="edit-email" className="font-medium">Email</Label>
+                <Label htmlFor="edit-email" className="font-medium text-foreground">Email</Label>
                 <Input 
                   id="edit-email" 
                   placeholder="Email" 
                   value={editItem?.email || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, email: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
             </div>
@@ -866,12 +866,12 @@ export default function Terceiros() {
             
           {/* Endereço */}
           <div className="mt-6">
-            <h3 className="font-semibold text-gray-700 text-sm mb-2">Endereço</h3>
-            <div className="h-0.5 bg-gray-100 mb-4"></div>
+            <h3 className="font-semibold text-foreground text-sm mb-2">Endereço</h3>
+            <div className="h-0.5 bg-border mb-4"></div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-3">
               <div className="space-y-2">
-                <Label htmlFor="edit-cep" className="font-medium">CEP</Label>
+                <Label htmlFor="edit-cep" className="font-medium text-foreground">CEP</Label>
                 <div className="flex gap-2">
                   <Input 
                     id="edit-cep"
@@ -879,7 +879,7 @@ export default function Terceiros() {
                     value={editItem?.cep || ""} 
                     onChange={e => setEditItem(prev => prev ? { ...prev, cep: e.target.value } : null)}
                     onBlur={e => handleEditCepChange(e.target.value)}
-                    className="bg-white"
+                    className="bg-background"
                   />
                   {loadingCep && <Loader2 className="h-4 w-4 animate-spin" />}
                 </div>
@@ -887,75 +887,75 @@ export default function Terceiros() {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="edit-estado" className="font-medium">Estado</Label>
+                <Label htmlFor="edit-estado" className="font-medium text-foreground">Estado</Label>
                 <Input 
                   id="edit-estado" 
                   placeholder="Estado" 
                   value={editItem?.estado || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, estado: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="edit-cidade" className="font-medium">Cidade</Label>
+                <Label htmlFor="edit-cidade" className="font-medium text-foreground">Cidade</Label>
                 <Input 
                   id="edit-cidade" 
                   placeholder="Cidade" 
                   value={editItem?.cidade || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, cidade: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2 sm:col-span-2 md:col-span-3">
-                <Label htmlFor="edit-endereco" className="font-medium">Endereço</Label>
+                <Label htmlFor="edit-endereco" className="font-medium text-foreground">Endereço</Label>
                 <Input 
                   id="edit-endereco" 
                   placeholder="Endereço" 
                   value={editItem?.endereco || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, endereco: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="edit-numero" className="font-medium">Número</Label>
+                <Label htmlFor="edit-numero" className="font-medium text-foreground">Número</Label>
                 <Input 
                   id="edit-numero" 
                   placeholder="Número" 
                   value={editItem?.numero || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, numero: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
               
               <div className="space-y-2 sm:col-span-2">
-                <Label htmlFor="edit-complemento" className="font-medium">Complemento</Label>
+                <Label htmlFor="edit-complemento" className="font-medium text-foreground">Complemento</Label>
                 <Input 
                   id="edit-complemento" 
                   placeholder="Complemento" 
                   value={editItem?.complemento || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, complemento: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
 
               <div className="space-y-2 sm:col-span-2 md:col-span-3">
-                <Label htmlFor="edit-chave_pix" className="font-medium">Chave Pix</Label>
+                <Label htmlFor="edit-chave_pix" className="font-medium text-foreground">Chave Pix</Label>
                 <Input
                   id="edit-chave_pix"
                   placeholder="Chave Pix"
                   value={editItem?.chave_pix || ""}
                   onChange={e => setEditItem(prev => prev ? { ...prev, chave_pix: e.target.value } : null)}
-                  className="bg-white"
+                  className="bg-background"
                 />
               </div>
             </div>
           </div>
           
-          <DialogFooter className="mt-6 pt-4 border-t border-gray-100">
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="focus:ring-2 focus:ring-gray-300">Cancelar</Button>
+          <DialogFooter className="mt-6 pt-4 border-t border-border">
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)} className="focus:ring-2 focus:ring-ring">Cancelar</Button>
             <Button onClick={handleEditItem} disabled={isLoading} className="bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-300">
               {isLoading ? (
                 <>

@@ -25,6 +25,8 @@ import RedefinirSenha from "./pages/RedefinirSenha";
 import SocketTest from "./pages/SocketTest";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { NotificationProvider } from "./contexts/NotificationContext";
+import { NotificationWrapper } from "./components/NotificationWrapper";
 import Estoque from "./pages/Inventario";
 
 const queryClient = new QueryClient();
@@ -86,15 +88,19 @@ const AppRoutes = () => (
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <AppRoutes />
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
+      <NotificationProvider>
+        <NotificationWrapper>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AuthProvider>
+                <AppRoutes />
+              </AuthProvider>
+            </BrowserRouter>
+          </TooltipProvider>
+        </NotificationWrapper>
+      </NotificationProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

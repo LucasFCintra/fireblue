@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Package, FileText, Download, Filter, Edit, Trash2, Plus, Search, Loader2, Scissors, History, Pencil } from "lucide-react";
+import { Package, FileText, Download, Filter, Edit, Trash2, Plus, Search, Loader2, Scissors, History, Pencil, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -848,7 +848,7 @@ export default function MateriaPrima() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
-                <FileText className="w-4 h-4 mr-2" />
+                <BarChart3 className="w-4 h-4 mr-2" />
                 Exportar Relatório
               </Button>
             </DropdownMenuTrigger>

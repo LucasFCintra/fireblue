@@ -23,7 +23,7 @@ export const StatusTrackingCard: React.FC<StatusTrackingCardProps> = ({
   return (
     <div 
       className={cn(
-        "flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md",
+        "flex flex-col items-center p-4 rounded-lg border cursor-pointer transition-all duration-200 hover:shadow-md dark:hover:shadow-lg dark:hover:shadow-black/20 hover:-translate-y-1",
         className
       )}
       onClick={onClick}

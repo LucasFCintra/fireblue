@@ -148,18 +148,30 @@ export const fichasService = {
     return response.data;
   },
 
-  async buscarRecebidosUltimosMeses(): Promise<any[]> {
-    const response = await axios.get(`${API_URL}/fichas/recebidos/ultimos-meses`);
+  async buscarRecebidosUltimosMeses(dataInicio?: string, dataFim?: string): Promise<any[]> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/recebidos/ultimos-meses`, { params });
     return response.data;
   },
 
-  async buscarPerdidasUltimosMeses(): Promise<any[]> {
-    const response = await axios.get(`${API_URL}/fichas/perdidas/ultimos-meses`);
+  async buscarPerdidasUltimosMeses(dataInicio?: string, dataFim?: string): Promise<any[]> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/perdidas/ultimos-meses`, { params });
     return response.data;
   },
 
-  async buscarCortadasUltimosMeses(): Promise<any[]> {
-    const response = await axios.get(`${API_URL}/fichas/cortadas/ultimos-meses`);
+  async buscarCortadasUltimosMeses(dataInicio?: string, dataFim?: string): Promise<any[]> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/cortadas/ultimos-meses`, { params });
     return response.data;
   }
 }; 

@@ -9,6 +9,7 @@ import { RelatorioFechamento } from '@/components/fechamento/RelatorioFechamento
 import { DetalheFechamentoBanca } from '@/components/fechamento/DetalheFechamentoBanca';
 import { FechamentoBanca, RelatorioSemanal } from '@/types/fechamento';
 import { useToast } from '@/hooks/use-toast';
+import { useNotificationToast } from '@/hooks/useNotificationToast';
 import { getCurrentWeekRange } from '@/utils/dateUtils';
 import { DateRange } from "react-day-picker";
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,8 @@ export default function FechamentoSemanal() {
     from: getCurrentWeekRange().start,
     to: getCurrentWeekRange().end
   });
-  const { toast } = useToast();
+  const { toast: toastHook } = useToast();
+  const { showSuccess, showError, showWarning, showInfo } = useNotificationToast();
   
   // Estado para controlar a aba ativa
   const [activeTab, setActiveTab] = useState<'atual' | 'historico'>('atual');
@@ -57,10 +59,8 @@ export default function FechamentoSemanal() {
   // Manipulador para gerar um novo fechamento
   const handleGerarFechamento = async () => {
     if (!dateRange.from || !dateRange.to) {
-      toast({
-        title: "Período incompleto",
-        description: "Selecione um período completo para gerar o fechamento.",
-        variant: "destructive",
+      showWarning("Selecione um período completo para gerar o fechamento.", {
+        description: "Período incompleto"
       });
       return;
     }
@@ -100,18 +100,14 @@ export default function FechamentoSemanal() {
         setSelectedHistoricoRelatorio(fechamentoCompleto);
         setIsHistoricoDetailOpen(true);
       } else {
-        toast({
-          title: "Erro ao carregar detalhes",
-          description: "Não foi possível carregar os detalhes do fechamento.",
-          variant: "destructive",
+        showError("Não foi possível carregar os detalhes do fechamento.", {
+          description: "Erro ao carregar detalhes"
         });
       }
     } catch (error) {
       console.error('Erro ao buscar detalhes do fechamento:', error);
-      toast({
-        title: "Erro ao carregar detalhes",
-        description: "Ocorreu um erro ao carregar os detalhes do fechamento.",
-        variant: "destructive",
+      showError("Ocorreu um erro ao carregar os detalhes do fechamento.", {
+        description: "Erro ao carregar detalhes"
       });
     }
   };
@@ -127,15 +123,12 @@ export default function FechamentoSemanal() {
     const resultado = await finalizarBanca(idBanca);
     
     if (resultado) {
-      toast({
-        title: "Fechamento finalizado",
-        description: `O fechamento da banca foi finalizado com sucesso.`,
+      showSuccess("O fechamento da banca foi finalizado com sucesso.", {
+        description: "Fechamento finalizado"
       });
     } else {
-      toast({
-        title: "Erro ao finalizar",
-        description: "Ocorreu um erro ao finalizar o fechamento da banca.",
-        variant: "destructive",
+      showError("Ocorreu um erro ao finalizar o fechamento da banca.", {
+        description: "Erro ao finalizar"
       });
     }
   };
@@ -146,16 +139,13 @@ export default function FechamentoSemanal() {
       const resultado = await imprimirComprovante(fechamento);
       
       if (resultado) {
-        toast({
-          title: "Comprovante gerado",
-          description: `O comprovante para ${fechamento.nomeBanca} foi gerado com sucesso.`,
+        showSuccess(`O comprovante para ${fechamento.nomeBanca} foi gerado com sucesso.`, {
+          description: "Comprovante gerado"
         });
       }
     } catch (error) {
-      toast({
-        title: "Erro ao gerar comprovante",
-        description: "Não foi possível gerar o comprovante de fechamento.",
-        variant: "destructive",
+      showError("Não foi possível gerar o comprovante de fechamento.", {
+        description: "Erro ao gerar comprovante"
       });
     }
   };
@@ -264,16 +254,13 @@ export default function FechamentoSemanal() {
       // Salvar o PDF
       doc.save(`${nomeArquivo}.pdf`);
       
-      toast({
-        title: "Relatório histórico gerado",
-        description: `O relatório "${nomeArquivo}.pdf" foi gerado com sucesso.`,
+      showSuccess(`O relatório "${nomeArquivo}.pdf" foi gerado com sucesso.`, {
+        description: "Relatório histórico gerado"
       });
     } catch (error) {
       console.error('Erro ao gerar relatório histórico:', error);
-      toast({
-        title: "Erro ao gerar relatório",
-        description: "Ocorreu um erro ao gerar o relatório histórico.",
-        variant: "destructive",
+      showError("Ocorreu um erro ao gerar o relatório histórico.", {
+        description: "Erro ao gerar relatório"
       });
     } finally {
       setIsGerandoRelatorio(false);
@@ -282,10 +269,10 @@ export default function FechamentoSemanal() {
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-center border-b pb-4">
+      <div className="flex justify-between items-center border-b border-border pb-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-indigo-900">Fechamento Semanal</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Fechamento Semanal</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             Gerencie os fechamentos semanais com as bancas
           </p>
         </div>
@@ -296,7 +283,7 @@ export default function FechamentoSemanal() {
               startIcon={<RefreshCw className="h-4 w-4" />}
               onClick={handleGerarFechamento}
               isLoading={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm dark:shadow-md dark:shadow-black/20"
             >
               Gerar Fechamento
             </ActionButton>
@@ -307,22 +294,22 @@ export default function FechamentoSemanal() {
       {/* Cards de navegação */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-700">
         <Card 
-          className={`border-indigo-200 bg-indigo-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer ${activeTab === "atual" ? "ring-2 ring-indigo-400" : "shadow-sm"}`}
+          className={`border-indigo-200 bg-indigo-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-indigo-800 dark:bg-indigo-950/50 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "atual" ? "ring-2 ring-indigo-400 dark:ring-indigo-500" : "shadow-sm"}`}
           onClick={() => setActiveTab('atual')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-indigo-800">Fechamento Atual</CardTitle>
-            <ClipboardCheck className="h-5 w-5 text-indigo-600" />
+            <CardTitle className="text-sm font-medium text-indigo-800 dark:text-indigo-200">Fechamento Atual</CardTitle>
+            <ClipboardCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-700">
+            <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
               {relatorio ? formatarMoeda(relatorio.valorTotal) : 'R$ 0,00'}
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-indigo-600">
+              <p className="text-xs text-indigo-600 dark:text-indigo-400">
                 {relatorio ? `${relatorio.totalPecas} peças entregues` : 'Nenhum fechamento gerado'}
               </p>
-              <span className="text-xs text-indigo-600 font-medium flex items-center">
+              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium flex items-center">
                 {activeTab === "atual" ? "Visualizando" : "Ver fechamento"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
@@ -330,22 +317,22 @@ export default function FechamentoSemanal() {
         </Card>
         
         <Card 
-          className={`border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer ${activeTab === "historico" ? "ring-2 ring-blue-400" : "shadow-sm"}`}
+          className={`border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-blue-800 dark:bg-blue-950/50 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "historico" ? "ring-2 ring-blue-400 dark:ring-blue-500" : "shadow-sm"}`}
           onClick={() => setActiveTab('historico')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Histórico de Fechamentos</CardTitle>
-            <History className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Histórico de Fechamentos</CardTitle>
+            <History className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
               {historicoFechamentos.length}
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-blue-600">
+              <p className="text-xs text-blue-600 dark:text-blue-400">
                 Fechamentos anteriores
               </p>
-              <span className="text-xs text-blue-600 font-medium flex items-center">
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center">
                 {activeTab === "historico" ? "Visualizando" : "Ver histórico"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
@@ -353,7 +340,7 @@ export default function FechamentoSemanal() {
         </Card>
       </div>
       
-      <div className="text-center text-xs text-gray-500 -mt-2 mb-4 animate-in fade-in">
+      <div className="text-center text-xs text-muted-foreground -mt-2 mb-4 animate-in fade-in">
         Clique nos cards acima para alternar entre o fechamento atual e o histórico
       </div>
 
@@ -361,12 +348,12 @@ export default function FechamentoSemanal() {
       {activeTab === 'atual' ? (
         <div className="space-y-6">
           {/* Período de fechamento */}
-          <Card>
-            <CardHeader>
+          <Card className="border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20">
+            <CardHeader className="bg-muted/30 border-b border-border dark:bg-muted/20">
               <div className="flex flex-col md:flex-row justify-between gap-4">
                 <div>
-                  <CardTitle>Período de Fechamento</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-foreground">Período de Fechamento</CardTitle>
+                  <CardDescription className="text-muted-foreground">
                     Selecione o período para gerar o fechamento
                   </CardDescription>
                 </div>
@@ -389,16 +376,17 @@ export default function FechamentoSemanal() {
               isLoading={isLoading}
             />
           ) : (
-            <Card className="p-8 text-center">
+            <Card className="p-8 text-center border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20">
               <div className="flex flex-col items-center justify-center space-y-4">
-                <Calendar className="h-12 w-12 text-gray-400" />
-                <h3 className="text-lg font-medium">Nenhum fechamento gerado</h3>
-                <p className="text-sm text-gray-500">
+                <Calendar className="h-12 w-12 text-muted-foreground" />
+                <h3 className="text-lg font-medium text-foreground">Nenhum fechamento gerado</h3>
+                <p className="text-sm text-muted-foreground">
                   Selecione um período e clique em "Gerar Fechamento" para criar um novo relatório.
                 </p>
                 <Button 
                   onClick={handleGerarFechamento}
                   disabled={isLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700 shadow-sm dark:shadow-md dark:shadow-black/20"
                 >
                   Gerar Fechamento Agora
                 </Button>
@@ -409,15 +397,15 @@ export default function FechamentoSemanal() {
       ) : (
         <div className="space-y-6">
           {/* Histórico de fechamentos */}
-          <Card className="bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-1000">
-            <CardHeader className="px-0 pt-0">
-              <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+          <Card className="border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20 animate-in fade-in duration-1000">
+            <CardHeader className="px-0 pt-0 bg-muted/30 border-b border-border dark:bg-muted/20">
+              <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center p-6">
                 <div>
-                  <CardTitle className="text-xl font-bold flex items-center">
-                    <History className="h-5 w-5 text-blue-600 mr-2" />
+                  <CardTitle className="text-xl font-bold flex items-center text-foreground">
+                    <History className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
                     Histórico de Fechamentos
                   </CardTitle>
-                  <CardDescription>
+                  <CardDescription className="text-muted-foreground">
                     Visualize todos os fechamentos semanais anteriores
                   </CardDescription>
                 </div>
@@ -427,28 +415,28 @@ export default function FechamentoSemanal() {
               {isLoadingHistorico ? (
                 <div className="p-8 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4">
-                    <RefreshCw className="h-12 w-12 text-gray-400 animate-spin" />
-                    <h3 className="text-lg font-medium">Carregando histórico...</h3>
+                    <RefreshCw className="h-12 w-12 text-muted-foreground animate-spin" />
+                    <h3 className="text-lg font-medium text-foreground">Carregando histórico...</h3>
                   </div>
                 </div>
               ) : historicoFechamentos.length > 0 ? (
-                <div className="space-y-6">
+                <div className="space-y-6 p-6">
                   {historicoFechamentos.map((relatorio) => (
-                    <Card key={relatorio.id} className="overflow-hidden">
-                      <CardHeader className="bg-gray-50 pb-3">
+                    <Card key={relatorio.id} className="overflow-hidden border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20">
+                      <CardHeader className="bg-muted/30 border-b border-border dark:bg-muted/20 pb-3">
                         <div className="flex justify-between items-center">
                           <div>
-                            <CardTitle className="text-lg">Semana {relatorio.semana}</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-lg text-foreground">Semana {relatorio.semana}</CardTitle>
+                            <CardDescription className="text-muted-foreground">
                               Período: {relatorio.dataInicio} a {relatorio.dataFim}
                             </CardDescription>
                           </div>
                           <Badge 
                             className={relatorio.status === 'aberto' 
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' 
+                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/50 dark:text-yellow-200 dark:hover:bg-yellow-900/50' 
                               : relatorio.status === 'pago'
-                                ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                                : 'bg-blue-100 text-blue-800 hover:bg-blue-100'
+                                ? 'bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/50 dark:text-green-200 dark:hover:bg-green-900/50'
+                                : 'bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-900/50'
                             }
                           >
                             {relatorio.status === 'aberto' ? 'Em aberto' : 
@@ -458,18 +446,18 @@ export default function FechamentoSemanal() {
                       </CardHeader>
                       <CardContent className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div className="p-3 bg-gray-50 rounded-md">
-                            <div className="text-sm text-gray-500">Total de Bancas</div>
-                            <div className="text-lg font-bold">{relatorio.fechamentos.length}</div>
+                          <div className="p-3 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                            <div className="text-sm text-muted-foreground">Total de Bancas</div>
+                            <div className="text-lg font-bold text-foreground">{relatorio.fechamentos.length}</div>
                           </div>
                           
-                          <div className="p-3 bg-gray-50 rounded-md">
-                            <div className="text-sm text-gray-500">Total de Peças</div>
-                            <div className="text-lg font-bold">{relatorio.totalPecas.toLocaleString()}</div>
+                          <div className="p-3 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                            <div className="text-sm text-muted-foreground">Total de Peças</div>
+                            <div className="text-lg font-bold text-foreground">{relatorio.totalPecas.toLocaleString()}</div>
                           </div>
                           
-                          <div className="p-3 bg-gray-50 rounded-md">
-                            <div className="text-sm text-gray-500">Valor Total</div>
+                          <div className="p-3 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                            <div className="text-sm text-muted-foreground">Valor Total</div>
                             <div className="text-lg font-bold text-primary">{formatarMoeda(relatorio.valorTotal)}</div>
                           </div>
                         </div>
@@ -479,6 +467,7 @@ export default function FechamentoSemanal() {
                             variant="outline" 
                             size="sm"
                             onClick={() => handleVerDetalhesHistorico(relatorio)}
+                            className="border-border hover:bg-accent hover:text-accent-foreground"
                           >
                             <FileText className="h-4 w-4 mr-2" />
                             Ver Detalhes
@@ -488,6 +477,7 @@ export default function FechamentoSemanal() {
                             size="sm"
                             onClick={() => handleGerarRelatorioHistorico(relatorio)}
                             disabled={isGerandoRelatorio}
+                            className="border-border hover:bg-accent hover:text-accent-foreground"
                           >
                             <Printer className="h-4 w-4 mr-2" />
                             {isGerandoRelatorio ? 'Gerando...' : 'Imprimir'}
@@ -500,9 +490,9 @@ export default function FechamentoSemanal() {
               ) : (
                 <div className="p-8 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4">
-                    <ClipboardList className="h-12 w-12 text-gray-400" />
-                    <h3 className="text-lg font-medium">Nenhum histórico encontrado</h3>
-                    <p className="text-sm text-gray-500">
+                    <ClipboardList className="h-12 w-12 text-muted-foreground" />
+                    <h3 className="text-lg font-medium text-foreground">Nenhum histórico encontrado</h3>
+                    <p className="text-sm text-muted-foreground">
                       Não há registros de fechamentos anteriores.
                     </p>
                   </div>
@@ -530,71 +520,71 @@ export default function FechamentoSemanal() {
         <Dialog open={isHistoricoDetailOpen} onOpenChange={(open) => {
           if (!open) handleCloseHistoricoDetails();
         }}>
-          <DialogContent className="sm:max-w-5xl max-h-[90vh] p-6 w-[95vw] overflow-hidden">
+          <DialogContent className="sm:max-w-5xl max-h-[90vh] p-6 w-[95vw] overflow-hidden border border-border dark:shadow-xl dark:shadow-black/30">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-indigo-800">
+              <DialogTitle className="text-xl font-semibold text-foreground">
                 Detalhes do Fechamento - Semana {selectedHistoricoRelatorio.semana}
               </DialogTitle>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Período: {selectedHistoricoRelatorio.dataInicio} a {selectedHistoricoRelatorio.dataFim}
               </div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Status: {selectedHistoricoRelatorio.status === 'aberto' ? 'Em aberto' : 
                          selectedHistoricoRelatorio.status === 'pago' ? 'Pago' : 'Fechado'}
               </div>
             </DialogHeader>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="p-4 bg-gray-50 rounded-md">
-                <div className="text-sm text-gray-500">Total de Bancas</div>
-                <div className="text-xl font-bold">{selectedHistoricoRelatorio.fechamentos.length}</div>
+              <div className="p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                <div className="text-sm text-muted-foreground">Total de Bancas</div>
+                <div className="text-xl font-bold text-foreground">{selectedHistoricoRelatorio.fechamentos.length}</div>
               </div>
               
-              <div className="p-4 bg-gray-50 rounded-md">
-                <div className="text-sm text-gray-500">Total de Peças</div>
-                <div className="text-xl font-bold">{selectedHistoricoRelatorio.totalPecas.toLocaleString()}</div>
+              <div className="p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                <div className="text-sm text-muted-foreground">Total de Peças</div>
+                <div className="text-xl font-bold text-foreground">{selectedHistoricoRelatorio.totalPecas.toLocaleString()}</div>
               </div>
               
-              <div className="p-4 bg-gray-50 rounded-md">
-                <div className="text-sm text-gray-500">Valor Total</div>
+              <div className="p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                <div className="text-sm text-muted-foreground">Valor Total</div>
                 <div className="text-xl font-bold text-primary">{formatarMoeda(selectedHistoricoRelatorio.valorTotal)}</div>
               </div>
             </div>
             
             <div className="mt-4">
-              <h3 className="text-lg font-medium mb-2">Detalhamento por Banca</h3>
-              <div className="overflow-y-auto max-h-[400px]">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50 sticky top-0">
+              <h3 className="text-lg font-medium mb-2 text-foreground">Detalhamento por Banca</h3>
+              <div className="overflow-y-auto max-h-[400px] border border-border rounded-md">
+                <table className="min-w-full divide-y divide-border">
+                  <thead className="bg-muted/50 dark:bg-muted/30 sticky top-0">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Banca</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Peças</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data Pagamento</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Banca</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Peças</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Data Pagamento</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-background divide-y divide-border">
                     {selectedHistoricoRelatorio.fechamentos.map((fechamento) => (
-                      <tr key={fechamento.id}>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{fechamento.nomeBanca}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{fechamento.totalPecas}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatarMoeda(fechamento.valorTotal)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <tr key={fechamento.id} className="hover:bg-muted/30 transition-colors">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{fechamento.nomeBanca}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{fechamento.totalPecas}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatarMoeda(fechamento.valorTotal)}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
                           <Badge 
                             className={
                               fechamento.status === 'pendente' 
-                                ? 'bg-yellow-100 text-yellow-800' 
+                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
                                 : fechamento.status === 'pago'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-red-100 text-red-800'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
                             }
                           >
                             {fechamento.status === 'pendente' ? 'Pendente' : 
                              fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{fechamento.dataPagamento || '-'}</td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{fechamento.dataPagamento || '-'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -608,7 +598,7 @@ export default function FechamentoSemanal() {
                 size="sm"
                 onClick={() => handleGerarRelatorioHistorico(selectedHistoricoRelatorio)}
                 disabled={isGerandoRelatorio}
-                className="mr-2"
+                className="mr-2 border-border hover:bg-accent hover:text-accent-foreground"
               >
                 <Printer className="h-4 w-4 mr-2" />
                 {isGerandoRelatorio ? 'Gerando...' : 'Imprimir Relatório'}
@@ -616,6 +606,7 @@ export default function FechamentoSemanal() {
               <Button 
                 variant="secondary"
                 onClick={handleCloseHistoricoDetails}
+                className="bg-muted hover:bg-muted/80 text-muted-foreground"
               >
                 Fechar
               </Button>

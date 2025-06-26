@@ -32,22 +32,26 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
     async function fetchData() {
       setLoading(true);
       try {
+        // Formatar as datas para a API
+        const dataInicio = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : '';
+        const dataFim = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : '';
+        
         let data;
         
         if (type === "pecas-cortadas") {
-          data = await fichasService.buscarCortadasUltimosMeses();
+          data = await fichasService.buscarCortadasUltimosMeses(dataInicio, dataFim);
           setChartData(data.map(item => ({ 
             name: item.mes, 
             quantidade: Number(item.total_cortada) || 0 
           })));
         } else if (type === "pecas-recebidas") {
-          data = await fichasService.buscarRecebidosUltimosMeses();
+          data = await fichasService.buscarRecebidosUltimosMeses(dataInicio, dataFim);
           setChartData(data.map(item => ({ 
             name: item.mes, 
             quantidade: Number(item.total_recebido) || 0 
           })));
         } else if (type === "pecas-perdidas") {
-          data = await fichasService.buscarPerdidasUltimosMeses();
+          data = await fichasService.buscarPerdidasUltimosMeses(dataInicio, dataFim);
           setChartData(data.map(item => ({ 
             name: item.mes, 
             quantidade: Number(item.total_perdido) || 0 
@@ -106,7 +110,7 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
       return (
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-2"></div>
             <p className="text-sm text-muted-foreground">Carregando dados do relatório...</p>
           </div>
         </div>
@@ -177,17 +181,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
         const maiorCorte = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
         return (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">Total de Peças Cortadas</p>
-              <p className="text-xl font-bold">{totalCortadas} unid.</p>
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-all dark:bg-blue-950/50 dark:border-blue-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-blue-700 dark:text-blue-300">Total de Peças Cortadas</p>
+              <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{totalCortadas} unid.</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-700">Média Mensal</p>
-              <p className="text-xl font-bold">{mediaCortadas} unid.</p>
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-all dark:bg-green-950/50 dark:border-green-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-green-700 dark:text-green-300">Média Mensal</p>
+              <p className="text-xl font-bold text-green-800 dark:text-green-200">{mediaCortadas} unid.</p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-700">Maior Quantidade</p>
-              <p className="text-xl font-bold">{maiorCorte} unid.</p>
+            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:shadow-sm transition-all dark:bg-purple-950/50 dark:border-purple-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-purple-700 dark:text-purple-300">Maior Quantidade</p>
+              <p className="text-xl font-bold text-purple-800 dark:text-purple-200">{maiorCorte} unid.</p>
             </div>
           </div>
         );
@@ -199,17 +203,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
         const maiorPerda = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
         return (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="p-4 bg-red-50 rounded-lg">
-              <p className="text-sm text-red-700">Total de Peças Perdidas</p>
-              <p className="text-xl font-bold">{totalPerdidas} unid.</p>
+            <div className="p-4 bg-red-50 rounded-lg border border-red-200 hover:shadow-sm transition-all dark:bg-red-950/50 dark:border-red-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-red-700 dark:text-red-300">Total de Peças Perdidas</p>
+              <p className="text-xl font-bold text-red-800 dark:text-red-200">{totalPerdidas} unid.</p>
             </div>
-            <div className="p-4 bg-amber-50 rounded-lg">
-              <p className="text-sm text-amber-700">Média Mensal</p>
-              <p className="text-xl font-bold">{mediaPerdidas} unid.</p>
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:shadow-sm transition-all dark:bg-amber-950/50 dark:border-amber-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-amber-700 dark:text-amber-300">Média Mensal</p>
+              <p className="text-xl font-bold text-amber-800 dark:text-amber-200">{mediaPerdidas} unid.</p>
             </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">Maior Perda</p>
-              <p className="text-xl font-bold">{maiorPerda} unid.</p>
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-all dark:bg-blue-950/50 dark:border-blue-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-blue-700 dark:text-blue-300">Maior Perda</p>
+              <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{maiorPerda} unid.</p>
             </div>
           </div>
         );
@@ -221,17 +225,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
         const maiorRecebimento = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
         return (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-700">Total de Peças Recebidas</p>
-              <p className="text-xl font-bold">{totalRecebidas} unid.</p>
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-all dark:bg-green-950/50 dark:border-green-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-green-700 dark:text-green-300">Total de Peças Recebidas</p>
+              <p className="text-xl font-bold text-green-800 dark:text-green-200">{totalRecebidas} unid.</p>
             </div>
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">Média Mensal</p>
-              <p className="text-xl font-bold">{mediaRecebidas} unid.</p>
+            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-all dark:bg-blue-950/50 dark:border-blue-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-blue-700 dark:text-blue-300">Média Mensal</p>
+              <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{mediaRecebidas} unid.</p>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-700">Maior Recebimento</p>
-              <p className="text-xl font-bold">{maiorRecebimento} unid.</p>
+            <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:shadow-sm transition-all dark:bg-purple-950/50 dark:border-purple-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-purple-700 dark:text-purple-300">Maior Recebimento</p>
+              <p className="text-xl font-bold text-purple-800 dark:text-purple-200">{maiorRecebimento} unid.</p>
             </div>
           </div>
         );

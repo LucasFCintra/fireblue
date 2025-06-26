@@ -148,7 +148,8 @@ class FichasController {
 
   async getRecebidosUltimosMeses(req, res) {
     try {
-      const data = await Fichas.getRecebidosUltimosMeses(5);
+      const { dataInicio, dataFim } = req.query;
+      const data = await Fichas.getRecebidosUltimosMeses(5, dataInicio, dataFim);
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: 'Erro ao buscar dados dos últimos meses' });
@@ -168,7 +169,8 @@ class FichasController {
 
   async getPerdidasUltimosMeses(req, res) {
     try {
-      const data = await Fichas.getPerdidasUltimosMeses();
+      const { dataInicio, dataFim } = req.query;
+      const data = await Fichas.getPerdidasUltimosMeses(5, dataInicio, dataFim);
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: 'Erro ao buscar peças perdidas dos últimos meses' });
@@ -177,7 +179,8 @@ class FichasController {
 
   async getCortadasUltimosMeses(req, res) {
     try {
-      const data = await Fichas.getCortadasUltimosMeses();
+      const { dataInicio, dataFim } = req.query;
+      const data = await Fichas.getCortadasUltimosMeses(5, dataInicio, dataFim);
       res.json(data);
     } catch (error) {
       res.status(500).json({ error: 'Erro ao buscar peças cortadas dos últimos meses' });

@@ -1,6 +1,5 @@
-
 import { useState } from "react";
-import { Palette, Layers, Users, Settings as SettingsIcon, Save } from "lucide-react";
+import { Layers, Settings as SettingsIcon, Save, Database, HardDrive } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -8,17 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { ActionButton } from "@/components/ActionButton";
-import { ColorPicker } from "@/components/configuracoes/ColorPicker";
-import { PermissoesUsuario } from "@/components/configuracoes/PermissoesUsuario";
 import { EstoqueMinimoConfig } from "@/components/configuracoes/EstoqueMinimoConfig";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 export default function Configuracoes() {
-  const [activeTab, setActiveTab] = useState("visual");
+  const [activeTab, setActiveTab] = useState("estoque");
   const [isLoading, setIsLoading] = useState(false);
-  const [corPrimaria, setCorPrimaria] = useState("#0f172a");
-  const [corSecundaria, setCorSecundaria] = useState("#64748b");
-  const [corDestaque, setCorDestaque] = useState("#3b82f6");
-  const [modoOffline, setModoOffline] = useState(false);
   const { toast } = useToast();
 
   const handleSaveConfig = () => {
@@ -35,182 +30,184 @@ export default function Configuracoes() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row justify-between gap-4">
-        <h1 className="text-3xl font-bold">Configurações</h1>
-        <ActionButton 
-          startIcon={<Save />} 
-          isLoading={isLoading}
-          onClick={handleSaveConfig}
-        >
-          Salvar Configurações
-        </ActionButton>
+    <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+      {/* Header com gradiente */}
+      <div className="relative overflow-hidden rounded-lg bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 text-white shadow-lg">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative z-10">
+          <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+            <div>
+              <h1 className="text-4xl font-bold tracking-tight">Configurações</h1>
+              <p className="text-blue-100 mt-2 text-lg">
+                Personalize o comportamento do sistema conforme suas necessidades
+              </p>
+            </div>
+            <ActionButton 
+              startIcon={<Save className="w-5 h-5" />} 
+              isLoading={isLoading}
+              onClick={handleSaveConfig}
+              className="bg-white/20 hover:bg-white/30 text-white border-white/30 backdrop-blur-sm"
+            >
+              Salvar Configurações
+            </ActionButton>
+          </div>
+        </div>
+        
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16"></div>
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full translate-y-12 -translate-x-12"></div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-2 md:grid-cols-4 w-full">
-          <TabsTrigger value="visual">
-            <Palette className="w-4 h-4 mr-2" />
-            Identidade Visual
+      {/* Tabs com design melhorado */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid grid-cols-2 w-full h-16 bg-muted/50 backdrop-blur-sm border border-border/50">
+          <TabsTrigger 
+            value="estoque" 
+            className="data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground transition-all duration-200"
+          >
+            <Layers className="w-5 h-5 mr-3" />
+            <div className="text-left">
+              <div className="font-medium">Regras de Estoque</div>
+              <div className="text-xs text-muted-foreground">Alertas e controles</div>
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="estoque">
-            <Layers className="w-4 h-4 mr-2" />
-            Regras de Estoque
-          </TabsTrigger>
-          <TabsTrigger value="usuarios">
-            <Users className="w-4 h-4 mr-2" />
-            Usuários e Permissões
-          </TabsTrigger>
-          <TabsTrigger value="sistema">
-            <SettingsIcon className="w-4 h-4 mr-2" />
-            Sistema
+          <TabsTrigger 
+            value="sistema" 
+            className="data-[state=active]:bg-background data-[state=active]:shadow-md data-[state=active]:text-foreground transition-all duration-200"
+          >
+            <SettingsIcon className="w-5 h-5 mr-3" />
+            <div className="text-left">
+              <div className="font-medium">Sistema</div>
+              <div className="text-xs text-muted-foreground">Configurações gerais</div>
+            </div>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="visual" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Identidade Visual</CardTitle>
-              <CardDescription>
-                Personalize as cores e aparência do sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <ColorPicker 
-                  label="Cor Primária"
-                  value={corPrimaria}
-                  onChange={setCorPrimaria}
-                />
-                
-                <ColorPicker 
-                  label="Cor Secundária"
-                  value={corSecundaria}
-                  onChange={setCorSecundaria}
-                />
-
-                <ColorPicker 
-                  label="Cor de Destaque"
-                  value={corDestaque}
-                  onChange={setCorDestaque}
-                />
-              </div>
-              
-              <div className="pt-4">
-                <h3 className="text-lg font-medium mb-4">Pré-visualização</h3>
-                <div className="flex flex-wrap gap-4">
-                  <div 
-                    className="p-4 rounded-md text-white flex items-center justify-center" 
-                    style={{ backgroundColor: corPrimaria }}
-                  >
-                    Cor Primária
-                  </div>
-                  <div 
-                    className="p-4 rounded-md text-white flex items-center justify-center" 
-                    style={{ backgroundColor: corSecundaria }}
-                  >
-                    Cor Secundária
-                  </div>
-                  <div 
-                    className="p-4 rounded-md text-white flex items-center justify-center" 
-                    style={{ backgroundColor: corDestaque }}
-                  >
-                    Cor de Destaque
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
         <TabsContent value="estoque" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Regras de Estoque</CardTitle>
-              <CardDescription>
-                Configure as regras de estoque mínimo e alertas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <EstoqueMinimoConfig />
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="usuarios" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Usuários e Permissões</CardTitle>
-              <CardDescription>
-                Gerencie usuários e suas permissões de acesso no sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PermissoesUsuario />
-            </CardContent>
-          </Card>
+          <EstoqueMinimoConfig />
         </TabsContent>
 
         <TabsContent value="sistema" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Configurações do Sistema</CardTitle>
-              <CardDescription>
-                Ajuste as configurações gerais do sistema.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label htmlFor="offline-mode">Modo Offline</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Permite que o sistema funcione sem conexão com a internet.
+          <div className="space-y-6">
+            {/* Alerta de Desenvolvimento */}
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg dark:bg-yellow-950/30 dark:border-yellow-800/50">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <SettingsIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                    Funcionalidade em Desenvolvimento
+                  </h3>
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    Esta seção está sendo desenvolvida. As funcionalidades de backup, restauração e configurações avançadas do sistema estarão disponíveis em breve.
                   </p>
                 </div>
-                <Switch 
-                  id="offline-mode" 
-                  checked={modoOffline} 
-                  onCheckedChange={setModoOffline} 
-                />
               </div>
-              
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-medium mb-4">Backup e Restauração</h3>
+            </div>
+
+            {/* Backup e Restauração */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="w-5 h-5" />
+                  Backup e Restauração
+                </CardTitle>
+                <CardDescription>
+                  Gerencie backups dos dados do sistema e restaure quando necessário.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <ActionButton onClick={() => toast({
-                    title: "Backup iniciado", 
-                    description: "O backup de dados foi iniciado e será concluído em breve."
-                  })}>
-                    Fazer Backup Agora
-                  </ActionButton>
-                  <ActionButton variant="outline" onClick={() => toast({
-                    title: "Escolha um arquivo", 
-                    description: "Selecione um arquivo de backup para restaurar os dados."
-                  })}>
-                    Restaurar Dados
-                  </ActionButton>
+                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <HardDrive className="w-5 h-5 text-green-600" />
+                      <span className="font-medium">Fazer Backup</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Crie um backup completo dos dados do sistema
+                    </p>
+                    <ActionButton 
+                      onClick={() => toast({
+                        title: "Funcionalidade em desenvolvimento", 
+                        description: "Esta funcionalidade estará disponível em breve.",
+                        variant: "destructive"
+                      })}
+                      className="w-full"
+                      variant="outline"
+                      disabled
+                    >
+                      Em Desenvolvimento
+                    </ActionButton>
+                  </div>
+                  
+                  <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Database className="w-5 h-5 text-blue-600" />
+                      <span className="font-medium">Restaurar Dados</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      Restaure dados de um backup anterior
+                    </p>
+                    <ActionButton 
+                      variant="outline" 
+                      onClick={() => toast({
+                        title: "Funcionalidade em desenvolvimento", 
+                        description: "Esta funcionalidade estará disponível em breve.",
+                        variant: "destructive"
+                      })}
+                      className="w-full"
+                      disabled
+                    >
+                      Em Desenvolvimento
+                    </ActionButton>
+                  </div>
                 </div>
-              </div>
-              
-              <div className="border-t pt-4">
-                <h3 className="text-lg font-medium mb-4">Informações do Sistema</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Versão:</span>
-                    <span>1.0.0</span>
+              </CardContent>
+            </Card>
+            
+            {/* Informações do Sistema */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <SettingsIcon className="w-5 h-5" />
+                  Informações do Sistema
+                </CardTitle>
+                <CardDescription>
+                  Detalhes sobre a versão e status do sistema.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                      <span className="text-muted-foreground">Versão do Sistema:</span>
+                      <Badge variant="secondary">1.0.0</Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                      <span className="text-muted-foreground">Última Atualização:</span>
+                      <span className="font-medium">13/05/2025</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Última atualização:</span>
-                    <span>13/05/2025</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Banco de dados:</span>
-                    <span>Atualizado</span>
+                  
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                      <span className="text-muted-foreground">Status do Banco:</span>
+                      <Badge variant="default" className="bg-green-600 hover:bg-green-700">
+                        Atualizado
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg">
+                      <span className="text-muted-foreground">Status do Sistema:</span>
+                      <Badge variant="secondary">
+                        Online
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
