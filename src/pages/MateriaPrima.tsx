@@ -81,6 +81,10 @@ export default function MateriaPrima() {
     observacoes: ""
   });
   
+  // Estado para validação de erros
+  const [errosValidacao, setErrosValidacao] = useState<{[key: string]: string}>({});
+  const [codigoBarrasExiste, setCodigoBarrasExiste] = useState(false);
+  
   // Estado para o formulário de edição
   const [bobinaEditando, setBobinaEditando] = useState<Bobina | null>(null);
   
@@ -91,6 +95,60 @@ export default function MateriaPrima() {
     dataInicio: "",
     dataFim: ""
   });
+  
+  // Função para validar campos obrigatórios
+  const validarCamposObrigatorios = () => {
+    const erros: {[key: string]: string} = {};
+    
+    if (!novaBobina.tipo_tecido.trim()) {
+      erros.tipo_tecido = "Tipo de tecido é obrigatório";
+    }
+    
+    if (!novaBobina.cor.trim()) {
+      erros.cor = "Cor é obrigatória";
+    }
+    
+    if (!novaBobina.lote.trim()) {
+      erros.lote = "Lote é obrigatório";
+    }
+    
+    if (!novaBobina.fornecedor.trim()) {
+      erros.fornecedor = "Fornecedor é obrigatório";
+    }
+    
+    if (novaBobina.quantidade_total <= 0) {
+      erros.quantidade_total = "Quantidade total deve ser maior que zero";
+    }
+    
+    if (!novaBobina.localizacao.trim()) {
+      erros.localizacao = "Localização é obrigatória";
+    }
+    
+    if (!novaBobina.data_entrada) {
+      erros.data_entrada = "Data de entrada é obrigatória";
+    }
+    
+    setErrosValidacao(erros);
+    return Object.keys(erros).length === 0;
+  };
+  
+  // Função para verificar se código de barras já existe
+  const verificarCodigoBarras = async (codigo: string) => {
+    if (!codigo.trim()) {
+      setCodigoBarrasExiste(false);
+      return true; // Código vazio é permitido
+    }
+    
+    try {
+      const existe = await materiaPrimaService.verificarCodigoBarras(codigo.trim());
+      setCodigoBarrasExiste(existe);
+      return !existe;
+    } catch (error) {
+      console.error('Erro ao verificar código de barras:', error);
+      toast.error("Erro ao verificar código de barras");
+      return false;
+    }
+  };
   
   // Função para limpar o formulário de nova bobina
   const limparFormulario = () => {
@@ -108,6 +166,8 @@ export default function MateriaPrima() {
       codigo_barras: "",
       observacoes: ""
     });
+    setErrosValidacao({});
+    setCodigoBarrasExiste(false);
   };
   
   // Função para carregar as bobinas
@@ -558,6 +618,19 @@ export default function MateriaPrima() {
   // Função para lidar com a criação de uma nova bobina
   const handleCreateBobina = async () => {
     try {
+      // Validar campos obrigatórios
+      if (!validarCamposObrigatorios()) {
+        toast.error("Por favor, preencha todos os campos obrigatórios");
+        return;
+      }
+      
+      // Verificar código de barras único
+      const codigoBarrasValido = await verificarCodigoBarras(novaBobina.codigo_barras);
+      if (!codigoBarrasValido) {
+        toast.error(`Código de barras "${novaBobina.codigo_barras}" já existe no sistema. Por favor, utilize um código único ou deixe o campo em branco.`);
+        return;
+      }
+      
       setIsLoading(true);
       await materiaPrimaService.criarBobina(novaBobina);
       await carregarBobinas();
@@ -1089,7 +1162,9 @@ export default function MateriaPrima() {
             <div className="grid gap-4 py-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="tipo_tecido">Tipo de Tecido</label>
+                  <label htmlFor="tipo_tecido" className="text-sm font-medium">
+                    Tipo de Tecido <span className="text-red-500">*</span>
+                  </label>
                   <Select
                     value={novaBobina.tipo_tecido}
                     onValueChange={(value) => {
@@ -1099,9 +1174,13 @@ export default function MateriaPrima() {
                       } else {
                         setCoresPorTipoTecido([]);
                       }
+                      // Limpar erro ao selecionar
+                      if (errosValidacao.tipo_tecido) {
+                        setErrosValidacao(prev => ({ ...prev, tipo_tecido: "" }));
+                      }
                     }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={errosValidacao.tipo_tecido ? "border-red-500" : ""}>
                       <SelectValue placeholder="Selecione o tipo de tecido" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1115,15 +1194,26 @@ export default function MateriaPrima() {
                       })}
                     </SelectContent>
                   </Select>
+                  {errosValidacao.tipo_tecido && (
+                    <p className="text-sm text-red-500">{errosValidacao.tipo_tecido}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="cor">Cor</label>
+                  <label htmlFor="cor" className="text-sm font-medium">
+                    Cor <span className="text-red-500">*</span>
+                  </label>
                   <Select
                     value={novaBobina.cor}
-                    onValueChange={(value) => setNovaBobina({ ...novaBobina, cor: value })}
+                    onValueChange={(value) => {
+                      setNovaBobina({ ...novaBobina, cor: value });
+                      // Limpar erro ao selecionar
+                      if (errosValidacao.cor) {
+                        setErrosValidacao(prev => ({ ...prev, cor: "" }));
+                      }
+                    }}
                     disabled={!novaBobina.tipo_tecido}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className={errosValidacao.cor ? "border-red-500" : ""}>
                       <SelectValue placeholder={novaBobina.tipo_tecido ? "Selecione a cor" : "Primeiro selecione o tipo de tecido"} />
                     </SelectTrigger>
                     <SelectContent>
@@ -1137,38 +1227,77 @@ export default function MateriaPrima() {
                       })}
                     </SelectContent>
                   </Select>
+                  {errosValidacao.cor && (
+                    <p className="text-sm text-red-500">{errosValidacao.cor}</p>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="lote">Lote</label>
+                  <label htmlFor="lote" className="text-sm font-medium">
+                    Lote <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     id="lote"
                     value={novaBobina.lote}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, lote: e.target.value })}
+                    onChange={(e) => {
+                      setNovaBobina({ ...novaBobina, lote: e.target.value });
+                      // Limpar erro ao digitar
+                      if (errosValidacao.lote) {
+                        setErrosValidacao(prev => ({ ...prev, lote: "" }));
+                      }
+                    }}
+                    className={errosValidacao.lote ? "border-red-500" : ""}
                   />
+                  {errosValidacao.lote && (
+                    <p className="text-sm text-red-500">{errosValidacao.lote}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="fornecedor">Fornecedor</label>
+                  <label htmlFor="fornecedor" className="text-sm font-medium">
+                    Fornecedor <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     id="fornecedor"
                     value={novaBobina.fornecedor}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, fornecedor: e.target.value })}
+                    onChange={(e) => {
+                      setNovaBobina({ ...novaBobina, fornecedor: e.target.value });
+                      // Limpar erro ao digitar
+                      if (errosValidacao.fornecedor) {
+                        setErrosValidacao(prev => ({ ...prev, fornecedor: "" }));
+                      }
+                    }}
+                    className={errosValidacao.fornecedor ? "border-red-500" : ""}
                   />
+                  {errosValidacao.fornecedor && (
+                    <p className="text-sm text-red-500">{errosValidacao.fornecedor}</p>
+                  )}
                 </div>
               </div>
-              <div className="grid grid-2 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="quantidade_total">quantidade_total</label>
+                  <label htmlFor="quantidade_total" className="text-sm font-medium">
+                    Quantidade Total <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     id="quantidade_total"
                     type="number"
                     value={novaBobina.quantidade_total}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_total: parseFloat(e.target.value) })}
+                    onChange={(e) => {
+                      setNovaBobina({ ...novaBobina, quantidade_total: parseFloat(e.target.value) || 0 });
+                      // Limpar erro ao digitar
+                      if (errosValidacao.quantidade_total) {
+                        setErrosValidacao(prev => ({ ...prev, quantidade_total: "" }));
+                      }
+                    }}
+                    className={errosValidacao.quantidade_total ? "border-red-500" : ""}
                   />
+                  {errosValidacao.quantidade_total && (
+                    <p className="text-sm text-red-500">{errosValidacao.quantidade_total}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="unidade">Unidade</label>
+                  <label htmlFor="unidade" className="text-sm font-medium">Unidade</label>
                   <Select
                     value={novaBobina.unidade}
                     onValueChange={(value) => setNovaBobina({ ...novaBobina, unidade: value })}
@@ -1186,33 +1315,72 @@ export default function MateriaPrima() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="localizacao">Localização</label>
+                  <label htmlFor="localizacao" className="text-sm font-medium">
+                    Localização <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     id="localizacao"
                     value={novaBobina.localizacao}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, localizacao: e.target.value })}
+                    onChange={(e) => {
+                      setNovaBobina({ ...novaBobina, localizacao: e.target.value });
+                      // Limpar erro ao digitar
+                      if (errosValidacao.localizacao) {
+                        setErrosValidacao(prev => ({ ...prev, localizacao: "" }));
+                      }
+                    }}
+                    className={errosValidacao.localizacao ? "border-red-500" : ""}
                   />
+                  {errosValidacao.localizacao && (
+                    <p className="text-sm text-red-500">{errosValidacao.localizacao}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <label htmlFor="data_entrada">Data de Entrada</label>
+                  <label htmlFor="data_entrada" className="text-sm font-medium">
+                    Data de Entrada <span className="text-red-500">*</span>
+                  </label>
                   <Input
                     id="data_entrada"
                     type="date"
                     value={format(novaBobina.data_entrada, "yyyy-MM-dd")}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, data_entrada: new Date(e.target.value) })}
+                    onChange={(e) => {
+                      setNovaBobina({ ...novaBobina, data_entrada: new Date(e.target.value) });
+                      // Limpar erro ao selecionar
+                      if (errosValidacao.data_entrada) {
+                        setErrosValidacao(prev => ({ ...prev, data_entrada: "" }));
+                      }
+                    }}
+                    className={errosValidacao.data_entrada ? "border-red-500" : ""}
                   />
+                  {errosValidacao.data_entrada && (
+                    <p className="text-sm text-red-500">{errosValidacao.data_entrada}</p>
+                  )}
                 </div>
               </div>
               <div className="space-y-2">
-                <label htmlFor="codigo_barras">Código de Barras</label>
+                <label htmlFor="codigo_barras" className="text-sm font-medium">
+                  Código de Barras
+                </label>
                 <Input
                   id="codigo_barras"
                   value={novaBobina.codigo_barras}
-                  onChange={(e) => setNovaBobina({ ...novaBobina, codigo_barras: e.target.value })}
+                  onChange={async (e) => {
+                    const codigo = e.target.value;
+                    setNovaBobina({ ...novaBobina, codigo_barras: codigo });
+                    // Verificar código de barras em tempo real
+                    if (codigo.trim()) {
+                      await verificarCodigoBarras(codigo);
+                    } else {
+                      setCodigoBarrasExiste(false);
+                    }
+                  }}
+                  className={codigoBarrasExiste ? "border-red-500" : ""}
                 />
+                {codigoBarrasExiste && (
+                  <p className="text-sm text-red-500">Código de barras já existe no sistema</p>
+                )}
               </div>
               <div className="space-y-2">
-                <label htmlFor="observacoes">Observações</label>
+                <label htmlFor="observacoes" className="text-sm font-medium">Observações</label>
                 <Input
                   id="observacoes"
                   value={novaBobina.observacoes}
@@ -1228,7 +1396,10 @@ export default function MateriaPrima() {
             }}>
               Cancelar
             </Button>
-            <Button onClick={handleCreateBobina} disabled={isLoading}>
+            <Button 
+              onClick={handleCreateBobina} 
+              disabled={isLoading || codigoBarrasExiste}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

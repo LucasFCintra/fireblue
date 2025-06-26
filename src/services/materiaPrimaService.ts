@@ -91,5 +91,15 @@ export const materiaPrimaService = {
   async buscarCoresPorTipoTecido(tipoTecido: string): Promise<string[]> {
     const response = await axios.get(`${API_URL}/api/materia-prima/cores/${encodeURIComponent(tipoTecido)}`);
     return response.data;
+  },
+
+  async verificarCodigoBarras(codigoBarras: string): Promise<boolean> {
+    try {
+      const response = await axios.get(`${API_URL}/api/materia-prima/verificar-codigo-barras/${encodeURIComponent(codigoBarras)}`);
+      return response.data.existe;
+    } catch (error) {
+      console.error('Erro ao verificar código de barras:', error);
+      return false;
+    }
   }
 }; 

@@ -146,6 +146,23 @@ class MateriasPrimasController {
       res.status(500).json({ error: "Erro ao buscar cores por tipo de tecido" });
     }
   }
+
+  async verificarCodigoBarras(req, res) {
+    try {
+      const codigoBarras = req.params.codigoBarras;
+      console.log('Verificando código de barras:', codigoBarras);
+      
+      if (!codigoBarras) {
+        return res.status(400).json({ error: "Código de barras é obrigatório" });
+      }
+
+      const existe = await MateriasPrimas.verificarCodigoBarras(codigoBarras);
+      res.status(200).json({ existe });
+    } catch (error) {
+      console.error('Erro ao verificar código de barras:', error);
+      res.status(500).json({ error: "Erro ao verificar código de barras" });
+    }
+  }
 }
 
 module.exports = new MateriasPrimasController();

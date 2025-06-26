@@ -323,6 +323,27 @@ class MateriasPrimasModel {
       throw err;
     }
   }
+
+  async verificarCodigoBarras(codigoBarras) {
+    try {
+      console.log('Verificando código de barras no banco:', codigoBarras);
+      
+      if (!codigoBarras || codigoBarras.trim() === '') {
+        return false; // Código vazio não existe
+      }
+
+      const result = await knex.select('id')
+        .where('codigo_barras', codigoBarras.trim())
+        .table("materias_primas");
+
+      const existe = result.length > 0;
+      console.log('Código de barras existe:', existe);
+      return existe;
+    } catch (err) {
+      console.error('Erro ao verificar código de barras:', err);
+      throw err;
+    }
+  }
 }
 
 module.exports = new MateriasPrimasModel();

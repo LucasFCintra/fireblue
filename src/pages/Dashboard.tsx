@@ -135,7 +135,6 @@ export default function Dashboard() {
       const monthlyStatsResponse = await fetch('http://26.203.75.236:8687/api/fichas/stats/monthly');
       const monthlyStatsData = await monthlyStatsResponse.json();
 
-      console.log(monthlyStatsData)
       setMonthlyStats(monthlyStatsData);
       
       setDashboardData({

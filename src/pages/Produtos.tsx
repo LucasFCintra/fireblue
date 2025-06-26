@@ -65,6 +65,7 @@ export default function Produtos() {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [errosValidacao, setErrosValidacao] = useState<{[key: string]: string}>({});
   const [formData, setFormData] = useState({
     nome_produto: "",
     sku: "",
@@ -107,9 +108,41 @@ export default function Produtos() {
     }).format(value);
   };
 
+  // Função para validar campos obrigatórios
+  const validarCamposObrigatorios = () => {
+    const erros: {[key: string]: string} = {};
+    
+    if (!formData.nome_produto.trim()) {
+      erros.nome_produto = "Nome do produto é obrigatório";
+    }
+    
+    if (!formData.sku.trim()) {
+      erros.sku = "SKU é obrigatório";
+    }
+    
+    if (parseFloat(formData.valor_unitario) <= 0) {
+      erros.valor_unitario = "Valor unitário deve ser maior que zero";
+    }
+    
+    if (formData.quantidade < 0) {
+      erros.quantidade = "Quantidade não pode ser negativa";
+    }
+    
+    if (formData.estoque_minimo < 0) {
+      erros.estoque_minimo = "Estoque mínimo não pode ser negativo";
+    }
+    
+    setErrosValidacao(erros);
+    return Object.keys(erros).length === 0;
+  };
+
   // Carregar produtos
   const loadProdutos = async () => {
     try {
+      if (!validarCamposObrigatorios()) {
+        return;
+      }
+
       const data = await listar();
       console.log(data)
       const produtosComStatus = Array.isArray(data) ? data.map(produto => ({
@@ -402,6 +435,7 @@ export default function Produtos() {
       descricao: ""
     });
     setImagePreview(null);
+    setErrosValidacao({});
     setIsModalOpen(true);
   };
 
@@ -423,6 +457,7 @@ export default function Produtos() {
       descricao: produto.descricao || ""
     });
     setImagePreview(produto.imagem);
+    setErrosValidacao({});
     setIsModalOpen(true);
   };
 
@@ -434,9 +469,9 @@ export default function Produtos() {
 
   // Salvar produto (criar ou editar)
   const handleSaveProduto = async () => {
-    // Validações
-    if (!formData.nome_produto) {
-      toast.error("Nome do produto é obrigatório");
+    // Validar campos obrigatórios
+    if (!validarCamposObrigatorios()) {
+      toast.error("Por favor, preencha todos os campos obrigatórios");
       return;
     }
 
@@ -547,8 +582,8 @@ export default function Produtos() {
       header: 'Produto',
       cell: (produto: any) => (
         <div className="flex flex-col">
-          <span className="font-medium text-gray-900">{produto.nome_produto}</span>
-          <span className="text-sm text-gray-500">{produto.codigo_barras || 'Sem código'}</span>
+          <span className="font-medium text-foreground">{produto.nome_produto}</span>
+          <span className="text-sm text-muted-foreground">{produto.codigo_barras || 'Sem código'}</span>
         </div>
       )
     },
@@ -870,17 +905,28 @@ export default function Produtos() {
             {/* Seção de Informações Básicas */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">SKU *</label>
+                <label className="text-sm font-medium">
+                  SKU <span className="text-red-500">*</span>
+                </label>
                 <Input
                   placeholder="Código SKU"
                   value={formData.sku}
-                  onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, sku: e.target.value });
+                    // Limpar erro ao digitar
+                    if (errosValidacao.sku) {
+                      setErrosValidacao(prev => ({ ...prev, sku: "" }));
+                    }
+                  }}
+                  className={errosValidacao.sku ? "border-red-500" : ""}
                 />
+                {errosValidacao.sku && (
+                  <p className="text-sm text-red-500">{errosValidacao.sku}</p>
+                )}
               </div>
               
               <div>
-                <label className="block text-sm font-medium mb-1">Código de Barras</label>
+                <label className="text-sm font-medium">Código de Barras</label>
                 <div className="flex space-x-2">
                   <Input
                     placeholder="Código de Barras"
@@ -900,17 +946,28 @@ export default function Produtos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Nome do Produto *</label>
+                <label className="text-sm font-medium">
+                  Nome do Produto <span className="text-red-500">*</span>
+                </label>
                 <Input
                   placeholder="Nome do Produto"
                   value={formData.nome_produto}
-                  onChange={(e) => setFormData({ ...formData, nome_produto: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, nome_produto: e.target.value });
+                    // Limpar erro ao digitar
+                    if (errosValidacao.nome_produto) {
+                      setErrosValidacao(prev => ({ ...prev, nome_produto: "" }));
+                    }
+                  }}
+                  className={errosValidacao.nome_produto ? "border-red-500" : ""}
                 />
+                {errosValidacao.nome_produto && (
+                  <p className="text-sm text-red-500">{errosValidacao.nome_produto}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Categoria</label>
+                <label className="text-sm font-medium">Categoria</label>
                 <Input
                   placeholder="Categoria do Produto"
                   value={formData.categoria}
@@ -919,7 +976,7 @@ export default function Produtos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Descrição</label>
+                <label className="text-sm font-medium">Descrição</label>
                 <Input
                   placeholder="Descrição do Produto"
                   value={formData.descricao}
@@ -931,46 +988,79 @@ export default function Produtos() {
             {/* Seção de Estoque e Valores */}
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Valor Unitário *</label>
+                <label className="text-sm font-medium">
+                  Valor Unitário <span className="text-red-500">*</span>
+                </label>
                 <Input
                   type="number"
                   step="0.01"
                   min="0"
                   placeholder="0,00"
                   value={formData.valor_unitario}
-                  onChange={(e) => setFormData({ ...formData, valor_unitario: e.target.value })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, valor_unitario: e.target.value });
+                    // Limpar erro ao digitar
+                    if (errosValidacao.valor_unitario) {
+                      setErrosValidacao(prev => ({ ...prev, valor_unitario: "" }));
+                    }
+                  }}
+                  className={errosValidacao.valor_unitario ? "border-red-500" : ""}
                 />
+                {errosValidacao.valor_unitario && (
+                  <p className="text-sm text-red-500">{errosValidacao.valor_unitario}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Quantidade *</label>
+                <label className="text-sm font-medium">
+                  Quantidade <span className="text-red-500">*</span>
+                </label>
                 <Input
                   type="number"
                   step="1"
                   min="0"
                   placeholder="0"
                   value={formData.quantidade}
-                  onChange={(e) => setFormData({ ...formData, quantidade: parseInt(e.target.value) || 0 })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, quantidade: parseInt(e.target.value) || 0 });
+                    // Limpar erro ao digitar
+                    if (errosValidacao.quantidade) {
+                      setErrosValidacao(prev => ({ ...prev, quantidade: "" }));
+                    }
+                  }}
+                  className={errosValidacao.quantidade ? "border-red-500" : ""}
                 />
+                {errosValidacao.quantidade && (
+                  <p className="text-sm text-red-500">{errosValidacao.quantidade}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Estoque Mínimo *</label>
+                <label className="text-sm font-medium">
+                  Estoque Mínimo <span className="text-red-500">*</span>
+                </label>
                 <Input
                   type="number"
                   step="1"
                   min="0"
                   placeholder="0"
                   value={formData.estoque_minimo}
-                  onChange={(e) => setFormData({ ...formData, estoque_minimo: parseInt(e.target.value) || 0 })}
-                  required
+                  onChange={(e) => {
+                    setFormData({ ...formData, estoque_minimo: parseInt(e.target.value) || 0 });
+                    // Limpar erro ao digitar
+                    if (errosValidacao.estoque_minimo) {
+                      setErrosValidacao(prev => ({ ...prev, estoque_minimo: "" }));
+                    }
+                  }}
+                  className={errosValidacao.estoque_minimo ? "border-red-500" : ""}
                 />
+                {errosValidacao.estoque_minimo && (
+                  <p className="text-sm text-red-500">{errosValidacao.estoque_minimo}</p>
+                )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Localização</label>
+                <label className="text-sm font-medium">Localização</label>
                 <Input
                   placeholder="Localização no Estoque"
                   value={formData.localizacao}
@@ -979,7 +1069,7 @@ export default function Produtos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Unidade de Medida</label>
+                <label className="text-sm font-medium">Unidade de Medida</label>
                 <Select
                   value={formData.unidade_medida}
                   onValueChange={(value) => setFormData({ ...formData, unidade_medida: value })}
@@ -1002,7 +1092,7 @@ export default function Produtos() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">Fornecedor</label>
+                <label className="text-sm font-medium">Fornecedor</label>
                 <Input
                   placeholder="Nome do Fornecedor"
                   value={formData.fornecedor || ''}
@@ -1016,7 +1106,10 @@ export default function Produtos() {
             <Button variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSaveProduto} disabled={isLoading}>
+            <Button 
+              onClick={handleSaveProduto} 
+              disabled={isLoading || Object.keys(errosValidacao).length > 0}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

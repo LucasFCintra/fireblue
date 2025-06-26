@@ -138,6 +138,7 @@ router.get('/api/materia-prima/estoque', materiaPrimaController.retornaEstoque);
 router.get('/api/materia-prima/tipos-tecido', materiaPrimaController.buscarTiposTecido);
 router.get('/api/materia-prima/cores', materiaPrimaController.buscarCores);
 router.get('/api/materia-prima/cores/:tipoTecido', materiaPrimaController.buscarCoresPorTipoTecido);
+router.get('/api/materia-prima/verificar-codigo-barras/:codigoBarras', materiaPrimaController.verificarCodigoBarras);
 router.post('/api/materia-prima/:id/corte', materiaPrimaController.cortar);
 router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico);
 router.get('/api/materia-prima', materiaPrimaController.index);
