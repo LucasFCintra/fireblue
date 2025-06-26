@@ -8,6 +8,7 @@ export interface Banca {
   telefone: string;
   endereco?: string;
   valorPorPeca?: number; // Valor padrão por peça
+  chave_pix?: string;
 }
 
 export interface FichaFechamento extends Ficha {
@@ -27,6 +28,16 @@ export interface FechamentoBanca {
   status: 'pendente' | 'pago' | 'cancelado';
   dataPagamento?: string;
   observacoes?: string;
+  chave_pix?: string;
+  cnpj?: string;
+  email?: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  complemento?: string;
+  numero?: string;
 }
 
 export interface RelatorioSemanal {

@@ -686,7 +686,7 @@ export default function MateriaPrima() {
                 type="number"
                 value={quantidade_totalCorte}
                 onChange={(e) => setquantidade_totalCorte(e.target.value)}
-                placeholder="quantidade_total em metros"
+                placeholder="Quantidade de bobinas cortadas"
               />
             </div>
             <div className="space-y-2">

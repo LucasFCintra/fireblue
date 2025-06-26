@@ -369,6 +369,47 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
             </Table>
           </div>
         </div>
+        
+        {/* Seção de Chaves PIX */}
+        {relatorio.fechamentos.some(f => f.chave_pix) && (
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-4">Chaves PIX para Pagamento</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {relatorio.fechamentos
+                .filter(f => f.chave_pix)
+                .map((fechamento) => (
+                  <Card key={fechamento.id} className="p-4 border-green-200 bg-green-50">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold text-green-800">{fechamento.nomeBanca}</h4>
+                        <p className="text-sm text-green-600 mb-2">
+                          Valor: {formatarMoeda(fechamento.valorTotal)}
+                        </p>
+                      </div>
+                      <Badge 
+                        className={
+                          fechamento.status === 'pendente' 
+                            ? 'bg-yellow-100 text-yellow-800' 
+                            : fechamento.status === 'pago'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                        }
+                      >
+                        {fechamento.status === 'pendente' ? 'Pendente' : 
+                         fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
+                      </Badge>
+                    </div>
+                    <div className="mt-2 p-2 bg-white rounded border border-green-300">
+                      <span className="text-xs font-medium text-green-700">Chave PIX:</span>
+                      <div className="font-mono text-sm text-green-600 break-all mt-1">
+                        {fechamento.chave_pix}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+            </div>
+          </div>
+        )}
       </CardContent>
       
       <CardFooter className="flex justify-between pt-6 px-0 pb-0 border-t mt-6">

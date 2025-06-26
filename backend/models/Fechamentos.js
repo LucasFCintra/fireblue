@@ -31,6 +31,7 @@ class FechamentosModel {
       let valorTotalGeral = 0;
       
       for (const banca of bancasComMovimentacao) {
+        console.log('3232'+JSON.stringify(banca))
         const fechamentoBanca = await this.processarFechamentoBanca(
           fechamentoId, 
           banca, 
@@ -56,6 +57,7 @@ class FechamentosModel {
       return {
         id: fechamentoId,
         semana: semana,
+       // chave_pix:chave_pix,
         data_inicio: dataInicio,
         data_fim: dataFim,
         total_pecas: totalPecasGeral,
@@ -75,13 +77,20 @@ class FechamentosModel {
    */
   async buscarBancasComMovimentacao(dataInicio, dataFim) {
     try {
+      // Teste para verificar se o campo chave_pix existe
+      const teste = await knex('terceiros').select('*').limit(1);
+      console.log('Estrutura da tabela terceiros:', Object.keys(teste[0] || {}));
+      
       const bancas = await knex('movimentacoes_fichas as mf')
         .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
         .leftJoin('terceiros as t', 't.nome', 'f.banca')
         .where('mf.data', '>=', dataInicio)
         .andWhere('mf.data', '<=', dataFim)
-        .andWhere('mf.tipo', 'retorno')
-        .groupBy('t.idTerceiro', 't.nome')
+        .andWhere(function() {
+          this.where('mf.tipo', 'Retorno')
+              .orWhere('mf.tipo', 'Conclusão');
+        })
+        .groupBy('t.idTerceiro')
         .select([
           't.idTerceiro as idTerceiro',
           't.nome as nome',
@@ -93,10 +102,12 @@ class FechamentosModel {
           't.estado',
           't.cep',
           't.complemento',
-          't.numero'
+          't.numero',
+          't.chave_pix'
         ]);
       
       console.log('Bancas únicas encontradas:', bancas.length);
+      console.log('Dados das bancas:', JSON.stringify(bancas, null, 2));
       return bancas;
     } catch (err) {
       console.error('Erro ao buscar bancas com movimentação:', err);
@@ -114,7 +125,10 @@ class FechamentosModel {
         .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
         .leftJoin('produtos as p', 'p.id', 'f.produto_id')
         .where('f.banca', banca.nome)
-        .where('mf.tipo', 'retorno')
+        .where(function() {
+          this.where('mf.tipo', 'Retorno')
+              .orWhere('mf.tipo', 'Conclusão');
+        })
         .whereBetween('mf.data', [dataInicio, dataFim])
         .select([
           'mf.id as movimentacao_id',
@@ -170,6 +184,8 @@ class FechamentosModel {
       const bancaId = Array.isArray(bancaObj) ? bancaObj[0]?.idTerceiro : bancaObj?.idTerceiro;
       
       console.log('bancaId: '+bancaId+ ' | ' + bancaObj )
+      console.log('Dados completos da banca:', JSON.stringify(banca));
+      
       // Criar fechamento da banca
       const fechamentoBanca = {
         fechamento_semanal_id: fechamentoId,
@@ -198,6 +214,17 @@ class FechamentosModel {
       return {
         id: fechamentoBancaId,
         ...fechamentoBanca,
+        // Dados completos da banca
+        chave_pix: banca.chave_pix,
+        cnpj: banca.cnpj,
+        email: banca.email,
+        telefone: banca.telefone,
+        endereco: banca.endereco,
+        cidade: banca.cidade,
+        estado: banca.estado,
+        cep: banca.cep,
+        complemento: banca.complemento,
+        numero: banca.numero,
         itens: itens
       };
       
@@ -221,9 +248,24 @@ class FechamentosModel {
       }
       
       // Buscar fechamentos das bancas
-      const fechamentosBancas = await knex('fechamentos_bancas')
+      const fechamentosBancas = await knex('fechamentos_bancas as fb')
+        .leftJoin('terceiros as t', 't.idTerceiro', 'fb.banca_id')
         .where({ fechamento_semanal_id: id })
-        .orderBy('nome_banca');
+        .select([
+          'fb.*',
+          't.nome as nome_banca_completo',
+          't.cnpj',
+          't.email',
+          't.telefone',
+          't.endereco',
+          't.cidade',
+          't.estado',
+          't.cep',
+          't.complemento',
+          't.numero',
+          't.chave_pix'
+        ])
+        .orderBy('fb.nome_banca');
       
       // Buscar itens de cada fechamento de banca
       for (const fechamentoBanca of fechamentosBancas) {

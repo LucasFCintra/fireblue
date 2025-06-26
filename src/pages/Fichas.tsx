@@ -292,12 +292,15 @@ export default function Fichas() {
   const handleConcluirFicha = async () => {
     if (!selectedFicha) return;
     
+    // Calcular a quantidade em produção (quantidade total menos quantidade já recebida)
+    const quantidadeEmProducao = selectedFicha.quantidade - (selectedFicha.quantidade_recebida || 0);
+    
     try {
       setIsLoading(true);
       await fichasService.registrarMovimentacao(
         selectedFicha.id,
         "Conclusão",
-        selectedFicha.quantidade,
+        quantidadeEmProducao,
         "Conclusão da produção",
         "Sistema"
       );
