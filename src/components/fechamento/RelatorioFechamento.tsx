@@ -233,24 +233,24 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
   };
 
   return (
-    <Card className="w-full bg-white p-6 rounded-lg shadow-sm border animate-in fade-in duration-1000">
+    <Card className="w-full border border-border hover:shadow-md transition-all animate-in fade-in duration-1000 dark:shadow-lg dark:shadow-black/20">
       <CardHeader className="px-0 pt-0">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <CardTitle className="text-xl font-bold">
+            <CardTitle className="text-xl font-bold text-foreground">
               Relatório de Fechamento Semanal
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-muted-foreground">
               Período: {relatorio.dataInicio} a {relatorio.dataFim} (Semana {relatorio.semana})
             </CardDescription>
           </div>
           <Badge 
             className={
               relatorio.status === 'aberto' 
-                ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100' 
+                ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/50 dark:text-yellow-200 dark:hover:bg-yellow-900/50' 
                 : relatorio.status === 'pago'
-                  ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                  : 'bg-blue-100 text-blue-800 hover:bg-blue-100'
+                  ? 'bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/50 dark:text-green-200 dark:hover:bg-green-900/50'
+                  : 'bg-blue-100 text-blue-800 hover:bg-blue-100 dark:bg-blue-900/50 dark:text-blue-200 dark:hover:bg-blue-900/50'
             }
           >
             {relatorio.status === 'aberto' ? 'Em aberto' : 
@@ -262,27 +262,27 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
       <CardContent className="px-0">
         {/* Resumo geral */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="border border-border hover:shadow-sm dark:shadow-md dark:shadow-black/10">
             <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium">Total de Bancas</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground">Total de Bancas</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{relatorio.fechamentos.length}</p>
+              <p className="text-2xl font-bold text-foreground">{relatorio.fechamentos.length}</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border border-border hover:shadow-sm dark:shadow-md dark:shadow-black/10">
             <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium">Total de Peças</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground">Total de Peças</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold">{relatorio.totalPecas.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-foreground">{relatorio.totalPecas.toLocaleString()}</p>
             </CardContent>
           </Card>
           
-          <Card>
+          <Card className="border border-border hover:shadow-sm dark:shadow-md dark:shadow-black/10">
             <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium">Valor Total</CardTitle>
+              <CardTitle className="text-sm font-medium text-foreground">Valor Total</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold text-primary">{formatarMoeda(relatorio.valorTotal)}</p>
@@ -292,32 +292,32 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
         
         {/* Tabela de fechamentos por banca */}
         <div className="mt-6">
-          <h3 className="text-lg font-medium mb-4">Fechamento por Banca</h3>
-          <div className="overflow-x-auto">
+          <h3 className="text-lg font-medium mb-4 text-foreground">Fechamento por Banca</h3>
+          <div className="overflow-x-auto border border-border rounded-md">
             <Table>
               <TableHeader>
-                <TableRow>
-                  <TableHead>Banca</TableHead>
-                  <TableHead>Peças Entregues</TableHead>
-                  <TableHead>Valor a Pagar</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                <TableRow className="bg-muted/50 dark:bg-muted/30">
+                  <TableHead className="text-foreground">Banca</TableHead>
+                  <TableHead className="text-foreground">Peças Entregues</TableHead>
+                  <TableHead className="text-foreground">Valor a Pagar</TableHead>
+                  <TableHead className="text-foreground">Status</TableHead>
+                  <TableHead className="text-right text-foreground">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {relatorio.fechamentos.map((fechamento) => (
-                  <TableRow key={fechamento.id}>
-                    <TableCell className="font-medium">{fechamento.nomeBanca}</TableCell>
-                    <TableCell>{fechamento.totalPecas.toLocaleString()}</TableCell>
-                    <TableCell>{formatarMoeda(fechamento.valorTotal)}</TableCell>
+                  <TableRow key={fechamento.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="font-medium text-foreground">{fechamento.nomeBanca}</TableCell>
+                    <TableCell className="text-muted-foreground">{fechamento.totalPecas.toLocaleString()}</TableCell>
+                    <TableCell className="text-muted-foreground">{formatarMoeda(fechamento.valorTotal)}</TableCell>
                     <TableCell>
                       <Badge 
                         className={
                           fechamento.status === 'pendente' 
-                            ? 'bg-yellow-100 text-yellow-800' 
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
                             : fechamento.status === 'pago'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
                         }
                       >
                         {fechamento.status === 'pendente' ? 'Pendente' : 
@@ -329,7 +329,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 hover:bg-muted/50"
                           onClick={() => onVerDetalhesBanca(fechamento)}
                           title="Ver detalhes"
                         >
@@ -339,7 +339,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 hover:bg-muted/50"
                           onClick={() => onImprimirComprovante(fechamento)}
                           title="Imprimir comprovante"
                           disabled={relatorio.status === 'fechado' || fechamento.status === 'pago'}
@@ -350,7 +350,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          className="h-8 w-8 p-0"
+                          className="h-8 w-8 p-0 hover:bg-muted/50"
                           onClick={() => onFinalizarBanca(fechamento.idBanca)}
                           title="Finalizar fechamento"
                           disabled={relatorio.status === 'fechado' || fechamento.status === 'pago'}
@@ -363,7 +363,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
                   </TableRow>
                 ))}
               </TableBody>
-              <TableCaption>
+              <TableCaption className="text-muted-foreground">
                 Total de {relatorio.fechamentos.length} bancas com fechamento na semana.
               </TableCaption>
             </Table>
@@ -373,35 +373,35 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
         {/* Seção de Chaves PIX */}
         {relatorio.fechamentos.some(f => f.chave_pix) && (
           <div className="mt-6">
-            <h3 className="text-lg font-medium mb-4">Chaves PIX para Pagamento</h3>
+            <h3 className="text-lg font-medium mb-4 text-foreground">Chaves PIX para Pagamento</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {relatorio.fechamentos
                 .filter(f => f.chave_pix)
                 .map((fechamento) => (
-                  <Card key={fechamento.id} className="p-4 border-green-200 bg-green-50">
+                  <Card key={fechamento.id} className="p-4 border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-950/30">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-semibold text-green-800">{fechamento.nomeBanca}</h4>
-                        <p className="text-sm text-green-600 mb-2">
+                        <h4 className="font-semibold text-green-800 dark:text-green-200">{fechamento.nomeBanca}</h4>
+                        <p className="text-sm text-green-600 dark:text-green-400 mb-2">
                           Valor: {formatarMoeda(fechamento.valorTotal)}
                         </p>
                       </div>
                       <Badge 
                         className={
                           fechamento.status === 'pendente' 
-                            ? 'bg-yellow-100 text-yellow-800' 
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
                             : fechamento.status === 'pago'
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
                         }
                       >
                         {fechamento.status === 'pendente' ? 'Pendente' : 
                          fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
                       </Badge>
                     </div>
-                    <div className="mt-2 p-2 bg-white rounded border border-green-300">
-                      <span className="text-xs font-medium text-green-700">Chave PIX:</span>
-                      <div className="font-mono text-sm text-green-600 break-all mt-1">
+                    <div className="mt-2 p-2 bg-white dark:bg-muted/50 rounded border border-green-300 dark:border-green-700/50">
+                      <span className="text-xs font-medium text-green-700 dark:text-green-300">Chave PIX:</span>
+                      <div className="font-mono text-sm text-green-600 dark:text-green-400 break-all mt-1">
                         {fechamento.chave_pix}
                       </div>
                     </div>
@@ -412,13 +412,14 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-between pt-6 px-0 pb-0 border-t mt-6">
+      <CardFooter className="flex justify-between pt-6 px-0 pb-0 border-t border-border mt-6">
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
             size="sm" 
             disabled={isLoading || isImprimindo}
             onClick={handleImprimirRelatorioGeral}
+            className="border-border hover:bg-accent hover:text-accent-foreground"
           >
             <Printer className="h-4 w-4 mr-2" />
             {isImprimindo ? 'Gerando...' : 'Imprimir Relatório'}
@@ -430,7 +431,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
             variant="default"
             disabled={isLoading || relatorio.status !== 'aberto' || !todasBancasPagas || existemBancasPendentes}
             onClick={onFinalizar}
-            className="bg-indigo-600 hover:bg-indigo-700"
+            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm dark:shadow-md dark:shadow-black/20"
             title={!todasBancasPagas ? "Todas as bancas devem estar pagas para finalizar o fechamento" : ""}
           >
             {todasBancasPagas 
