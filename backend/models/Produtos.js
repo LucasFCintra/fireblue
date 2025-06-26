@@ -110,6 +110,60 @@ class ProdutosModel {
       return [];
     }
   }
+
+  async ajustarEstoque(id, dadosAjuste) {
+    try {
+      const produto = await this.findById(id);
+      if (!produto) {
+        return { status: false, err: "Produto não encontrado" };
+      }
+
+      const { tipoAjuste, quantidade, observacao } = dadosAjuste;
+      let novaQuantidade = produto.quantidade;
+
+      // Calcular nova quantidade com base no tipo de ajuste
+      switch (tipoAjuste) {
+        case "entrada":
+          novaQuantidade = produto.quantidade + parseInt(quantidade);
+          break;
+        case "saida":
+          novaQuantidade = Math.max(0, produto.quantidade - parseInt(quantidade));
+          break;
+        default:
+          return { status: false, err: "Tipo de ajuste inválido" };
+      }
+
+      // Atualizar a quantidade do produto
+      await knex.update({ quantidade: novaQuantidade }).where({ id }).table("produtos");
+
+      // Registrar o histórico do ajuste (opcional - pode ser implementado em uma tabela separada)
+      const historicoAjuste = {
+        id: uuidv4(),
+        produto_id: id,
+        tipo_ajuste: tipoAjuste,
+        quantidade_anterior: produto.quantidade,
+        quantidade_ajuste: quantidade,
+        nova_quantidade: novaQuantidade,
+        observacao: observacao || null,
+        data_ajuste: new Date().toISOString(),
+        usuario: dadosAjuste.usuario || 'Sistema'
+      };
+
+      // Aqui você pode salvar o histórico em uma tabela separada se desejar
+      // await knex.insert(historicoAjuste).table("historico_ajustes_estoque");
+
+      return { 
+        status: true, 
+        data: {
+          produto: await this.findById(id),
+          ajuste: historicoAjuste
+        }
+      };
+    } catch (err) {
+      console.log(err);
+      return { status: false, err: err.message };
+    }
+  }
 }
 
 module.exports = new ProdutosModel() 

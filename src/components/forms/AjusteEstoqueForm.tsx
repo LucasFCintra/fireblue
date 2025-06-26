@@ -28,15 +28,14 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ActionButton } from "@/components/ActionButton";
 import { toast } from "@/components/ui/sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { PlusCircle, MinusCircle, RotateCcw, Package } from "lucide-react";
 
 const formSchema = z.object({
-  tipoAjuste: z.enum(["entrada", "saida", "ajuste", "inventario"]),
+  tipoAjuste: z.enum(["entrada", "saida"]),
   quantidade: z.coerce.number().positive("A quantidade deve ser maior que zero"),
-  motivo: z.string().min(3, "O motivo deve ter pelo menos 3 caracteres"),
+  motivo: z.string().optional(),
   observacao: z.string().optional(),
   documento: z.string().optional(),
 });
@@ -74,6 +73,7 @@ export function AjusteEstoqueForm({
   // Função para lidar com o envio do formulário
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
+      console.log("Iniciando ajuste de estoque...", values);
       setIsLoading(true);
       
       // Calcular nova quantidade com base no tipo de ajuste
@@ -86,17 +86,15 @@ export function AjusteEstoqueForm({
         case "saida":
           novaQuantidade = Math.max(0, item.quantidade - values.quantidade);
           break;
-        case "ajuste":
-        case "inventario":
-          novaQuantidade = values.quantidade;
-          break;
       }
+      
+      console.log("Nova quantidade calculada:", novaQuantidade);
       
       // Calcular o status com base na nova quantidade e estoque mínimo
       let novoStatus = "Em Estoque";
       if (novaQuantidade === 0) {
         novoStatus = "Sem Estoque";
-      } else if (item.estoqueMinimo && novaQuantidade <= item.estoqueMinimo) {
+      } else if (item.estoque_minimo && novaQuantidade <= item.estoque_minimo) {
         novoStatus = "Baixo Estoque";
       }
       
@@ -111,13 +109,18 @@ export function AjusteEstoqueForm({
         usuario: "Usuário Atual", // Idealmente virá do contexto de autenticação
       };
       
+      console.log("Dados do ajuste:", dadosAjuste);
+      
       // Chamar a função onSubmit passada como prop
       await onSubmit(dadosAjuste);
+      
+      console.log("Ajuste realizado com sucesso!");
       
       // Resetar o formulário e fechar o diálogo
       form.reset();
       onClose();
     } catch (error) {
+      console.error("Erro detalhado:", error);
       toast.error("Erro ao ajustar o estoque. Tente novamente.");
       console.error("Erro ao ajustar estoque:", error);
     } finally {
@@ -131,7 +134,7 @@ export function AjusteEstoqueForm({
         <DialogHeader>
           <DialogTitle>Ajuste de Estoque</DialogTitle>
           <DialogDescription>
-            Realize ajustes no estoque do produto: <strong>{item?.produto}</strong>
+            Realize ajustes no estoque do produto: <strong>{item?.nome_produto}</strong>
           </DialogDescription>
         </DialogHeader>
         
@@ -146,7 +149,9 @@ export function AjusteEstoqueForm({
         </div>
         
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit, (errors) => {
+            console.log("Erros de validação:", errors);
+          })} className="space-y-4">
             {/* Tipo de Ajuste */}
             <FormField
               control={form.control}
@@ -176,25 +181,11 @@ export function AjusteEstoqueForm({
                           <span>Saída de Estoque</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="ajuste">
-                        <div className="flex items-center">
-                          <RotateCcw className="mr-2 h-4 w-4 text-amber-600" />
-                          <span>Ajuste Manual</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="inventario">
-                        <div className="flex items-center">
-                          <Package className="mr-2 h-4 w-4 text-blue-600" />
-                          <span>Contagem de Inventário</span>
-                        </div>
-                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <FormDescription>
                     {tipoAjuste === "entrada" && "Adiciona quantidade ao estoque atual"}
                     {tipoAjuste === "saida" && "Remove quantidade do estoque atual"}
-                    {tipoAjuste === "ajuste" && "Define um valor específico para o estoque"}
-                    {tipoAjuste === "inventario" && "Define o estoque com base na contagem física"}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -214,77 +205,6 @@ export function AjusteEstoqueForm({
                   <FormDescription>
                     {tipoAjuste === "entrada" && `Estoque após ajuste: ${item?.quantidade + Number(field.value)}`}
                     {tipoAjuste === "saida" && `Estoque após ajuste: ${Math.max(0, item?.quantidade - Number(field.value))}`}
-                    {(tipoAjuste === "ajuste" || tipoAjuste === "inventario") && "Quantidade total após o ajuste"}
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Motivo */}
-            <FormField
-              control={form.control}
-              name="motivo"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Motivo</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o motivo do ajuste" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {tipoAjuste === "entrada" && (
-                        <>
-                          <SelectItem value="compra">Compra</SelectItem>
-                          <SelectItem value="devolucao">Devolução</SelectItem>
-                          <SelectItem value="transferencia">Transferência</SelectItem>
-                          <SelectItem value="producao">Produção</SelectItem>
-                          <SelectItem value="outro_entrada">Outro</SelectItem>
-                        </>
-                      )}
-                      
-                      {tipoAjuste === "saida" && (
-                        <>
-                          <SelectItem value="venda">Venda</SelectItem>
-                          <SelectItem value="consumo">Consumo Interno</SelectItem>
-                          <SelectItem value="perda">Perda/Avaria</SelectItem>
-                          <SelectItem value="transferencia_saida">Transferência</SelectItem>
-                          <SelectItem value="outro_saida">Outro</SelectItem>
-                        </>
-                      )}
-                      
-                      {(tipoAjuste === "ajuste" || tipoAjuste === "inventario") && (
-                        <>
-                          <SelectItem value="contagem">Contagem Física</SelectItem>
-                          <SelectItem value="correcao">Correção</SelectItem>
-                          <SelectItem value="ajuste_sistema">Ajuste de Sistema</SelectItem>
-                          <SelectItem value="outro_ajuste">Outro</SelectItem>
-                        </>
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {/* Documento */}
-            <FormField
-              control={form.control}
-              name="documento"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Documento (opcional)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Nota fiscal, ordem, etc." {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Número do documento relacionado a este ajuste
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -314,13 +234,13 @@ export function AjusteEstoqueForm({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancelar
               </Button>
-              <ActionButton 
+              <Button 
                 type="submit" 
-                isLoading={isLoading}
-                loadingText="Processando..."
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700"
               >
-                Confirmar Ajuste
-              </ActionButton>
+                {isLoading ? "Processando..." : "Confirmar Ajuste"}
+              </Button>
             </DialogFooter>
           </form>
         </Form>

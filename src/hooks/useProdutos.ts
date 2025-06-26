@@ -133,6 +133,30 @@ export function useProdutos() {
     }
   };
 
+  const ajustarEstoque = async (id: string, dadosAjuste: any) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log("Hook: Iniciando ajuste de estoque para ID:", id);
+      console.log("Hook: Dados do ajuste:", dadosAjuste);
+      
+      const response = await axios.post(url+`/api/produtos/${id}/ajustar-estoque`, dadosAjuste);
+      
+      console.log("Hook: Resposta do servidor:", response.data);
+      
+      toast.success('Estoque ajustado com sucesso!');
+      return response.data;
+    } catch (err: any) {
+      console.error("Hook: Erro detalhado:", err);
+      const mensagem = err.response?.data?.error || 'Erro ao ajustar estoque';
+      setError(mensagem);
+      toast.error(mensagem);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -141,6 +165,7 @@ export function useProdutos() {
     criar,
     atualizar,
     excluir,
-    pesquisar
+    pesquisar,
+    ajustarEstoque
   };
 } 

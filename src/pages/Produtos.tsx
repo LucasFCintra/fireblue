@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { 
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow 
 } from "@/components/ui/table";
@@ -19,6 +19,11 @@ import { ActionButton } from "@/components/ActionButton";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { AjusteEstoqueForm } from "@/components/forms/AjusteEstoqueForm";
+import DataTable from "@/components/DataTable";
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 // Componente para a célula da imagem
 const ImagemCell = ({ produto }: { produto: any }) => {
@@ -45,7 +50,7 @@ const ImagemCell = ({ produto }: { produto: any }) => {
 export default function Produtos() {
   // Estados para produtos
   const [produtos, setProdutos] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
+  const [filteredProdutos, setFilteredProdutos] = useState<any[]>([]);
   const [page, setPage] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
   const pageSize = 10;
@@ -83,33 +88,39 @@ export default function Produtos() {
     criar, 
     atualizar, 
     excluir, 
-    pesquisar 
+    pesquisar,
+    ajustarEstoque 
   } = useProdutos();
+
+  // Função para determinar o status do produto
+  const getProdutoStatus = (produto: any) => {
+    if (produto.quantidade === 0) return "Sem Estoque";
+    if (produto.quantidade <= produto.estoque_minimo) return "Baixo Estoque";
+    return "Em Estoque";
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
 
   // Carregar produtos
   const loadProdutos = async () => {
     try {
       const data = await listar();
       console.log(data)
-      setProdutos(Array.isArray(data) ? data : []);
+      const produtosComStatus = Array.isArray(data) ? data.map(produto => ({
+        ...produto,
+        status: getProdutoStatus(produto)
+      })) : [];
+      setProdutos(produtosComStatus);
+      setFilteredProdutos(produtosComStatus);
     } catch (err) {
       console.error("Erro ao carregar produtos:", err);
       setProdutos([]);
-    }
-  };
-
-  // Buscar produtos
-  const handleSearch = async () => {
-    if (!search.trim()) {
-      await loadProdutos();
-      return;
-    }
-    try {
-      const data = await pesquisar(search);
-      setProdutos(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Erro ao buscar produtos:", err);
-      setProdutos([]);
+      setFilteredProdutos([]);
     }
   };
 
@@ -119,7 +130,7 @@ export default function Produtos() {
   }, []);
 
   // Calcular estatísticas
-  const calcularEstatisticas = () => {
+  const estatisticas = useMemo(() => {
     const totalProdutos = produtos.length;
     const produtosEmEstoque = produtos.filter(p => p.quantidade > p.estoque_minimo).length;
     const produtosBaixoEstoque = produtos.filter(p => p.quantidade <= p.estoque_minimo && p.quantidade > 0).length;
@@ -133,9 +144,244 @@ export default function Produtos() {
       produtosSemEstoque,
       valorTotalEstoque
     };
+  }, [produtos]);
+
+  // Função para gerar relatório em Excel
+  const gerarRelatorioExcel = () => {
+    try {
+      // Criar um novo workbook
+      const workbook = XLSX.utils.book_new();
+      
+      // Preparar dados para a planilha principal
+      const dadosPlanilha = filteredProdutos.map(produto => ({
+        'Nome do Produto': produto.nome_produto,
+        'SKU': produto.sku || '',
+        'Categoria': produto.categoria || '',
+        'Valor Unitário': parseFloat(produto.valor_unitario || 0),
+        'Quantidade': produto.quantidade || 0,
+        'Estoque Mínimo': produto.estoque_minimo || 0,
+        'Status': produto.status,
+        'Localização': produto.localizacao || '',
+        'Unidade de Medida': produto.unidade_medida || 'un',
+        'Código de Barras': produto.codigo_barras || '',
+        'Fornecedor': produto.fornecedor || '',
+        'Descrição': produto.descricao || '',
+        'Valor Total em Estoque': (produto.quantidade || 0) * parseFloat(produto.valor_unitario || 0)
+      }));
+      
+      // Criar planilha principal
+      const worksheet = XLSX.utils.json_to_sheet(dadosPlanilha);
+      
+      // Configurar larguras das colunas
+      const colWidths = [
+        { wch: 25 }, // Nome do Produto
+        { wch: 15 }, // SKU
+        { wch: 20 }, // Categoria
+        { wch: 15 }, // Valor Unitário
+        { wch: 12 }, // Quantidade
+        { wch: 15 }, // Estoque Mínimo
+        { wch: 15 }, // Status
+        { wch: 20 }, // Localização
+        { wch: 15 }, // Unidade de Medida
+        { wch: 20 }, // Código de Barras
+        { wch: 20 }, // Fornecedor
+        { wch: 30 }, // Descrição
+        { wch: 20 }  // Valor Total em Estoque
+      ];
+      worksheet['!cols'] = colWidths;
+      
+      // Adicionar planilha ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Produtos');
+      
+      // Criar planilha de resumo
+      const dadosResumo = [
+        { 'Métrica': 'Total de Produtos', 'Valor': estatisticas.totalProdutos },
+        { 'Métrica': 'Em Estoque', 'Valor': estatisticas.produtosEmEstoque },
+        { 'Métrica': 'Baixo Estoque', 'Valor': estatisticas.produtosBaixoEstoque },
+        { 'Métrica': 'Sem Estoque', 'Valor': estatisticas.produtosSemEstoque },
+        { 'Métrica': 'Valor Total em Estoque', 'Valor': formatCurrency(estatisticas.valorTotalEstoque) },
+        { 'Métrica': '', 'Valor': '' }, // Linha em branco
+        { 'Métrica': 'Data do Relatório', 'Valor': format(new Date(), 'dd/MM/yyyy às HH:mm', { locale: ptBR }) },
+        { 'Métrica': 'Gerado por', 'Valor': 'Sistema SGE FireBlue' }
+      ];
+      
+      const worksheetResumo = XLSX.utils.json_to_sheet(dadosResumo);
+      worksheetResumo['!cols'] = [{ wch: 25 }, { wch: 20 }];
+      
+      // Adicionar planilha de resumo ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheetResumo, 'Resumo');
+      
+      // Criar planilha de estoque por status
+      const dadosEstoque = [
+        { 'Status': 'Em Estoque', 'Quantidade': estatisticas.produtosEmEstoque, 'Percentual': `${((estatisticas.produtosEmEstoque / estatisticas.totalProdutos) * 100).toFixed(1)}%` },
+        { 'Status': 'Baixo Estoque', 'Quantidade': estatisticas.produtosBaixoEstoque, 'Percentual': `${((estatisticas.produtosBaixoEstoque / estatisticas.totalProdutos) * 100).toFixed(1)}%` },
+        { 'Status': 'Sem Estoque', 'Quantidade': estatisticas.produtosSemEstoque, 'Percentual': `${((estatisticas.produtosSemEstoque / estatisticas.totalProdutos) * 100).toFixed(1)}%` }
+      ];
+      
+      const worksheetEstoque = XLSX.utils.json_to_sheet(dadosEstoque);
+      worksheetEstoque['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
+      
+      // Adicionar planilha de estoque ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheetEstoque, 'Análise de Estoque');
+      
+      // Configurar propriedades do workbook
+      workbook.Props = {
+        Title: 'Relatório de Produtos - Controle de Estoque',
+        Subject: 'Relatório de Produtos e Estoque',
+        Author: 'SGE FireBlue',
+        CreatedDate: new Date(),
+        Keywords: 'produtos, estoque, relatório',
+        Category: 'Relatório de Produtos'
+      };
+      
+      // Gerar o arquivo Excel
+      const nomeArquivo = `relatorio_produtos_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.xlsx`;
+      XLSX.writeFile(workbook, nomeArquivo);
+      
+      toast.success('Relatório Excel exportado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar relatório Excel');
+      console.error(error);
+    }
   };
 
-  const estatisticas = calcularEstatisticas();
+  // Função para gerar relatório em PDF
+  const gerarRelatorioPDF = async () => {
+    try {
+      // Importar jspdf-autotable dinamicamente
+      const autoTable = await import('jspdf-autotable');
+      
+      // Criar nova instância do jsPDF
+      const doc = new jsPDF();
+      
+      // Configurar fonte para suportar caracteres especiais
+      doc.setFont('helvetica');
+      
+      // Título do relatório
+      doc.setFontSize(20);
+      doc.setTextColor(51, 51, 51);
+      doc.text('Relatório de Produtos - Controle de Estoque', 105, 20, { align: 'center' });
+      
+      // Data de geração
+      doc.setFontSize(12);
+      doc.setTextColor(102, 102, 102);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy às HH:mm', { locale: ptBR })}`, 105, 30, { align: 'center' });
+      
+      // Resumo do estoque
+      doc.setFontSize(14);
+      doc.setTextColor(51, 51, 51);
+      doc.text('Resumo do Estoque', 20, 50);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total de Produtos: ${estatisticas.totalProdutos}`, 20, 60);
+      doc.text(`Em Estoque: ${estatisticas.produtosEmEstoque}`, 20, 67);
+      doc.text(`Baixo Estoque: ${estatisticas.produtosBaixoEstoque}`, 20, 74);
+      doc.text(`Sem Estoque: ${estatisticas.produtosSemEstoque}`, 20, 81);
+      doc.text(`Valor Total: ${formatCurrency(estatisticas.valorTotalEstoque)}`, 20, 88);
+      
+      // Preparar dados para a tabela
+      const dadosTabela = filteredProdutos.map(produto => [
+        produto.nome_produto,
+        produto.sku || '',
+        produto.categoria || '',
+        formatCurrency(parseFloat(produto.valor_unitario || 0)),
+        `${produto.quantidade || 0} ${produto.unidade_medida || 'un'}`,
+        produto.status,
+        produto.localizacao || '',
+        formatCurrency((produto.quantidade || 0) * parseFloat(produto.valor_unitario || 0))
+      ]);
+      
+      // Cabeçalhos da tabela
+      const headers = [
+        'Produto',
+        'SKU',
+        'Categoria',
+        'Valor Unit.',
+        'Estoque',
+        'Status',
+        'Localização',
+        'Valor Total'
+      ];
+      
+      // Configurações da tabela
+      const tableConfig = {
+        head: [headers],
+        body: dadosTabela,
+        startY: 105,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak' as const,
+          halign: 'left' as const
+        },
+        headStyles: {
+          fillColor: [51, 122, 183] as [number, number, number],
+          textColor: 255,
+          fontStyle: 'bold' as const,
+          fontSize: 9
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245] as [number, number, number]
+        },
+        columnStyles: {
+          0: { cellWidth: 35 }, // Produto
+          1: { cellWidth: 20 }, // SKU
+          2: { cellWidth: 25 }, // Categoria
+          3: { cellWidth: 20 }, // Valor Unit.
+          4: { cellWidth: 20 }, // Estoque
+          5: { cellWidth: 20 }, // Status
+          6: { cellWidth: 25 }, // Localização
+          7: { cellWidth: 20 }  // Valor Total
+        },
+        didParseCell: function(data: any) {
+          // Colorir células de status
+          if (data.column.index === 5) { // Coluna Status
+            const status = data.cell.text[0];
+            if (status === 'Em Estoque') {
+              data.cell.styles.textColor = [0, 128, 0]; // Verde
+            } else if (status === 'Baixo Estoque') {
+              data.cell.styles.textColor = [255, 140, 0]; // Laranja
+            } else if (status === 'Sem Estoque') {
+              data.cell.styles.textColor = [220, 53, 69]; // Vermelho
+            }
+          }
+        }
+      };
+      
+      // Adicionar tabela ao PDF usando a função importada
+      autoTable.default(doc, tableConfig);
+      
+      // Adicionar rodapé com informações
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+      }
+      
+      // Salvar o PDF
+      const nomeArquivo = `relatorio_produtos_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.pdf`;
+      doc.save(nomeArquivo);
+      
+      toast.success('Relatório PDF exportado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar relatório PDF');
+      console.error(error);
+    }
+  };
+
+  // Função para lidar com a exportação
+  const handleExport = async (format: string) => {
+    if (format === 'excel') {
+      gerarRelatorioExcel();
+    } else if (format === 'pdf') {
+      await gerarRelatorioPDF();
+    } else {
+      toast.error('Formato não suportado');
+    }
+  };
 
   // Abrir modal para novo produto
   const handleNewProduto = () => {
@@ -204,7 +450,7 @@ export default function Produtos() {
       
       // Fechar modal e atualizar lista
       setIsModalOpen(false);
-      loadProdutos();
+      await loadProdutos();
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
     }
@@ -216,7 +462,7 @@ export default function Produtos() {
       try {
         await excluir(currentProduto.id);
         setIsDeleteDialogOpen(false);
-        loadProdutos();
+        await loadProdutos();
       } catch (error) {
         console.error("Erro ao excluir produto:", error);
       }
@@ -259,29 +505,143 @@ export default function Produtos() {
   // Lidar com ajuste de estoque
   const handleAjusteEstoque = async (data: any) => {
     try {
-      // Implementar lógica de ajuste de estoque
-      toast.success("Estoque ajustado com sucesso!");
+      console.log("Recebendo dados do ajuste:", data);
+      console.log("ID do produto:", currentProduto?.id);
+      
+      // Chamar a função de ajuste de estoque do hook
+      await ajustarEstoque(currentProduto?.id, {
+        tipoAjuste: data.tipoAjuste,
+        quantidade: data.quantidade,
+        observacao: data.observacao
+      });
+      
+      console.log("Ajuste de estoque realizado com sucesso!");
+      
+      // Fechar o modal
       setIsAjusteDialogOpen(false);
-      loadProdutos();
+      
+      // Recarregar os produtos para atualizar a lista
+      await loadProdutos();
     } catch (error) {
       console.error("Erro ao ajustar estoque:", error);
-      toast.error("Erro ao ajustar estoque");
+      // O erro já é tratado no hook useProdutos
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL'
-    }).format(value);
-  };
+  // Configuração das colunas para o DataTable
+  const columns = [
+    {
+      accessor: 'imagem' as keyof any,
+      header: '',
+      cell: (produto: any) => <ImagemCell produto={produto} />,
+      filterable: false
+    },
+    {
+      accessor: 'nome_produto' as keyof any,
+      header: 'Produto',
+      cell: (produto: any) => (
+        <div className="flex flex-col">
+          <span className="font-medium text-gray-900">{produto.nome_produto}</span>
+          <span className="text-sm text-gray-500">{produto.codigo_barras || 'Sem código'}</span>
+        </div>
+      )
+    },
+    {
+      accessor: 'sku' as keyof any,
+      header: 'SKU'
+    },
+    {
+      accessor: 'categoria' as keyof any,
+      header: 'Categoria'
+    },
+    {
+      accessor: 'quantidade' as keyof any,
+      header: 'Estoque',
+      cell: (produto: any) => (
+        <span className={`font-medium ${produto.quantidade <= produto.estoque_minimo ? "text-red-600" : "text-green-600"}`}>
+          {produto.quantidade} {produto.unidade_medida}
+        </span>
+      )
+    },
+    {
+      accessor: 'status' as keyof any,
+      header: 'Status',
+      cell: (produto: any) => {
+        const status = produto.status;
+        let statusColor = "";
+        
+        if (status === "Em Estoque") {
+          statusColor = "bg-green-100 text-green-800";
+        } else if (status === "Baixo Estoque") {
+          statusColor = "bg-yellow-100 text-yellow-800";
+        } else if (status === "Sem Estoque") {
+          statusColor = "bg-red-100 text-red-800";
+        }
 
-  // Função para determinar o status do produto
-  const getProdutoStatus = (produto: any) => {
-    if (produto.quantidade === 0) return "Sem Estoque";
-    if (produto.quantidade <= produto.estoque_minimo) return "Baixo Estoque";
-    return "Em Estoque";
-  };
+        return (
+          <Badge variant="outline" className={statusColor}>
+            {status}
+          </Badge>
+        );
+      }
+    },
+    {
+      accessor: 'valor_unitario' as keyof any,
+      header: 'Valor',
+      cell: (produto: any) => formatCurrency(parseFloat(produto.valor_unitario))
+    },
+    {
+      accessor: 'localizacao' as keyof any,
+      header: 'Localização'
+    },
+    {
+      accessor: 'acoes' as keyof any,
+      header: 'Ações',
+      cell: (produto: any) => (
+        <div className="flex gap-2 justify-end">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              setCurrentProduto(produto);
+              setIsDetalhesOpen(true);
+            }}
+            title="Visualizar Detalhes"
+          >
+            <Search className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleEditProduto(produto)}
+            title="Editar Produto"
+          >
+            <Edit className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              setCurrentProduto(produto);
+              setIsAjusteDialogOpen(true);
+            }}
+            title="Ajustar Estoque"
+          >
+            <Package className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => handleDeleteClick(produto)}
+            title="Excluir Produto"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+      filterable: false
+    }
+  ];
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -293,25 +653,6 @@ export default function Produtos() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex gap-2">
-            <Input
-              placeholder="Buscar produto ou SKU..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-64"
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-            />
-            <ActionButton 
-              onClick={handleSearch} 
-              isLoading={isLoading} 
-              loadingText="Buscando..." 
-              size="sm"
-              startIcon={<Search className="h-4 w-4" />}
-            >
-              Buscar
-            </ActionButton>
-          </div>
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
@@ -320,29 +661,16 @@ export default function Produtos() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => toast.info("Relatório de Produtos será implementado")}>
-                <Package className="w-4 h-4 mr-2" />
-                Relatório de Produtos
+              <DropdownMenuItem onClick={() => handleExport('excel')}>
+                <Download className="w-4 h-4 mr-2" />
+                Exportar Excel
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info("Relatório de Estoque será implementado")}>
+              <DropdownMenuItem onClick={() => handleExport('pdf')}>
                 <FileText className="w-4 h-4 mr-2" />
-                Relatório de Estoque
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => toast.info("Relatório de Valorização será implementado")}>
-                <DollarSign className="w-4 h-4 mr-2" />
-                Valorização
+                Exportar PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <ActionButton
-            variant="outline" 
-            size="sm"
-            startIcon={<Filter className="h-4 w-4" />}
-            onClick={() => toast.info("Filtros serão implementados")}
-          >
-            Filtros
-          </ActionButton>
           
           <ActionButton
             onClick={handleNewProduto}
@@ -431,7 +759,7 @@ export default function Produtos() {
         </Card>
       </div>
 
-      {/* Tabela de Produtos */}
+      {/* Tabela de Produtos com DataTable */}
       <Card className="border hover:shadow-md transition-all animate-in fade-in duration-1000">
         <CardHeader className="bg-muted border-b">
           <CardTitle className="text-foreground">Lista de Produtos</CardTitle>
@@ -440,131 +768,14 @@ export default function Produtos() {
           </p>
         </CardHeader>
         <CardContent className="pt-6">
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <>
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead></TableHead>
-                      <TableHead>Produto</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Categoria</TableHead>
-                      <TableHead>Estoque</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Localização</TableHead>
-                      <TableHead className="text-right">Ações</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {produtos.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="text-center py-4 text-muted-foreground">
-                          Nenhum produto encontrado
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      produtos.map((produto) => {
-                        const status = getProdutoStatus(produto);
-                        let statusColor = "";
-                        let iconColor = "";
-                        let bgHoverColor = "";
-                        
-                        if (status === "Em Estoque") {
-                          statusColor = "bg-green-100 text-green-800";
-                          iconColor = "text-green-600";
-                          bgHoverColor = "hover:bg-green-50";
-                        } else if (status === "Baixo Estoque") {
-                          statusColor = "bg-yellow-100 text-yellow-800";
-                          iconColor = "text-yellow-600";
-                          bgHoverColor = "hover:bg-yellow-50";
-                        } else if (status === "Sem Estoque") {
-                          statusColor = "bg-red-100 text-red-800";
-                          iconColor = "text-red-600";
-                          bgHoverColor = "hover:bg-red-50";
-                        }
-
-                        return (
-                          <TableRow key={produto.id} className="hover:bg-muted/50 transition-colors">
-                            <TableCell>
-                              <ImagemCell produto={produto} />
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-col">
-                                <span className="font-medium text-gray-900">{produto.nome_produto}</span>
-                                <span className="text-sm text-gray-500">{produto.codigo_barras || 'Sem código'}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-medium">{produto.sku || '-'}</TableCell>
-                          <TableCell>{produto.categoria || '-'}</TableCell>
-                            <TableCell>
-                              <span className={`font-medium ${produto.quantidade <= produto.estoque_minimo ? "text-red-600" : "text-green-600"}`}>
-                            {produto.quantidade} {produto.unidade_medida}
-                              </span>
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={statusColor}>
-                                {status}
-                              </Badge>
-                          </TableCell>
-                            <TableCell className="font-medium">{formatCurrency(parseFloat(produto.valor_unitario))}</TableCell>
-                          <TableCell>{produto.localizacao || '-'}</TableCell>
-                          <TableCell className="text-right">
-                              <div className="flex gap-2 justify-end">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentProduto(produto);
-                                    setIsDetalhesOpen(true);
-                                  }}
-                                  title="Visualizar Detalhes"
-                                >
-                                  <Search className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleEditProduto(produto)}
-                                  title="Editar Produto"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => {
-                                    setCurrentProduto(produto);
-                                    setIsAjusteDialogOpen(true);
-                                  }}
-                                  title="Ajustar Estoque"
-                                >
-                                  <Package className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => handleDeleteClick(produto)}
-                                  title="Excluir Produto"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                          </TableCell>
-                        </TableRow>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            </>
-          )}
+          <DataTable
+            data={produtos}
+            columns={columns}
+            searchable={true}
+            pagination={true}
+            isLoading={isLoading}
+            onFilterChange={setFilteredProdutos}
+          />
         </CardContent>
       </Card>
 
@@ -871,14 +1082,14 @@ export default function Produtos() {
                   <Badge 
                     variant="outline" 
                     className={
-                      getProdutoStatus(currentProduto) === "Em Estoque" 
+                      currentProduto.status === "Em Estoque" 
                         ? "bg-green-100 text-green-800 border-green-200" 
-                        : getProdutoStatus(currentProduto) === "Baixo Estoque" 
+                        : currentProduto.status === "Baixo Estoque" 
                         ? "bg-yellow-100 text-yellow-800 border-yellow-200" 
                         : "bg-red-100 text-red-800 border-red-200"
                     }
                   >
-                    {getProdutoStatus(currentProduto)}
+                    {currentProduto.status}
                   </Badge>
                 </div>
               </div>

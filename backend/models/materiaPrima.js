@@ -262,6 +262,67 @@ class MateriasPrimasModel {
       throw err;
     }
   }
+
+  async buscarTiposTecido() {
+    try {
+      console.log('Executando query para buscar tipos de tecido...');
+      const tiposTecido = await knex.select('tipo_tecido')
+        .distinct()
+        .whereNotNull('tipo_tecido')
+        .where('tipo_tecido', '!=', '')
+        .orderBy('tipo_tecido')
+        .table("materias_primas");
+
+      console.log('Resultado da query tipos de tecido:', tiposTecido);
+      const resultado = tiposTecido.map(item => item.tipo_tecido);
+      console.log('Tipos de tecido mapeados:', resultado);
+      return resultado;
+    } catch (err) {
+      console.error('Erro ao buscar tipos de tecido:', err);
+      throw err;
+    }
+  }
+
+  async buscarCores() {
+    try {
+      console.log('Executando query para buscar cores...');
+      const cores = await knex.select('cor')
+        .distinct()
+        .whereNotNull('cor')
+        .where('cor', '!=', '')
+        .orderBy('cor')
+        .table("materias_primas");
+
+      console.log('Resultado da query cores:', cores);
+      const resultado = cores.map(item => item.cor);
+      console.log('Cores mapeadas:', resultado);
+      return resultado;
+    } catch (err) {
+      console.error('Erro ao buscar cores:', err);
+      throw err;
+    }
+  }
+
+  async buscarCoresPorTipoTecido(tipoTecido) {
+    try {
+      console.log('Executando query para buscar cores do tipo:', tipoTecido);
+      const cores = await knex.select('cor')
+        .distinct()
+        .whereNotNull('cor')
+        .where('cor', '!=', '')
+        .where('tipo_tecido', tipoTecido)
+        .orderBy('cor')
+        .table("materias_primas");
+
+      console.log('Resultado da query cores por tipo:', cores);
+      const resultado = cores.map(item => item.cor);
+      console.log('Cores mapeadas para', tipoTecido, ':', resultado);
+      return resultado;
+    } catch (err) {
+      console.error('Erro ao buscar cores por tipo de tecido:', err);
+      throw err;
+    }
+  }
 }
 
 module.exports = new MateriasPrimasModel();

@@ -34,6 +34,8 @@ import { ptBR } from "date-fns/locale";
 import { materiaPrimaService, Bobina, Movimentacao, Estoque } from "@/services/materiaPrimaService";
 import { ReactNode } from "react";
 import { io } from 'socket.io-client';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 const API_URL = 'http://localhost:8687/api';
 
@@ -57,6 +59,11 @@ export default function MateriaPrima() {
     baixoEstoque: [],
     emEstoque: []
   });
+  
+  // Estados para tipos de tecido e cores
+  const [tiposTecido, setTiposTecido] = useState<string[]>([]);
+  const [cores, setCores] = useState<string[]>([]);
+  const [coresPorTipoTecido, setCoresPorTipoTecido] = useState<string[]>([]);
   
   // Estado para o formulário de nova bobina
   const [novaBobina, setNovaBobina] = useState<Omit<Bobina, 'id'>>({
@@ -129,10 +136,47 @@ export default function MateriaPrima() {
     }
   };
   
+  // Função para carregar tipos de tecido
+  const carregarTiposTecido = async () => {
+    try {
+      const tipos = await materiaPrimaService.buscarTiposTecido();
+      setTiposTecido(tipos);
+      console.log('Tipos de tecido carregados:', tipos); // DEBUG
+    } catch (error) {
+      toast.error("Erro ao carregar tipos de tecido");
+      console.error(error);
+    }
+  };
+  
+  // Função para carregar cores
+  const carregarCores = async () => {
+    try {
+      const coresData = await materiaPrimaService.buscarCores();
+      setCores(coresData);
+    } catch (error) {
+      toast.error("Erro ao carregar cores");
+      console.error(error);
+    }
+  };
+  
+  // Função para carregar cores por tipo de tecido
+  const carregarCoresPorTipoTecido = async (tipoTecido: string) => {
+    try {
+      const coresData = await materiaPrimaService.buscarCoresPorTipoTecido(tipoTecido);
+      setCoresPorTipoTecido(coresData);
+      console.log('Cores carregadas para', tipoTecido, ':', coresData); // DEBUG
+    } catch (error) {
+      toast.error("Erro ao carregar cores para o tipo de tecido selecionado");
+      console.error(error);
+    }
+  };
+  
   // Carregar dados iniciais
   useEffect(() => {
     void carregarBobinas();
     void carregarEstoque();
+    void carregarTiposTecido();
+    void carregarCores();
   }, []);
   
   // Atualizar o estoque quando houver mudanças nas bobinas
@@ -145,37 +189,268 @@ export default function MateriaPrima() {
     setIsNovaBobinaDialogOpen(true);
   };
   
+  // Função para gerar relatório em Excel
+  const gerarRelatorioExcel = () => {
+    try {
+      // Criar um novo workbook
+      const workbook = XLSX.utils.book_new();
+      
+      // Preparar dados para a planilha principal
+      const dadosPlanilha = filteredData.map(bobina => ({
+        'Tipo de Tecido': bobina.tipo_tecido,
+        'Cor': bobina.cor,
+        'Lote': bobina.lote,
+        'Fornecedor': bobina.fornecedor,
+        'Quantidade Total': bobina.quantidade_total,
+        'Quantidade Disponível': bobina.quantidade_disponivel,
+        'Unidade': bobina.unidade,
+        'Localização': bobina.localizacao,
+        'Data de Entrada': format(new Date(bobina.data_entrada), 'dd/MM/yyyy'),
+        'Status': bobina.status,
+        'Código de Barras': bobina.codigo_barras,
+        'Observações': bobina.observacoes
+      }));
+      
+      // Criar planilha principal
+      const worksheet = XLSX.utils.json_to_sheet(dadosPlanilha);
+      
+      // Configurar larguras das colunas
+      const colWidths = [
+        { wch: 20 }, // Tipo de Tecido
+        { wch: 15 }, // Cor
+        { wch: 15 }, // Lote
+        { wch: 20 }, // Fornecedor
+        { wch: 15 }, // Quantidade Total
+        { wch: 15 }, // Quantidade Disponível
+        { wch: 10 }, // Unidade
+        { wch: 15 }, // Localização
+        { wch: 15 }, // Data de Entrada
+        { wch: 15 }, // Status
+        { wch: 20 }, // Código de Barras
+        { wch: 30 }  // Observações
+      ];
+      worksheet['!cols'] = colWidths;
+      
+      // Adicionar planilha ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Bobinas');
+      
+      // Criar planilha de resumo
+      const dadosResumo = [
+        { 'Métrica': 'Total de Bobinas', 'Valor': filteredData.length },
+        { 'Métrica': 'Em Estoque', 'Valor': estoque.emEstoque.length },
+        { 'Métrica': 'Baixo Estoque', 'Valor': estoque.baixoEstoque.length },
+        { 'Métrica': 'Sem Estoque', 'Valor': estoque.semEstoque.length },
+        { 'Métrica': '', 'Valor': '' }, // Linha em branco
+        { 'Métrica': 'Data do Relatório', 'Valor': format(new Date(), 'dd/MM/yyyy às HH:mm', { locale: ptBR }) },
+        { 'Métrica': 'Gerado por', 'Valor': 'Sistema SGE FireBlue' }
+      ];
+      
+      const worksheetResumo = XLSX.utils.json_to_sheet(dadosResumo);
+      worksheetResumo['!cols'] = [{ wch: 25 }, { wch: 20 }];
+      
+      // Adicionar planilha de resumo ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheetResumo, 'Resumo');
+      
+      // Criar planilha de estoque por status
+      const dadosEstoque = [
+        { 'Status': 'Em Estoque', 'Quantidade': estoque.emEstoque.length, 'Percentual': `${((estoque.emEstoque.length / filteredData.length) * 100).toFixed(1)}%` },
+        { 'Status': 'Baixo Estoque', 'Quantidade': estoque.baixoEstoque.length, 'Percentual': `${((estoque.baixoEstoque.length / filteredData.length) * 100).toFixed(1)}%` },
+        { 'Status': 'Sem Estoque', 'Quantidade': estoque.semEstoque.length, 'Percentual': `${((estoque.semEstoque.length / filteredData.length) * 100).toFixed(1)}%` }
+      ];
+      
+      const worksheetEstoque = XLSX.utils.json_to_sheet(dadosEstoque);
+      worksheetEstoque['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }];
+      
+      // Adicionar planilha de estoque ao workbook
+      XLSX.utils.book_append_sheet(workbook, worksheetEstoque, 'Análise de Estoque');
+      
+      // Configurar propriedades do workbook
+      workbook.Props = {
+        Title: 'Relatório de Bobinas - Controle de Matéria Prima',
+        Subject: 'Relatório de Estoque de Bobinas',
+        Author: 'SGE FireBlue',
+        CreatedDate: new Date(),
+        Keywords: 'bobinas, estoque, matéria prima, relatório',
+        Category: 'Relatório de Estoque'
+      };
+      
+      // Gerar o arquivo Excel
+      const nomeArquivo = `relatorio_bobinas_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.xlsx`;
+      XLSX.writeFile(workbook, nomeArquivo);
+      
+      toast.success('Relatório Excel exportado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar relatório Excel');
+      console.error(error);
+    }
+  };
+
+  // Função para gerar relatório em PDF
+  const gerarRelatorioPDF = async () => {
+    try {
+      // Importar jspdf-autotable dinamicamente
+      const autoTable = await import('jspdf-autotable');
+      
+      // Criar nova instância do jsPDF
+      const doc = new jsPDF();
+      
+      // Configurar fonte para suportar caracteres especiais
+      doc.setFont('helvetica');
+      
+      // Título do relatório
+      doc.setFontSize(20);
+      doc.setTextColor(51, 51, 51);
+      doc.text('Relatório de Bobinas - Controle de Matéria Prima', 105, 20, { align: 'center' });
+      
+      // Data de geração
+      doc.setFontSize(12);
+      doc.setTextColor(102, 102, 102);
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy às HH:mm', { locale: ptBR })}`, 105, 30, { align: 'center' });
+      
+      // Resumo do estoque
+      doc.setFontSize(14);
+      doc.setTextColor(51, 51, 51);
+      doc.text('Resumo do Estoque', 20, 50);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total de Bobinas: ${filteredData.length}`, 20, 60);
+      doc.text(`Em Estoque: ${estoque.emEstoque.length}`, 20, 67);
+      doc.text(`Baixo Estoque: ${estoque.baixoEstoque.length}`, 20, 74);
+      doc.text(`Sem Estoque: ${estoque.semEstoque.length}`, 20, 81);
+      
+      // Preparar dados para a tabela
+      const dadosTabela = filteredData.map(bobina => [
+        bobina.tipo_tecido,
+        bobina.cor,
+        bobina.lote,
+        bobina.fornecedor,
+        `${bobina.quantidade_total} ${bobina.unidade}`,
+        `${bobina.quantidade_disponivel} ${bobina.unidade}`,
+        bobina.localizacao,
+        format(new Date(bobina.data_entrada), 'dd/MM/yyyy'),
+        bobina.status
+      ]);
+      
+      // Cabeçalhos da tabela
+      const headers = [
+        'Tipo de Tecido',
+        'Cor',
+        'Lote',
+        'Fornecedor',
+        'Qtd. Total',
+        'Qtd. Disponível',
+        'Localização',
+        'Data Entrada',
+        'Status'
+      ];
+      
+      // Configurações da tabela
+      const tableConfig = {
+        head: [headers],
+        body: dadosTabela,
+        startY: 95,
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak' as const,
+          halign: 'left' as const
+        },
+        headStyles: {
+          fillColor: [51, 122, 183] as [number, number, number],
+          textColor: 255,
+          fontStyle: 'bold' as const,
+          fontSize: 9
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245] as [number, number, number]
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // Tipo de Tecido
+          1: { cellWidth: 20 }, // Cor
+          2: { cellWidth: 20 }, // Lote
+          3: { cellWidth: 25 }, // Fornecedor
+          4: { cellWidth: 20 }, // Qtd. Total
+          5: { cellWidth: 20 }, // Qtd. Disponível
+          6: { cellWidth: 20 }, // Localização
+          7: { cellWidth: 20 }, // Data Entrada
+          8: { cellWidth: 20 }  // Status
+        },
+        didParseCell: function(data: any) {
+          // Colorir células de status
+          if (data.column.index === 8) { // Coluna Status
+            const status = data.cell.text[0];
+            if (status === 'em_estoque') {
+              data.cell.styles.textColor = [0, 128, 0]; // Verde
+            } else if (status === 'baixo_estoque') {
+              data.cell.styles.textColor = [255, 140, 0]; // Laranja
+            } else if (status === 'sem_estoque') {
+              data.cell.styles.textColor = [220, 53, 69]; // Vermelho
+            }
+          }
+        }
+      };
+      
+      // Adicionar tabela ao PDF usando a função importada
+      autoTable.default(doc, tableConfig);
+      
+      // Adicionar rodapé com informações
+      const pageCount = (doc as any).internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128, 128, 128);
+        doc.text(`Página ${i} de ${pageCount}`, 105, doc.internal.pageSize.height - 10, { align: 'center' });
+      }
+      
+      // Salvar o PDF
+      const nomeArquivo = `relatorio_bobinas_${format(new Date(), 'dd-MM-yyyy_HH-mm')}.pdf`;
+      doc.save(nomeArquivo);
+      
+      toast.success('Relatório PDF exportado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao gerar relatório PDF');
+      console.error(error);
+    }
+  };
+
   // Função para lidar com a exportação
   const handleExport = async (format: string) => {
-    try {
-      setIsLoading(true);
-      const response = await fetch(`${API_URL}/materia-prima/exportar/${format}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+    if (format === 'excel') {
+      gerarRelatorioExcel();
+    } else if (format === 'pdf') {
+      await gerarRelatorioPDF();
+    } else {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`${API_URL}/materia-prima/exportar/${format}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error('Erro ao exportar dados');
+        if (!response.ok) {
+          throw new Error('Erro ao exportar dados');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `materia-prima.${format}`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
+        toast.success(`Dados exportados com sucesso em formato ${format}`);
+      } catch (error) {
+        toast.error("Erro ao exportar dados");
+        console.error(error);
+      } finally {
+        setIsLoading(false);
       }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `materia-prima.${format}`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success(`Dados exportados com sucesso em formato ${format}`);
-    } catch (error) {
-      toast.error("Erro ao exportar dados");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
   
@@ -205,9 +480,13 @@ export default function MateriaPrima() {
   };
   
   // Função para abrir o diálogo de edição
-  const handleOpenEditDialog = (bobina: Bobina) => {
+  const handleOpenEditDialog = async (bobina: Bobina) => {
     setBobinaEditando(bobina);
     setIsEditDialogOpen(true);
+    // Carregar cores para o tipo de tecido da bobina sendo editada
+    if (bobina.tipo_tecido) {
+      await carregarCoresPorTipoTecido(bobina.tipo_tecido);
+    }
   };
   
   // Função para lidar com a edição de uma bobina
@@ -566,21 +845,22 @@ export default function MateriaPrima() {
           </p>
         </div>
         <div className="flex items-center gap-4">
-          <Button variant="outline" size="sm" onClick={handleOpenFilterDialog}>
-            <Filter className="w-4 h-4 mr-2" />
-            Filtros
-          </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm">
                 <FileText className="w-4 h-4 mr-2" />
-                Exportar
+                Exportar Relatório
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem onClick={() => handleExport("excel")}> <Download className="w-4 h-4 mr-2" /> Excel </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("pdf")}> <Download className="w-4 h-4 mr-2" /> PDF </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("csv")}> <Download className="w-4 h-4 mr-2" /> CSV </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("excel")}> 
+                <Download className="w-4 h-4 mr-2" /> 
+                Excel
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("pdf")}> 
+                <Download className="w-4 h-4 mr-2" /> 
+                PDF
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
           <ActionButton
@@ -810,19 +1090,53 @@ export default function MateriaPrima() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="tipo_tecido">Tipo de Tecido</label>
-                  <Input
-                    id="tipo_tecido"
+                  <Select
                     value={novaBobina.tipo_tecido}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, tipo_tecido: e.target.value })}
-                  />
+                    onValueChange={(value) => {
+                      setNovaBobina({ ...novaBobina, tipo_tecido: value, cor: "" });
+                      if (value) {
+                        carregarCoresPorTipoTecido(value);
+                      } else {
+                        setCoresPorTipoTecido([]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de tecido" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposTecido.map((tipo) => {
+                        console.log('Renderizando tipo:', tipo); // DEBUG
+                        return (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="cor">Cor</label>
-                  <Input
-                    id="cor"
+                  <Select
                     value={novaBobina.cor}
-                    onChange={(e) => setNovaBobina({ ...novaBobina, cor: e.target.value })}
-                  />
+                    onValueChange={(value) => setNovaBobina({ ...novaBobina, cor: value })}
+                    disabled={!novaBobina.tipo_tecido}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={novaBobina.tipo_tecido ? "Selecione a cor" : "Primeiro selecione o tipo de tecido"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coresPorTipoTecido.map((cor) => {
+                        console.log('Renderizando cor:', cor); // DEBUG
+                        return (
+                          <SelectItem key={cor} value={cor}>
+                            {cor}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -939,19 +1253,53 @@ export default function MateriaPrima() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="edit-tipo_tecido">Tipo de Tecido</label>
-                  <Input
-                    id="edit-tipo_tecido"
+                  <Select
                     value={bobinaEditando.tipo_tecido}
-                    onChange={(e) => setBobinaEditando({ ...bobinaEditando, tipo_tecido: e.target.value })}
-                  />
+                    onValueChange={(value) => {
+                      setBobinaEditando({ ...bobinaEditando, tipo_tecido: value, cor: "" });
+                      if (value) {
+                        carregarCoresPorTipoTecido(value);
+                      } else {
+                        setCoresPorTipoTecido([]);
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o tipo de tecido" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tiposTecido.map((tipo) => {
+                        console.log('Renderizando tipo (editar):', tipo); // DEBUG
+                        return (
+                          <SelectItem key={tipo} value={tipo}>
+                            {tipo}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="edit-cor">Cor</label>
-                  <Input
-                    id="edit-cor"
+                  <Select
                     value={bobinaEditando.cor}
-                    onChange={(e) => setBobinaEditando({ ...bobinaEditando, cor: e.target.value })}
-                  />
+                    onValueChange={(value) => setBobinaEditando({ ...bobinaEditando, cor: value })}
+                    disabled={!bobinaEditando.tipo_tecido}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={bobinaEditando.tipo_tecido ? "Selecione a cor" : "Primeiro selecione o tipo de tecido"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {coresPorTipoTecido.map((cor) => {
+                        console.log('Renderizando cor (editar):', cor); // DEBUG
+                        return (
+                          <SelectItem key={cor} value={cor}>
+                            {cor}
+                          </SelectItem>
+                        );
+                      })}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">

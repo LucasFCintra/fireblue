@@ -3,7 +3,7 @@ CREATE DATABASE IF NOT EXISTS sge_fire_blue;
 USE sge_fire_blue;
 
 -- Tabela de matéria prima
-CREATE TABLE IF NOT EXISTS materia_prima (
+CREATE TABLE IF NOT EXISTS materias_primas (
   id INT AUTO_INCREMENT PRIMARY KEY,
   tipo_tecido VARCHAR(100) NOT NULL,
   cor VARCHAR(50) NOT NULL,
@@ -23,12 +23,12 @@ CREATE TABLE IF NOT EXISTS materia_prima (
 -- Tabela de movimentações
 CREATE TABLE IF NOT EXISTS movimentacoes (
   id INT AUTO_INCREMENT PRIMARY KEY,
-  materia_prima_id INT NOT NULL,
+  materias_primas_id INT NOT NULL,
   tipo ENUM('entrada', 'saida', 'corte') NOT NULL,
   quantidade DECIMAL(10,2) NOT NULL,
   ordem_producao VARCHAR(50),
   observacoes TEXT,
   data_movimentacao DATETIME NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (materia_prima_id) REFERENCES materia_prima(id)
+  FOREIGN KEY (materias_primas_id) REFERENCES materias_primas(id)
 ); 

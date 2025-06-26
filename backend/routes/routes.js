@@ -48,18 +48,22 @@ router.get('/api/fichas/:id/movimentacoes', fichasController.buscarMovimentacoes
 
 // ROTAS MATÉRIA PRIMA
 router.get('/api/materia-prima/estoque', materiaPrimaController.retornaEstoque);
+router.get('/api/materia-prima/tipos-tecido', materiaPrimaController.buscarTiposTecido);
+router.get('/api/materia-prima/cores', materiaPrimaController.buscarCores);
+router.get('/api/materia-prima/cores/:tipoTecido', materiaPrimaController.buscarCoresPorTipoTecido);
+router.post('/api/materia-prima/:id/corte', materiaPrimaController.cortar);
+router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico);
 router.get('/api/materia-prima', materiaPrimaController.index);
 router.get('/api/materia-prima/:id', materiaPrimaController.indexOne);
 router.post('/api/materia-prima', materiaPrimaController.create);
 router.put('/api/materia-prima', materiaPrimaController.update);
 router.delete('/api/materia-prima/:id', materiaPrimaController.delete);
-router.post('/api/materia-prima/:id/corte', materiaPrimaController.cortar);
-router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico);
 
 // ROTAS PRODUTOS
 router.get('/api/produtos', produtosController.index);
 router.get('/api/produtos/search', produtosController.search);
 router.get('/api/produtos/low-stock', produtosController.getLowStock);
+router.post('/api/produtos/:id/ajustar-estoque', produtosController.ajustarEstoque);
 router.get('/api/produtos/:idProduto', produtosController.indexOne);
 router.post('/api/produtos', produtosController.create);
 router.put('/api/produtos/:id', produtosController.update);

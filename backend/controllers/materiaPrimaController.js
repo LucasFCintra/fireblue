@@ -109,6 +109,43 @@ class MateriasPrimasController {
       res.status(400).json({ error: "Erro ao buscar histórico de movimentações" });
     }
   }
+
+  async buscarTiposTecido(req, res) {
+    try {
+      console.log('Buscando tipos de tecido...');
+      const tiposTecido = await MateriasPrimas.buscarTiposTecido();
+      console.log('Tipos de tecido encontrados:', tiposTecido);
+      res.status(200).json(tiposTecido);
+    } catch (error) {
+      console.error('Erro ao buscar tipos de tecido:', error);
+      res.status(500).json({ error: "Erro ao buscar tipos de tecido" });
+    }
+  }
+
+  async buscarCores(req, res) {
+    try {
+      console.log('Buscando cores...');
+      const cores = await MateriasPrimas.buscarCores();
+      console.log('Cores encontradas:', cores);
+      res.status(200).json(cores);
+    } catch (error) {
+      console.error('Erro ao buscar cores:', error);
+      res.status(500).json({ error: "Erro ao buscar cores" });
+    }
+  }
+
+  async buscarCoresPorTipoTecido(req, res) {
+    try {
+      const tipoTecido = req.params.tipoTecido;
+      console.log('Buscando cores para tipo de tecido:', tipoTecido);
+      const cores = await MateriasPrimas.buscarCoresPorTipoTecido(tipoTecido);
+      console.log('Cores encontradas para', tipoTecido, ':', cores);
+      res.status(200).json(cores);
+    } catch (error) {
+      console.error('Erro ao buscar cores por tipo de tecido:', error);
+      res.status(500).json({ error: "Erro ao buscar cores por tipo de tecido" });
+    }
+  }
 }
 
 module.exports = new MateriasPrimasController();

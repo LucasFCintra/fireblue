@@ -76,5 +76,20 @@ export const materiaPrimaService = {
   async buscarHistorico(id: string): Promise<Movimentacao[]> {
     const response = await axios.get(`${API_URL}/api/materia-prima/${id}/historico`);
     return response.data;
+  },
+
+  async buscarTiposTecido(): Promise<string[]> {
+    const response = await axios.get(`${API_URL}/api/materia-prima/tipos-tecido`);
+    return response.data;
+  },
+
+  async buscarCores(): Promise<string[]> {
+    const response = await axios.get(`${API_URL}/api/materia-prima/cores`);
+    return response.data;
+  },
+
+  async buscarCoresPorTipoTecido(tipoTecido: string): Promise<string[]> {
+    const response = await axios.get(`${API_URL}/api/materia-prima/cores/${encodeURIComponent(tipoTecido)}`);
+    return response.data;
   }
 }; 

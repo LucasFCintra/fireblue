@@ -117,6 +117,44 @@ class ProdutosController {
       return res.status(500).json({ error: 'Erro ao buscar produtos com estoque baixo' });
     }
   }
+
+  async ajustarEstoque(req, res) {
+    try {
+      const { id } = req.params;
+      const { tipoAjuste, quantidade, observacao } = req.body;
+
+      // Validações básicas
+      if (!tipoAjuste || !['entrada', 'saida'].includes(tipoAjuste)) {
+        return res.status(400).json({ error: "Tipo de ajuste deve ser 'entrada' ou 'saida'" });
+      }
+
+      if (!quantidade || quantidade <= 0) {
+        return res.status(400).json({ error: "Quantidade deve ser maior que zero" });
+      }
+
+      const dadosAjuste = {
+        tipoAjuste,
+        quantidade,
+        observacao: observacao || null,
+        usuario: req.body.usuario || 'Sistema'
+      };
+
+      const result = await Produtos.ajustarEstoque(id, dadosAjuste);
+      
+      if (!result.status) {
+        return res.status(400).json({ error: result.err });
+      }
+
+      res.json({
+        message: "Estoque ajustado com sucesso",
+        produto: result.data.produto,
+        ajuste: result.data.ajuste
+      });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erro ao ajustar estoque" });
+    }
+  }
 }
 
 module.exports = new ProdutosController() 
