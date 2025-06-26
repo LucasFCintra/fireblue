@@ -157,6 +157,31 @@ export function useProdutos() {
     }
   };
 
+  const uploadImagem = async (file: File): Promise<string> => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const formData = new FormData();
+      formData.append('imagem', file);
+
+      const response = await axios.post(url + '/api/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      console.log('Upload realizado com sucesso:', response.data);
+      return response.data.url;
+    } catch (err: any) {
+      const mensagem = err.response?.data?.error || 'Erro ao fazer upload da imagem';
+      setError(mensagem);
+      toast.error(mensagem);
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -166,6 +191,7 @@ export function useProdutos() {
     atualizar,
     excluir,
     pesquisar,
-    ajustarEstoque
+    ajustarEstoque,
+    uploadImagem
   };
 } 

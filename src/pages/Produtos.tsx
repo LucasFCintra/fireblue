@@ -89,7 +89,8 @@ export default function Produtos() {
     atualizar, 
     excluir, 
     pesquisar,
-    ajustarEstoque 
+    ajustarEstoque,
+    uploadImagem 
   } = useProdutos();
 
   // Função para determinar o status do produto
@@ -479,12 +480,11 @@ export default function Produtos() {
   const handleImageUpload = async (file: File) => {
     setIsUploading(true);
     try {
-      // Simular upload para um servidor
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      const fakeServerUrl = URL.createObjectURL(file);
+      // Fazer upload real para o servidor
+      const imageUrl = await uploadImagem(file);
       
-      setFormData(prev => ({ ...prev, imagem: fakeServerUrl }));
-      setImagePreview(fakeServerUrl);
+      setFormData(prev => ({ ...prev, imagem: imageUrl }));
+      setImagePreview(imageUrl);
       
       setIsUploading(false);
       toast.success("Imagem carregada com sucesso!");

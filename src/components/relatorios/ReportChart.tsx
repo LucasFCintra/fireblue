@@ -30,37 +30,34 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
 
   useEffect(() => {
     async function fetchData() {
-      if (type === "pecas-cortadas") {
-        setLoading(true);
-        try {
-          const data = await fichasService.buscarCortadasUltimosMeses();
-          setChartData(data.map(item => ({ name: item.mes, quantidade: Number(item.total_cortada) || 0 })));
-        } catch (e) {
-          setChartData([]);
-        } finally {
-          setLoading(false);
+      setLoading(true);
+      try {
+        let data;
+        
+        if (type === "pecas-cortadas") {
+          data = await fichasService.buscarCortadasUltimosMeses();
+          setChartData(data.map(item => ({ 
+            name: item.mes, 
+            quantidade: Number(item.total_cortada) || 0 
+          })));
+        } else if (type === "pecas-recebidas") {
+          data = await fichasService.buscarRecebidosUltimosMeses();
+          setChartData(data.map(item => ({ 
+            name: item.mes, 
+            quantidade: Number(item.total_recebido) || 0 
+          })));
+        } else if (type === "pecas-perdidas") {
+          data = await fichasService.buscarPerdidasUltimosMeses();
+          setChartData(data.map(item => ({ 
+            name: item.mes, 
+            quantidade: Number(item.total_perdido) || 0 
+          })));
         }
-      } else if (type === "pecas-recebidas") {
-        setLoading(true);
-        try {
-          const data = await fichasService.buscarRecebidosUltimosMeses();
-          setChartData(data.map(item => ({ name: item.mes, quantidade: Number(item.total_recebido) })));
-        } catch (e) {
-          setChartData([]);
-        } finally {
-          setLoading(false);
-        }
-      } else if (type === "pecas-perdidas") {
-        setLoading(true);
-        try {
-          const data = await fichasService.buscarPerdidasUltimosMeses();
-          console.log(data)
-          setChartData(data.map(item => ({ name: item.mes, quantidade: Number(item.total_perdido) || 0 })));
-        } catch (e) {
-          setChartData([]);
-        } finally {
-          setLoading(false);
-        }
+      } catch (e) {
+        console.error('Erro ao buscar dados do gráfico:', e);
+        setChartData([]);
+      } finally {
+        setLoading(false);
       }
     }
     fetchData();
@@ -70,6 +67,8 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
     if ((type === "pecas-cortadas" || type === "pecas-recebidas" || type === "pecas-perdidas") && chartData.length > 0) {
       return chartData;
     }
+    
+    // Dados mockados como fallback
     switch (type) {
       case "pecas-perdidas":
         return [
@@ -87,6 +86,14 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
           { name: 'Abr', quantidade: 1100 },
           { name: 'Mai', quantidade: 1800 },
         ];
+      case "pecas-cortadas":
+        return [
+          { name: 'Jan', quantidade: 1100 },
+          { name: 'Fev', quantidade: 750 },
+          { name: 'Mar', quantidade: 1400 },
+          { name: 'Abr', quantidade: 1000 },
+          { name: 'Mai', quantidade: 1700 },
+        ];
       default:
         return [];
     }
@@ -96,8 +103,16 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
 
   const renderChart = () => {
     if (loading && (type === "pecas-cortadas" || type === "pecas-recebidas" || type === "pecas-perdidas")) {
-      return <p>Carregando dados do relatório...</p>;
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+            <p className="text-sm text-muted-foreground">Carregando dados do relatório...</p>
+          </div>
+        </div>
+      );
     }
+    
     switch (type) {
       case "pecas-cortadas":
         return (
@@ -202,21 +217,21 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
       case "pecas-recebidas": {
         // Cálculos baseados em chartData
         const totalRecebidas = chartData.reduce((acc, item) => acc + (item.quantidade || 0), 0);
-        const mediaMensal = chartData.length > 0 ? Math.round(totalRecebidas / chartData.length) : 0;
-        const maiorQuantidade = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
+        const mediaRecebidas = chartData.length > 0 ? Math.round(totalRecebidas / chartData.length) : 0;
+        const maiorRecebimento = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
         return (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="text-sm text-blue-700">Total Recebidas</p>
+            <div className="p-4 bg-green-50 rounded-lg">
+              <p className="text-sm text-green-700">Total de Peças Recebidas</p>
               <p className="text-xl font-bold">{totalRecebidas} unid.</p>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <p className="text-sm text-green-700">Média Mensal</p>
-              <p className="text-xl font-bold">{mediaMensal} unid.</p>
+            <div className="p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">Média Mensal</p>
+              <p className="text-xl font-bold">{mediaRecebidas} unid.</p>
             </div>
             <div className="p-4 bg-purple-50 rounded-lg">
-              <p className="text-sm text-purple-700">Maior Quantidade</p>
-              <p className="text-xl font-bold">{maiorQuantidade} unid.</p>
+              <p className="text-sm text-purple-700">Maior Recebimento</p>
+              <p className="text-xl font-bold">{maiorRecebimento} unid.</p>
             </div>
           </div>
         );
@@ -227,7 +242,7 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
   };
 
   return (
-    <div className="space-y-4">
+    <div>
       {renderChart()}
       {getAdditionalInfo()}
     </div>

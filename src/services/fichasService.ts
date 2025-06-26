@@ -109,15 +109,42 @@ export const fichasService = {
   },
 
   async buscarRelatorio(dataInicio?: string, dataFim?: string): Promise<any> {
-    let url = `${API_URL}/fichas/relatorio`;
-    if (dataInicio && dataFim) {
-      url += `?dataInicio=${encodeURIComponent(dataInicio)}&dataFim=${encodeURIComponent(dataFim)}`;
-    } else if (dataInicio) {
-      url += `?dataInicio=${encodeURIComponent(dataInicio)}`;
-    } else if (dataFim) {
-      url += `?dataFim=${encodeURIComponent(dataFim)}`;
+    try {
+      let url = `${API_URL}/fichas/relatorio`;
+      const params: any = {};
+      
+      if (dataInicio && dataFim) {
+        params.dataInicio = dataInicio;
+        params.dataFim = dataFim;
+      } else if (dataInicio) {
+        params.dataInicio = dataInicio;
+      } else if (dataFim) {
+        params.dataFim = dataFim;
+      }
+      
+      console.log('FichasService - URL:', url);
+      console.log('FichasService - Params:', params);
+      
+      const response = await axios.get(url, { params });
+      
+      console.log('FichasService - Response status:', response.status);
+      console.log('FichasService - Response data:', response.data);
+      
+      return response.data;
+    } catch (error) {
+      console.error('FichasService - Erro ao buscar relatório:', error);
+      console.error('FichasService - Error response:', error.response?.data);
+      throw error;
     }
-    const response = await axios.get(url);
+  },
+
+  async buscarDadosSemanais(dataInicio: string, dataFim: string): Promise<any> {
+    const response = await axios.get(`${API_URL}/fichas/relatorio`, {
+      params: {
+        dataInicio,
+        dataFim
+      }
+    });
     return response.data;
   },
 

@@ -311,18 +311,34 @@ class FichasModel {
       let firstDay = dataInicio ? new Date(dataInicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       let lastDay = dataFim ? new Date(dataFim) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 
+      console.log('FichasModel - Buscando relatório para período:', firstDay, 'a', lastDay);
+
       const [stats] = await knex.raw(`
         SELECT 
           COUNT(*) as total_criadas,
           SUM(CASE WHEN status = 'concluido' THEN 1 ELSE 0 END) as total_concluidas,
-          SUM(quantidade_recebida) as total_recebidas
+          SUM(COALESCE(quantidade_recebida, 0)) as total_recebidas,
+          SUM(COALESCE(quantidade_perdida, 0)) as total_perdidas,
+          SUM(quantidade) as total_cortadas
         FROM fichas
         WHERE data_entrada BETWEEN ? AND ?
       `, [firstDay, lastDay]);
 
-      return stats[0];
+      console.log('FichasModel - Resultado bruto da consulta:', stats[0]);
+
+      const resultado = {
+        total_cortadas: parseInt(stats[0].total_cortadas) || 0,
+        total_perdidas: parseInt(stats[0].total_perdidas) || 0,
+        total_recebidas: parseInt(stats[0].total_recebidas) || 0,
+        total_criadas: parseInt(stats[0].total_criadas) || 0,
+        total_concluidas: parseInt(stats[0].total_concluidas) || 0
+      };
+
+      console.log('FichasModel - Resultado processado:', resultado);
+
+      return resultado;
     } catch (error) {
-      console.error('Erro ao buscar relatório:', error);
+      console.error('FichasModel - Erro ao buscar relatório:', error);
       throw error;
     }
   }
