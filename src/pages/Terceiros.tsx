@@ -52,7 +52,8 @@ export default function Terceiros() {
     cep: "",
     tipo: "fornecedor",
     numero: "",
-    complemento: ""
+    complemento: "",
+    chave_pix: ""
   });
   const [editItem, setEditItem] = useState<Terceiro | null>(null);
   
@@ -91,7 +92,8 @@ export default function Terceiros() {
       cep: "",
       tipo: "fornecedor",
       numero: "",
-      complemento: ""
+      complemento: "",
+      chave_pix: ""
     });
   };
 
@@ -142,7 +144,8 @@ export default function Terceiros() {
         cep: "",
         tipo: "fornecedor",
         numero: "",
-        complemento: ""
+        complemento: "",
+        chave_pix: ""
       });
       // Recarregar todos os terceiros para atualizar os contadores
       recarregarTodosTerceiros();
@@ -191,7 +194,8 @@ export default function Terceiros() {
         'Complemento': item.complemento || '',
         'Cidade': item.cidade || '',
         'Estado': item.estado || '',
-        'CEP': item.cep || ''
+        'CEP': item.cep || '',
+        'Chave Pix': item.chave_pix || ''
       }));
 
       // Cria uma nova planilha
@@ -209,7 +213,8 @@ export default function Terceiros() {
         { wch: 20 }, // Complemento
         { wch: 20 }, // Cidade
         { wch: 10 }, // Estado
-        { wch: 10 }  // CEP
+        { wch: 10 }, // CEP
+        { wch: 20 }  // Chave Pix
       ];
       ws['!cols'] = wscols;
 
@@ -259,12 +264,13 @@ export default function Terceiros() {
         item.endereco || '-',
         item.numero || '-',
         item.cidade || '-',
-        item.estado || '-'
+        item.estado || '-',
+        item.chave_pix || '-'
       ]);
 
       // Configura a tabela
       autoTable(doc, {
-        head: [['Nome', 'CNPJ', 'Email', 'Telefone', 'Tipo', 'Endereço', 'Número', 'Cidade', 'Estado']],
+        head: [['Nome', 'CNPJ', 'Email', 'Telefone', 'Tipo', 'Endereço', 'Número', 'Cidade', 'Estado', 'Chave Pix']],
         body: dadosParaExportar,
         startY: filteredData.length !== terceiros.length ? 35 : 30,
         styles: {
@@ -290,6 +296,7 @@ export default function Terceiros() {
           6: { cellWidth: 25 }, // Número
           7: { cellWidth: 30 }, // Cidade
           8: { cellWidth: 20 }, // Estado
+          9: { cellWidth: 20 }  // Chave Pix
         },
         margin: { top: 30 },
         didDrawPage: function(data: any) {
@@ -745,6 +752,17 @@ export default function Terceiros() {
                   className="bg-white" 
                 />
               </div>
+
+              <div className="space-y-2 sm:col-span-2 md:col-span-3">
+                <Label htmlFor="chave_pix" className="font-medium">Chave Pix</Label>
+                <Input
+                  id="chave_pix"
+                  placeholder="Chave Pix"
+                  value={newItem.chave_pix || ""}
+                  onChange={e => setNewItem({...newItem, chave_pix: e.target.value})}
+                  className="bg-white"
+                />
+              </div>
             </div>
           </div>
           
@@ -919,6 +937,17 @@ export default function Terceiros() {
                   placeholder="Complemento" 
                   value={editItem?.complemento || ""} 
                   onChange={e => setEditItem(prev => prev ? { ...prev, complemento: e.target.value } : null)}
+                  className="bg-white"
+                />
+              </div>
+
+              <div className="space-y-2 sm:col-span-2 md:col-span-3">
+                <Label htmlFor="edit-chave_pix" className="font-medium">Chave Pix</Label>
+                <Input
+                  id="edit-chave_pix"
+                  placeholder="Chave Pix"
+                  value={editItem?.chave_pix || ""}
+                  onChange={e => setEditItem(prev => prev ? { ...prev, chave_pix: e.target.value } : null)}
                   className="bg-white"
                 />
               </div>

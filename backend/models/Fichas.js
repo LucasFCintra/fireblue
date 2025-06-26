@@ -83,6 +83,13 @@ class FichasModel {
 
   async create(fichas) {
     try {
+      // Se vier produto_id mas não vier produto, buscar o nome do produto
+      if ((!fichas.produto || fichas.produto === '') && fichas.produto_id) {
+        const produto = await Produtos.findById(fichas.produto_id);
+        if (produto) {
+          fichas.produto = produto.nome_produto;
+        }
+      }
       const ids = await knex.insert(fichas).table("fichas")
       // Após criar, buscar o fichas completo para enviar via Socket
       const novoFichas = await this.findById(ids[0])
@@ -100,7 +107,15 @@ class FichasModel {
   async update(id, fichas) {
     try {
       console.log('Model: '+id)
-      console.log('Model: '+fichas)
+      console.log('Model: '+ fichas.produto + '\n'+JSON.stringify(fichas))
+
+      // Se vier produto_id mas não vier produto, buscar o nome do produto
+      if ((!fichas.produto || fichas.produto === '') && fichas.produto_id) {
+        const produto = await Produtos.findById(fichas.produto_id);
+        if (produto) {
+          fichas.produto = produto.nome_produto;
+        }
+      }
 
       await knex.update(fichas).where({ id }).table("fichas")
       

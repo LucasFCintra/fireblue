@@ -146,13 +146,52 @@ export const DetalheFechamentoBanca: React.FC<DetalheFechamentoBancaProps> = ({
         doc.text(`Data de pagamento: ${fechamento.dataPagamento}`, 14, 54);
       }
       
+      // Informações adicionais da banca
+      let yPosition = 62;
+      if (fechamento.cnpj) {
+        doc.text(`CNPJ: ${fechamento.cnpj}`, 14, yPosition);
+        yPosition += 8;
+      }
+      if (fechamento.telefone) {
+        doc.text(`Telefone: ${fechamento.telefone}`, 14, yPosition);
+        yPosition += 8;
+      }
+      if (fechamento.email) {
+        doc.text(`Email: ${fechamento.email}`, 14, yPosition);
+        yPosition += 8;
+      }
+      if (fechamento.endereco) {
+        doc.text(`Endereço: ${fechamento.endereco}`, 14, yPosition);
+        yPosition += 8;
+      }
+      if (fechamento.cidade && fechamento.estado) {
+        doc.text(`Cidade/Estado: ${fechamento.cidade} - ${fechamento.estado}`, 14, yPosition);
+        yPosition += 8;
+      }
+      if (fechamento.cep) {
+        doc.text(`CEP: ${fechamento.cep}`, 14, yPosition);
+        yPosition += 8;
+      }
+      
+      // Chave PIX destacada
+      if (fechamento.chave_pix) {
+        yPosition += 4;
+        doc.setFillColor(240, 248, 255); // Azul claro
+        doc.rect(14, yPosition - 2, 182, 12, 'F');
+        doc.setFontSize(11);
+        doc.text('Chave PIX para Pagamento:', 14, yPosition + 2);
+        doc.setFontSize(10);
+        doc.text(fechamento.chave_pix, 14, yPosition + 8);
+        yPosition += 16;
+      }
+      
       // Resumo geral
       doc.setFillColor(240, 240, 240);
-      doc.rect(14, 60, 182, 20, 'F');
+      doc.rect(14, yPosition, 182, 20, 'F');
       doc.setFontSize(11);
-      doc.text('Resumo Geral', 14, 66);
-      doc.text(`Total de Peças: ${fechamento.totalPecas}`, 14, 74);
-      doc.text(`Valor Total: ${formatarMoeda(fechamento.valorTotal)}`, 120, 74);
+      doc.text('Resumo Geral', 14, yPosition + 6);
+      doc.text(`Total de Peças: ${fechamento.totalPecas}`, 14, yPosition + 14);
+      doc.text(`Valor Total: ${formatarMoeda(fechamento.valorTotal)}`, 120, yPosition + 14);
       
       // Seção 1: Resumo por Produto
       doc.addPage();
@@ -353,6 +392,48 @@ export const DetalheFechamentoBanca: React.FC<DetalheFechamentoBancaProps> = ({
             </Badge>
           </div>
         </DialogHeader>
+        
+        {/* Informações da Banca */}
+        {(fechamento.chave_pix || fechamento.cnpj || fechamento.telefone || fechamento.email || fechamento.endereco) && (
+          <Card className="mb-4 p-4 bg-blue-50 border-blue-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 className="font-semibold text-blue-800 mb-2">Informações da Banca</h3>
+                <div className="space-y-1 text-sm">
+                  {fechamento.cnpj && (
+                    <div><span className="font-medium">CNPJ:</span> {fechamento.cnpj}</div>
+                  )}
+                  {fechamento.telefone && (
+                    <div><span className="font-medium">Telefone:</span> {fechamento.telefone}</div>
+                  )}
+                  {fechamento.email && (
+                    <div><span className="font-medium">Email:</span> {fechamento.email}</div>
+                  )}
+                </div>
+              </div>
+              <div>
+                <h3 className="font-semibold text-blue-800 mb-2">Endereço e Pagamento</h3>
+                <div className="space-y-1 text-sm">
+                  {fechamento.endereco && (
+                    <div><span className="font-medium">Endereço:</span> {fechamento.endereco}</div>
+                  )}
+                  {fechamento.cidade && fechamento.estado && (
+                    <div><span className="font-medium">Cidade/Estado:</span> {fechamento.cidade} - {fechamento.estado}</div>
+                  )}
+                  {fechamento.cep && (
+                    <div><span className="font-medium">CEP:</span> {fechamento.cep}</div>
+                  )}
+                  {fechamento.chave_pix && (
+                    <div className="mt-2 p-2 bg-white rounded border">
+                      <span className="font-medium text-green-700">Chave PIX:</span>
+                      <div className="font-mono text-sm text-green-600 break-all">{fechamento.chave_pix}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="p-4 bg-gray-50 rounded-md">
