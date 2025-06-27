@@ -22,6 +22,7 @@ export const produtosService = {
   async listarProdutos(): Promise<Produto[]> {
     try {
       const response = await axios.get(`${API_URL}/produtos`);
+      console.log(response)
       return response.data;
     } catch (error) {
       console.error('Erro ao buscar produtos:', error);

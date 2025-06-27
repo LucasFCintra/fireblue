@@ -139,10 +139,6 @@ export default function Produtos() {
   // Carregar produtos
   const loadProdutos = async () => {
     try {
-      if (!validarCamposObrigatorios()) {
-        return;
-      }
-
       const data = await listar();
       console.log(data)
       const produtosComStatus = Array.isArray(data) ? data.map(produto => ({

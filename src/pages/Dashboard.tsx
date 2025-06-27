@@ -112,6 +112,9 @@ export default function Dashboard() {
   // Estado para os dados de peças recebidas por mês
   const [recebidosUltimosMeses, setRecebidosUltimosMeses] = useState<Array<{ mes: string, total_recebido: number }>>([]);
 
+  // Estado para os dados de peças perdidas por mês
+  const [perdidasUltimosMeses, setPerdidasUltimosMeses] = useState<Array<{ mes: string, total_perdido: number }>>([]);
+
   const { showSuccess, showError, showWarning, showInfo } = useNotificationToast();
 
   // Função para carregar os dados do dashboard
@@ -130,7 +133,7 @@ export default function Dashboard() {
       // Buscar produtos com estoque baixo
       const lowStockResponse = await fetch('http://26.203.75.236:8687/api/produtos/low-stock');
       const lowStockData = await lowStockResponse.json();
-      
+      console.log(lowStockData)
       // Buscar estatísticas mensais
       const monthlyStatsResponse = await fetch('http://26.203.75.236:8687/api/fichas/stats/monthly');
       const monthlyStatsData = await monthlyStatsResponse.json();
@@ -159,6 +162,11 @@ export default function Dashboard() {
       const recebidosResponse = await fetch('http://26.203.75.236:8687/api/fichas/recebidos/ultimos-meses');
       const recebidosData = await recebidosResponse.json();
       setRecebidosUltimosMeses(recebidosData);
+
+      // Buscar dados de peças perdidas por mês
+      const perdidasResponse = await fetch('http://26.203.75.236:8687/api/fichas/perdidas/ultimos-meses');
+      const perdidasData = await perdidasResponse.json();
+      setPerdidasUltimosMeses(perdidasData);
     } catch (error) {
       toast.error("Erro ao carregar dados do dashboard");
       console.error(error);
@@ -203,6 +211,12 @@ export default function Dashboard() {
   const dadosGraficoCorte = recebidosUltimosMeses.map(item => ({
     name: item.mes.split('-').reverse().join('/'), // Ex: 2024-06 -> 06/2024
     quantidade: Number(item.total_recebido) || 0
+  }));
+
+  // Montar os dados do gráfico de peças perdidas
+  const dadosGraficoPerdidas = perdidasUltimosMeses.map(item => ({
+    name: item.mes.split('-').reverse().join('/'),
+    quantidade: Number(item.total_perdido) || 0
   }));
 
   return (
@@ -357,13 +371,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="h-80 pt-6">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={[
-                { name: 'Jan', quantidade: 40 },
-                { name: 'Fev', quantidade: 30 },
-                { name: 'Mar', quantidade: 50 },
-                { name: 'Abr', quantidade: 45 },
-                { name: 'Mai', quantidade: 60 },
-              ]}>
+              <BarChart data={dadosGraficoPerdidas}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" />
                 <YAxis stroke="hsl(var(--muted-foreground))" />
@@ -376,7 +384,7 @@ export default function Dashboard() {
                   }}
                 />
                 <Legend />
-                <Bar dataKey="quantidade" name="Quantidade" fill="#ff4d4d" />
+                <Bar dataKey="quantidade" name="Perdidas" fill="#ff4d4d" />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>

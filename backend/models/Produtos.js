@@ -31,8 +31,8 @@ class ProdutosModel {
       // Garantir que os campos numéricos sejam do tipo correto
       const produtoFormatado = {
         ...produto,
-        preco_venda: produto.preco_venda ? parseFloat(produto.preco_venda) : 0,
-        estoque_atual: produto.estoque_atual ? parseFloat(produto.estoque_atual) : 0,
+      //  preco_venda: produto.preco_venda ? parseFloat(produto.preco_venda) : 0,
+        quantidade: produto.quantidade ? parseFloat(produto.quantidade) : 0,
         estoque_minimo: produto.estoque_minimo ? parseFloat(produto.estoque_minimo) : 0
       };
 
@@ -49,8 +49,8 @@ class ProdutosModel {
       // Garantir que os campos numéricos sejam do tipo correto
       const dadosFormatados = {
         ...dados,
-        preco_venda: dados.preco_venda ? parseFloat(dados.preco_venda) : 0,
-        estoque_atual: dados.estoque_atual ? parseFloat(dados.estoque_atual) : 0,
+       // preco_venda: dados.preco_venda ? parseFloat(dados.preco_venda) : 0,
+        quantidade: dados.quantidade ? parseFloat(dados.quantidade) : 0,
         estoque_minimo: dados.estoque_minimo ? parseFloat(dados.estoque_minimo) : 0
       };
       console.log(id,dados)
@@ -97,19 +97,19 @@ class ProdutosModel {
       // Query corrigida usando os nomes corretos dos campos
       const result = await knex('produtos')
         .select('*')
-        .whereRaw('COALESCE(CAST(estoque_atual AS DECIMAL), 0) <= COALESCE(CAST(estoque_minimo AS DECIMAL), 0)')
-        .orderBy('estoque_atual', 'asc');
+        .whereRaw('COALESCE(CAST(quantidade AS DECIMAL), 0) <= COALESCE(CAST(estoque_minimo AS DECIMAL), 0)')
+        .orderBy('quantidade', 'asc');
       
       console.log('Produtos encontrados com estoque baixo:', result.length);
  
       return result.map(item => ({
         id: item.id,
-        nome: item.nome,
+        nome: item.nome_produto,
         descricao: item.descricao,
-        quantidade_atual: item.estoque_atual || 0,
+        quantidade_atual: item.quantidade || 0,
         estoque_minimo: item.estoque_minimo || 0,
         unidade: item.unidade || 'un',
-        status: parseFloat(item.estoque_atual || 0) === 0 ? 'Sem Estoque' : 'Baixo Estoque'
+        status: parseFloat(item.quantidade || 0) === 0 ? 'Sem Estoque' : 'Baixo Estoque'
       }));
     } catch (err) {
       console.log('Erro ao buscar produtos com estoque baixo:', err);
@@ -125,29 +125,29 @@ class ProdutosModel {
       }
 
       const { tipoAjuste, quantidade, observacao } = dadosAjuste;
-      let novaQuantidade = produto.estoque_atual;
+      let novaQuantidade = produto.quantidade;
 
       // Calcular nova quantidade com base no tipo de ajuste
       switch (tipoAjuste) {
         case "entrada":
-          novaQuantidade = produto.estoque_atual + parseFloat(quantidade);
+          novaQuantidade = produto.quantidade + parseFloat(quantidade);
           break;
         case "saida":
-          novaQuantidade = Math.max(0, produto.estoque_atual - parseFloat(quantidade));
+          novaQuantidade = Math.max(0, produto.quantidade - parseFloat(quantidade));
           break;
         default:
           return { status: false, err: "Tipo de ajuste inválido" };
       }
 
       // Atualizar a quantidade do produto
-      await knex.update({ estoque_atual: novaQuantidade }).where({ id }).table("produtos");
+      await knex.update({ quantidade: novaQuantidade }).where({ id }).table("produtos");
 
       // Registrar o histórico do ajuste (opcional - pode ser implementado em uma tabela separada)
       const historicoAjuste = {
         id: uuidv4(),
         produto_id: id,
         tipo_ajuste: tipoAjuste,
-        quantidade_anterior: produto.estoque_atual,
+        quantidade_anterior: produto.quantidade,
         quantidade_ajuste: quantidade,
         nova_quantidade: novaQuantidade,
         observacao: observacao || null,
