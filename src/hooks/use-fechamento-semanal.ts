@@ -156,6 +156,9 @@ export function useFechamentoSemanal() {
           status: 'pago'
         });
         
+        // Recarregar o histórico para atualizar o número no card
+        carregarHistorico();
+        
         toast({
           title: "Fechamento finalizado",
           description: "O fechamento semanal foi finalizado e marcado como pago com sucesso.",
@@ -173,7 +176,7 @@ export function useFechamentoSemanal() {
     } finally {
       setIsLoading(false);
     }
-  }, [relatorio, toast]);
+  }, [relatorio, toast, carregarHistorico]);
 
   /**
    * Finaliza o fechamento de uma banca específica
@@ -213,6 +216,9 @@ export function useFechamentoSemanal() {
             fechamentos: fechamentosAtualizados
           });
           
+          // Recarregar o histórico para atualizar o número no card
+          carregarHistorico();
+          
           toast({
             title: "Fechamento de banca finalizado",
             description: "O fechamento da banca foi finalizado com sucesso.",
@@ -231,7 +237,7 @@ export function useFechamentoSemanal() {
     } finally {
       setIsLoading(false);
     }
-  }, [relatorio, toast]);
+  }, [relatorio, toast, carregarHistorico]);
 
   /**
    * Gera e imprime o comprovante de fechamento para uma banca

@@ -360,7 +360,7 @@ export const DetalheFechamentoBanca: React.FC<DetalheFechamentoBancaProps> = ({
       if (!value) onClose();
     }}>
       <DialogContent 
-        className="sm:max-w-4xl max-h-[85vh] p-4 w-[90vw] overflow-hidden z-50"
+        className="sm:max-w-5xl max-w-[95vw] max-h-[95vh] p-0 w-full overflow-hidden z-50 border border-border bg-background dark:shadow-xl dark:shadow-black/30 flex flex-col"
         onInteractOutside={(e) => {
           // Previne que o diálogo feche ao clicar fora dele
           e.preventDefault();
@@ -370,21 +370,22 @@ export const DetalheFechamentoBanca: React.FC<DetalheFechamentoBancaProps> = ({
           onClose();
         }}
       >
-        <DialogHeader className="pb-3">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+        {/* Header fixo */}
+        <DialogHeader className="p-4 sm:p-6 pb-3 space-y-3 flex-shrink-0 border-b border-border">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <DialogTitle className="text-lg font-semibold text-indigo-800">Detalhes do Fechamento - {fechamento.nomeBanca}</DialogTitle>
-              <DialogDescription className="text-sm">
+              <DialogTitle className="text-lg sm:text-xl font-semibold text-foreground">Detalhes do Fechamento - {fechamento.nomeBanca}</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
                 Período: {fechamento.dataInicio} a {fechamento.dataFim}
               </DialogDescription>
             </div>
             <Badge 
               className={
                 fechamento.status === 'pendente' 
-                  ? 'bg-yellow-100 text-yellow-800' 
+                  ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
                   : fechamento.status === 'pago'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
+                    ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                    : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
               }
             >
               {fechamento.status === 'pendente' ? 'Pendente' : 
@@ -393,195 +394,216 @@ export const DetalheFechamentoBanca: React.FC<DetalheFechamentoBancaProps> = ({
           </div>
         </DialogHeader>
         
-        {/* Informações da Banca */}
-        {(fechamento.cnpj || fechamento.telefone || fechamento.email || fechamento.endereco || fechamento.chave_pix) && (
-          <Card className="mb-3 p-3 bg-blue-50 border-blue-200">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <div>
-                <h3 className="font-semibold text-blue-800 mb-1 text-sm">Informações da Banca</h3>
-                <div className="space-y-1 text-xs">
-                  {fechamento.cnpj && (
-                    <div><span className="font-medium">CNPJ:</span> {fechamento.cnpj}</div>
-                  )}
-                  {fechamento.telefone && (
-                    <div><span className="font-medium">Telefone:</span> {fechamento.telefone}</div>
-                  )}
-                  {fechamento.email && (
-                    <div><span className="font-medium">Email:</span> {fechamento.email}</div>
-                  )}
+        {/* Conteúdo com scroll */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 pt-3">
+          {/* Informações da Banca */}
+          {(fechamento.cnpj || fechamento.telefone || fechamento.email || fechamento.endereco || fechamento.chave_pix) && (
+            <Card className="mb-4 p-3 sm:p-4 bg-blue-50 border-blue-200 dark:bg-blue-950/30 dark:border-blue-800">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 text-sm">Informações da Banca</h3>
+                  <div className="space-y-1 text-xs sm:text-sm">
+                    {fechamento.cnpj && (
+                      <div><span className="font-medium text-blue-700 dark:text-blue-300">CNPJ:</span> <span className="text-blue-600 dark:text-blue-400">{fechamento.cnpj}</span></div>
+                    )}
+                    {fechamento.telefone && (
+                      <div><span className="font-medium text-blue-700 dark:text-blue-300">Telefone:</span> <span className="text-blue-600 dark:text-blue-400">{fechamento.telefone}</span></div>
+                    )}
+                    {fechamento.email && (
+                      <div><span className="font-medium text-blue-700 dark:text-blue-300">Email:</span> <span className="text-blue-600 dark:text-blue-400">{fechamento.email}</span></div>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-blue-800 dark:text-blue-200 mb-2 text-sm">Endereço e Pagamento</h3>
+                  <div className="space-y-1 text-xs sm:text-sm">
+                    {fechamento.endereco && (
+                      <div><span className="font-medium text-blue-700 dark:text-blue-300">Endereço:</span> <span className="text-blue-600 dark:text-blue-400">{fechamento.endereco}</span></div>
+                    )}
+                    {fechamento.cidade && fechamento.estado && (
+                      <div><span className="font-medium text-blue-700 dark:text-blue-300">Cidade/Estado:</span> <span className="text-blue-600 dark:text-blue-400">{fechamento.cidade} - {fechamento.estado}</span></div>
+                    )}
+                    {fechamento.cep && (
+                      <div><span className="font-medium text-blue-700 dark:text-blue-300">CEP:</span> <span className="text-blue-600 dark:text-blue-400">{fechamento.cep}</span></div>
+                    )}
+                    {fechamento.chave_pix && (
+                      <div className="mt-2 p-2 bg-white dark:bg-muted/50 rounded border border-green-300 dark:border-green-700/50">
+                        <span className="font-medium text-green-700 dark:text-green-300 text-xs">Chave PIX:</span>
+                        <div className="font-mono text-xs text-green-600 dark:text-green-400 break-all mt-1">{fechamento.chave_pix}</div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              
-              <div>
-                <h3 className="font-semibold text-blue-800 mb-1 text-sm">Endereço e Pagamento</h3>
-                <div className="space-y-1 text-xs">
-                  {fechamento.endereco && (
-                    <div><span className="font-medium">Endereço:</span> {fechamento.endereco}</div>
-                  )}
-                  {fechamento.cidade && fechamento.estado && (
-                    <div><span className="font-medium">Cidade/Estado:</span> {fechamento.cidade} - {fechamento.estado}</div>
-                  )}
-                  {fechamento.cep && (
-                    <div><span className="font-medium">CEP:</span> {fechamento.cep}</div>
-                  )}
-                  {fechamento.chave_pix && (
-                    <div className="mt-1 p-1 bg-white rounded border">
-                      <span className="font-medium text-green-700 text-xs">Chave PIX:</span>
-                      <div className="font-mono text-xs text-green-600 break-all">{fechamento.chave_pix}</div>
-                    </div>
-                  )}
-                </div>
+            </Card>
+          )}
+          
+          {/* Resumo Geral */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+            <div className="p-3 sm:p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+              <div className="text-xs sm:text-sm text-muted-foreground">Total de Peças</div>
+              <div className="text-lg sm:text-xl font-bold text-foreground">{fechamento.totalPecas.toLocaleString()}</div>
+            </div>
+            
+            <div className="p-3 sm:p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+              <div className="text-xs sm:text-sm text-muted-foreground">Valor a Pagar</div>
+              <div className="text-lg sm:text-xl font-bold text-primary">{formatarMoeda(fechamento.valorTotal)}</div>
+            </div>
+            
+            <div className="p-3 sm:p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+              <div className="text-xs sm:text-sm text-muted-foreground">Status</div>
+              <div className="text-lg sm:text-xl font-bold flex items-center">
+                {fechamento.status === 'pendente' ? (
+                  <span className="flex items-center text-yellow-700 dark:text-yellow-300">
+                    Pendente
+                  </span>
+                ) : fechamento.status === 'pago' ? (
+                  <span className="flex items-center text-green-700 dark:text-green-300">
+                    <CheckCircle className="h-4 w-4 mr-1" /> Pago
+                  </span>
+                ) : (
+                  <span className="text-red-700 dark:text-red-300">Cancelado</span>
+                )}
               </div>
             </div>
-          </Card>
-        )}
-        
-        {/* Resumo Geral */}
-        <div className="grid grid-cols-3 gap-3 mb-3">
-          <div className="p-3 bg-gray-50 rounded-md">
-            <div className="text-xs text-gray-500">Total de Peças</div>
-            <div className="text-lg font-bold">{fechamento.totalPecas.toLocaleString()}</div>
           </div>
           
-          <div className="p-3 bg-gray-50 rounded-md">
-            <div className="text-xs text-gray-500">Valor a Pagar</div>
-            <div className="text-lg font-bold text-primary">{formatarMoeda(fechamento.valorTotal)}</div>
-          </div>
-          
-          <div className="p-3 bg-gray-50 rounded-md">
-            <div className="text-xs text-gray-500">Status</div>
-            <div className="text-lg font-bold flex items-center">
-              {fechamento.status === 'pendente' ? (
-                <span className="flex items-center text-yellow-700">
-                  Pendente
-                </span>
-              ) : fechamento.status === 'pago' ? (
-                <span className="flex items-center text-green-700">
-                  <CheckCircle className="h-4 w-4 mr-1" /> Pago
-                </span>
-              ) : (
-                <span className="text-red-700">Cancelado</span>
-              )}
-            </div>
-          </div>
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-3 w-full mb-3">
+              <TabsTrigger value="resumo" className="text-xs sm:text-sm">
+                <FileBarChart className="h-3 w-3 mr-1" />
+                Resumo por Produto
+              </TabsTrigger>
+              <TabsTrigger value="fichas" className="text-xs sm:text-sm">
+                <FilesIcon className="h-3 w-3 mr-1" />
+                Todas as Fichas
+              </TabsTrigger>
+              <TabsTrigger value="grafico" className="text-xs sm:text-sm">
+                <PieChart className="h-3 w-3 mr-1" />
+                Gráficos
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="resumo" className="mt-0">
+              <div className="overflow-hidden border border-border rounded-md bg-background">
+                <div className="overflow-x-auto">
+                  <div className="overflow-y-auto max-h-[300px] sm:max-h-[400px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 dark:bg-muted/30">
+                          <TableHead className="w-[40%] text-xs sm:text-sm font-medium text-foreground">Produto</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Quantidade</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Valor Unit.</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Valor Total</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Fichas</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {resumoProdutos.map((produto, index) => (
+                          <TableRow key={index} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-medium text-xs sm:text-sm text-foreground">{produto.descricao}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{produto.quantidade}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{formatarMoeda(produto.valorUnitario)}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground font-medium">{formatarMoeda(produto.valorTotal)}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{produto.fichas.length}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="fichas" className="mt-0">
+              <div className="overflow-hidden border border-border rounded-md bg-background">
+                <div className="overflow-x-auto">
+                  <div className="overflow-y-auto max-h-[300px] sm:max-h-[400px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 dark:bg-muted/30">
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Código</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Data</TableHead>
+                          <TableHead className="w-[30%] text-xs sm:text-sm font-medium text-foreground">Descrição</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Qtd</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Valor Unit.</TableHead>
+                          <TableHead className="text-xs sm:text-sm font-medium text-foreground">Valor Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {fechamento.fichasEntregues.map((ficha) => (
+                          <TableRow key={ficha.id} className="hover:bg-muted/30 transition-colors">
+                            <TableCell className="font-medium text-xs sm:text-sm text-foreground">{ficha.codigo}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{ficha.dataEntrada}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{ficha.descricao}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{ficha.quantidade}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground">{formatarMoeda(ficha.valorUnitario)}</TableCell>
+                            <TableCell className="text-xs sm:text-sm text-muted-foreground font-medium">{formatarMoeda(ficha.valorTotal)}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="grafico" className="mt-0">
+              <div className="space-y-4">
+                <div className="text-xs text-muted-foreground text-center pb-2 border-b border-border">
+                  <PieChart className="h-3 w-3 inline mr-1" />
+                  Visualize todos os gráficos abaixo
+                </div>
+                <GraficoProdutosBanca fechamento={fechamento} />
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
         
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="grid grid-cols-3 w-full mb-3">
-            <TabsTrigger value="resumo" className="text-xs">
-              <FileBarChart className="h-3 w-3 mr-1" />
-              Resumo por Produto
-            </TabsTrigger>
-            <TabsTrigger value="fichas" className="text-xs">
-              <FilesIcon className="h-3 w-3 mr-1" />
-              Todas as Fichas
-            </TabsTrigger>
-            <TabsTrigger value="grafico" className="text-xs">
-              <PieChart className="h-3 w-3 mr-1" />
-              Gráficos
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="resumo" className="mt-0">
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[40%] text-xs">Produto</TableHead>
-                    <TableHead className="text-xs">Quantidade</TableHead>
-                    <TableHead className="text-xs">Valor Unit.</TableHead>
-                    <TableHead className="text-xs">Valor Total</TableHead>
-                    <TableHead className="text-xs">Fichas</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {resumoProdutos.map((produto, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium text-xs">{produto.descricao}</TableCell>
-                      <TableCell className="text-xs">{produto.quantidade}</TableCell>
-                      <TableCell className="text-xs">{formatarMoeda(produto.valorUnitario)}</TableCell>
-                      <TableCell className="text-xs">{formatarMoeda(produto.valorTotal)}</TableCell>
-                      <TableCell className="text-xs">{produto.fichas.length}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="fichas" className="mt-0">
-            <ScrollArea className="h-[300px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Código</TableHead>
-                    <TableHead className="text-xs">Data</TableHead>
-                    <TableHead className="w-[30%] text-xs">Descrição</TableHead>
-                    <TableHead className="text-xs">Qtd</TableHead>
-                    <TableHead className="text-xs">Valor Unit.</TableHead>
-                    <TableHead className="text-xs">Valor Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {fechamento.fichasEntregues.map((ficha) => (
-                    <TableRow key={ficha.id}>
-                      <TableCell className="font-medium text-xs">{ficha.codigo}</TableCell>
-                      <TableCell className="text-xs">{ficha.dataEntrada}</TableCell>
-                      <TableCell className="text-xs">{ficha.descricao}</TableCell>
-                      <TableCell className="text-xs">{ficha.quantidade}</TableCell>
-                      <TableCell className="text-xs">{formatarMoeda(ficha.valorUnitario)}</TableCell>
-                      <TableCell className="text-xs">{formatarMoeda(ficha.valorTotal)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="grafico" className="mt-0">
-            <div className="h-[300px] overflow-y-auto py-2">
-              <GraficoProdutosBanca fechamento={fechamento} />
-            </div>
-          </TabsContent>
-        </Tabs>
-        
-        {/* Footer */}
-        <DialogFooter className="pt-3 border-t">
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleImprimirComprovante}
-              disabled={fechamento.status === 'pago' || isProcessing}
-            >
-              <Receipt className="h-4 w-4 mr-2" />
-              {isProcessing ? 'Gerando...' : 'Imprimir Comprovante'}
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={handleImprimirRelatorio}
-              disabled={isPrintingReport}
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              {isPrintingReport ? 'Gerando...' : 'Imprimir Relatório'}
-            </Button>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Button onClick={onClose} variant="secondary" size="sm">Fechar</Button>
-            {fechamento.status === 'pendente' && (
+        {/* Footer fixo */}
+        <DialogFooter className="p-4 sm:p-6 pt-4 border-t border-border flex-shrink-0 bg-background">
+          <div className="flex flex-col sm:flex-row justify-between gap-2 sm:gap-3 w-full">
+            <div className="flex flex-col sm:flex-row gap-2">
               <Button 
-                onClick={handleFinalizarBanca}
-                disabled={isProcessing}
-                className="bg-indigo-600 hover:bg-indigo-700"
+                variant="outline" 
                 size="sm"
+                onClick={handleImprimirComprovante}
+                disabled={fechamento.status === 'pago' || isProcessing}
+                className="border-border hover:bg-accent hover:text-accent-foreground"
               >
-                <FileCheck className="h-4 w-4 mr-2" />
-                {isProcessing ? 'Finalizando...' : 'Finalizar Fechamento'}
+                <Receipt className="h-4 w-4 mr-2" />
+                {isProcessing ? 'Gerando...' : 'Imprimir Comprovante'}
               </Button>
-            )}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleImprimirRelatorio}
+                disabled={isPrintingReport}
+                className="border-border hover:bg-accent hover:text-accent-foreground"
+              >
+                <Printer className="h-4 w-4 mr-2" />
+                {isPrintingReport ? 'Gerando...' : 'Imprimir Relatório'}
+              </Button>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Button onClick={onClose} variant="secondary" size="sm" className="bg-muted hover:bg-muted/80 text-muted-foreground">
+                Fechar
+              </Button>
+              {fechamento.status === 'pendente' && (
+                <Button 
+                  onClick={handleFinalizarBanca}
+                  disabled={isProcessing}
+                  className="bg-primary hover:bg-primary/90"
+                  size="sm"
+                >
+                  <FileCheck className="h-4 w-4 mr-2" />
+                  {isProcessing ? 'Finalizando...' : 'Finalizar Fechamento'}
+                </Button>
+              )}
+            </div>
           </div>
         </DialogFooter>
       </DialogContent>

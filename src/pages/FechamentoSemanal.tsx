@@ -50,11 +50,13 @@ export default function FechamentoSemanal() {
   useEffect(() => {
     if (activeTab === 'atual') {
       handleGerarFechamento();
-    } else {
-      // Carregar histórico de fechamentos
-      carregarHistorico();
     }
   }, [activeTab]);
+
+  // Carrega o histórico sempre que a página é carregada
+  useEffect(() => {
+    carregarHistorico();
+  }, []);
 
   // Manipulador para gerar um novo fechamento
   const handleGerarFechamento = async () => {
@@ -267,6 +269,10 @@ export default function FechamentoSemanal() {
     }
   };
 
+  // Verifica se todas as bancas estão pagas e com dataPagamento
+  const todasBancasPagas = relatorio && relatorio.fechamentos.length > 0 &&
+    relatorio.fechamentos.every(fechamento => fechamento.status === 'pago' && fechamento.dataPagamento);
+
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center border-b border-border pb-4">
@@ -283,7 +289,7 @@ export default function FechamentoSemanal() {
               startIcon={<RefreshCw className="h-4 w-4" />}
               onClick={handleGerarFechamento}
               isLoading={isLoading}
-              className="bg-indigo-600 hover:bg-indigo-700 shadow-sm dark:shadow-md dark:shadow-black/20"
+              className="bg-primary hover:bg-primary/90"
             >
               Gerar Fechamento
             </ActionButton>
@@ -292,24 +298,24 @@ export default function FechamentoSemanal() {
       </div>
 
       {/* Cards de navegação */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-700">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in duration-700">
         <Card 
-          className={`border-indigo-200 bg-indigo-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-indigo-800 dark:bg-indigo-950/50 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "atual" ? "ring-2 ring-indigo-400 dark:ring-indigo-500" : "shadow-sm"}`}
+          className={`border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-blue-800 dark:bg-blue-950 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "atual" ? "ring-2 ring-blue-400 dark:ring-blue-500" : "shadow-sm"}`}
           onClick={() => setActiveTab('atual')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-indigo-800 dark:text-indigo-200">Fechamento Atual</CardTitle>
-            <ClipboardCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Fechamento Atual</CardTitle>
+            <ClipboardCheck className="h-5 w-5 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
               {relatorio ? formatarMoeda(relatorio.valorTotal) : 'R$ 0,00'}
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-indigo-600 dark:text-indigo-400">
+              <p className="text-xs text-blue-600 dark:text-blue-400">
                 {relatorio ? `${relatorio.totalPecas} peças entregues` : 'Nenhum fechamento gerado'}
               </p>
-              <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium flex items-center">
+              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center">
                 {activeTab === "atual" ? "Visualizando" : "Ver fechamento"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
@@ -317,22 +323,22 @@ export default function FechamentoSemanal() {
         </Card>
         
         <Card 
-          className={`border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-blue-800 dark:bg-blue-950/50 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "historico" ? "ring-2 ring-blue-400 dark:ring-blue-500" : "shadow-sm"}`}
+          className={`border-purple-200 bg-purple-50 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer dark:border-purple-800 dark:bg-purple-950 dark:hover:shadow-lg dark:hover:shadow-black/20 ${activeTab === "historico" ? "ring-2 ring-purple-400 dark:ring-purple-500" : "shadow-sm"}`}
           onClick={() => setActiveTab('historico')}
         >
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Histórico de Fechamentos</CardTitle>
-            <History className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-200">Histórico de Fechamentos</CardTitle>
+            <History className="h-5 w-5 text-purple-600 dark:text-purple-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
               {historicoFechamentos.length}
             </div>
             <div className="flex justify-between items-center">
-              <p className="text-xs text-blue-600 dark:text-blue-400">
+              <p className="text-xs text-purple-600 dark:text-purple-400">
                 Fechamentos anteriores
               </p>
-              <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center">
+              <span className="text-xs text-purple-600 dark:text-purple-400 font-medium flex items-center">
                 {activeTab === "historico" ? "Visualizando" : "Ver histórico"} <ArrowRight className="ml-1 h-3 w-3" />
               </span>
             </div>
@@ -348,21 +354,21 @@ export default function FechamentoSemanal() {
       {activeTab === 'atual' ? (
         <div className="space-y-6">
           {/* Período de fechamento */}
-          <Card className="border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20">
+          <Card className="border border-border hover:shadow-md transition-all animate-in fade-in duration-1000 dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
             <CardHeader className="bg-muted/30 border-b border-border dark:bg-muted/20">
-              <div className="flex flex-col md:flex-row justify-between gap-4">
-                <div>
-                  <CardTitle className="text-foreground">Período de Fechamento</CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Selecione o período para gerar o fechamento
-                  </CardDescription>
-                </div>
+              <CardTitle className="text-foreground">Período de Fechamento</CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Selecione o período para gerar o fechamento
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="flex justify-end">
                 <DateRangePicker
                   date={dateRange}
                   onChange={setDateRange}
                 />
               </div>
-            </CardHeader>
+            </CardContent>
           </Card>
 
           {/* Relatório de fechamento atual */}
@@ -376,42 +382,53 @@ export default function FechamentoSemanal() {
               isLoading={isLoading}
             />
           ) : (
-            <Card className="p-8 text-center border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20">
-              <div className="flex flex-col items-center justify-center space-y-4">
-                <Calendar className="h-12 w-12 text-muted-foreground" />
-                <h3 className="text-lg font-medium text-foreground">Nenhum fechamento gerado</h3>
-                <p className="text-sm text-muted-foreground">
-                  Selecione um período e clique em "Gerar Fechamento" para criar um novo relatório.
-                </p>
-                <Button 
-                  onClick={handleGerarFechamento}
-                  disabled={isLoading}
-                  className="bg-indigo-600 hover:bg-indigo-700 shadow-sm dark:shadow-md dark:shadow-black/20"
-                >
-                  Gerar Fechamento Agora
-                </Button>
-              </div>
+            <Card className="border border-border hover:shadow-md transition-all animate-in fade-in duration-1000 dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
+              <CardContent className="p-8 text-center">
+                <div className="flex flex-col items-center justify-center space-y-4">
+                  <Calendar className="h-12 w-12 text-muted-foreground" />
+                  <h3 className="text-lg font-medium text-foreground">Nenhum fechamento gerado</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Selecione um período e clique em "Gerar Fechamento" para criar um novo relatório.
+                  </p>
+                  <Button 
+                    onClick={handleGerarFechamento}
+                    disabled={isLoading}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    Gerar Fechamento Agora
+                  </Button>
+                </div>
+              </CardContent>
             </Card>
+          )}
+
+          {todasBancasPagas && relatorio && relatorio.status === 'aberto' && (
+            <div className="flex justify-end mt-4">
+              <Button
+                variant="default"
+                disabled={isLoading}
+                onClick={finalizarFechamento}
+                className="bg-primary hover:bg-primary/90"
+              >
+                Finalizar Fechamento
+              </Button>
+            </div>
           )}
         </div>
       ) : (
         <div className="space-y-6">
           {/* Histórico de fechamentos */}
-          <Card className="border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20 animate-in fade-in duration-1000">
-            <CardHeader className="px-0 pt-0 bg-muted/30 border-b border-border dark:bg-muted/20">
-              <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center p-6">
-                <div>
-                  <CardTitle className="text-xl font-bold flex items-center text-foreground">
-                    <History className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2" />
-                    Histórico de Fechamentos
-                  </CardTitle>
-                  <CardDescription className="text-muted-foreground">
-                    Visualize todos os fechamentos semanais anteriores
-                  </CardDescription>
-                </div>
-              </div>
+          <Card className="border border-border hover:shadow-md transition-all animate-in fade-in duration-1000 dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
+            <CardHeader className="bg-muted/30 border-b border-border dark:bg-muted/20">
+              <CardTitle className="text-xl font-bold flex items-center text-foreground">
+                <History className="h-5 w-5 text-purple-600 dark:text-purple-400 mr-2" />
+                Histórico de Fechamentos
+              </CardTitle>
+              <CardDescription className="text-muted-foreground">
+                Visualize todos os fechamentos semanais anteriores
+              </CardDescription>
             </CardHeader>
-            <CardContent className="px-0 pb-0">
+            <CardContent className="pt-6">
               {isLoadingHistorico ? (
                 <div className="p-8 text-center">
                   <div className="flex flex-col items-center justify-center space-y-4">
@@ -420,9 +437,9 @@ export default function FechamentoSemanal() {
                   </div>
                 </div>
               ) : historicoFechamentos.length > 0 ? (
-                <div className="space-y-6 p-6">
+                <div className="space-y-4">
                   {historicoFechamentos.map((relatorio) => (
-                    <Card key={relatorio.id} className="overflow-hidden border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20">
+                    <Card key={relatorio.id} className="overflow-hidden border border-border hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
                       <CardHeader className="bg-muted/30 border-b border-border dark:bg-muted/20 pb-3">
                         <div className="flex justify-between items-center">
                           <div>
@@ -520,96 +537,110 @@ export default function FechamentoSemanal() {
         <Dialog open={isHistoricoDetailOpen} onOpenChange={(open) => {
           if (!open) handleCloseHistoricoDetails();
         }}>
-          <DialogContent className="sm:max-w-5xl max-h-[90vh] p-6 w-[95vw] overflow-hidden border border-border dark:shadow-xl dark:shadow-black/30">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold text-foreground">
+          <DialogContent className="sm:max-w-6xl max-w-[95vw] max-h-[95vh] p-0 w-full overflow-hidden border border-border bg-background dark:shadow-xl dark:shadow-black/30 flex flex-col">
+            <DialogHeader className="p-4 sm:p-6 space-y-3 flex-shrink-0 border-b border-border">
+              <DialogTitle className="text-lg sm:text-xl font-semibold text-foreground">
                 Detalhes do Fechamento - Semana {selectedHistoricoRelatorio.semana}
               </DialogTitle>
-              <div className="text-sm text-muted-foreground">
-                Período: {selectedHistoricoRelatorio.dataInicio} a {selectedHistoricoRelatorio.dataFim}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Status: {selectedHistoricoRelatorio.status === 'aberto' ? 'Em aberto' : 
-                         selectedHistoricoRelatorio.status === 'pago' ? 'Pago' : 'Fechado'}
+              <div className="space-y-1 text-sm text-muted-foreground">
+                <div>Período: {selectedHistoricoRelatorio.dataInicio} a {selectedHistoricoRelatorio.dataFim}</div>
+                <div>Status: {selectedHistoricoRelatorio.status === 'aberto' ? 'Em aberto' : 
+                         selectedHistoricoRelatorio.status === 'pago' ? 'Pago' : 'Fechado'}</div>
               </div>
             </DialogHeader>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
-                <div className="text-sm text-muted-foreground">Total de Bancas</div>
-                <div className="text-xl font-bold text-foreground">{selectedHistoricoRelatorio.fechamentos.length}</div>
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-4">
+                <div className="p-3 sm:p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Total de Bancas</div>
+                  <div className="text-lg sm:text-xl font-bold text-foreground">{selectedHistoricoRelatorio.fechamentos.length}</div>
+                </div>
+                
+                <div className="p-3 sm:p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Total de Peças</div>
+                  <div className="text-lg sm:text-xl font-bold text-foreground">{selectedHistoricoRelatorio.totalPecas.toLocaleString()}</div>
+                </div>
+                
+                <div className="p-3 sm:p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30 sm:col-span-2 lg:col-span-1">
+                  <div className="text-xs sm:text-sm text-muted-foreground">Valor Total</div>
+                  <div className="text-lg sm:text-xl font-bold text-primary">{formatarMoeda(selectedHistoricoRelatorio.valorTotal)}</div>
+                </div>
               </div>
               
-              <div className="p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
-                <div className="text-sm text-muted-foreground">Total de Peças</div>
-                <div className="text-xl font-bold text-foreground">{selectedHistoricoRelatorio.totalPecas.toLocaleString()}</div>
-              </div>
-              
-              <div className="p-4 bg-muted/50 rounded-md border border-border dark:bg-muted/30">
-                <div className="text-sm text-muted-foreground">Valor Total</div>
-                <div className="text-xl font-bold text-primary">{formatarMoeda(selectedHistoricoRelatorio.valorTotal)}</div>
+              <div className="space-y-3">
+                <h3 className="text-base sm:text-lg font-medium text-foreground">Detalhamento por Banca</h3>
+                <div className="overflow-hidden border border-border rounded-md bg-background">
+                  <div className="overflow-x-auto">
+                    <div className="overflow-y-auto max-h-[300px] sm:max-h-[400px]">
+                      <table className="min-w-full divide-y divide-border">
+                        <thead className="bg-muted/50 dark:bg-muted/30 sticky top-0 z-10">
+                          <tr>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Banca</th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Peças</th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                            <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Data Pagamento</th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-background divide-y divide-border">
+                          {selectedHistoricoRelatorio.fechamentos.map((fechamento) => (
+                            <tr key={fechamento.id} className="hover:bg-muted/30 transition-colors">
+                              <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-foreground">
+                                {fechamento.nomeBanca}
+                              </td>
+                              <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-muted-foreground">
+                                {fechamento.totalPecas}
+                              </td>
+                              <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-muted-foreground">
+                                {formatarMoeda(fechamento.valorTotal)}
+                              </td>
+                              <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-muted-foreground">
+                                <Badge 
+                                  className={
+                                    fechamento.status === 'pendente' 
+                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200 text-xs' 
+                                      : fechamento.status === 'pago'
+                                        ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200 text-xs'
+                                        : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200 text-xs'
+                                  }
+                                >
+                                  {fechamento.status === 'pendente' ? 'Pendente' : 
+                                   fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
+                                </Badge>
+                              </td>
+                              <td className="px-3 sm:px-6 py-2 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-muted-foreground">
+                                {fechamento.dataPagamento || '-'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
             
-            <div className="mt-4">
-              <h3 className="text-lg font-medium mb-2 text-foreground">Detalhamento por Banca</h3>
-              <div className="overflow-y-auto max-h-[400px] border border-border rounded-md">
-                <table className="min-w-full divide-y divide-border">
-                  <thead className="bg-muted/50 dark:bg-muted/30 sticky top-0">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Banca</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Peças</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Valor</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Data Pagamento</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-background divide-y divide-border">
-                    {selectedHistoricoRelatorio.fechamentos.map((fechamento) => (
-                      <tr key={fechamento.id} className="hover:bg-muted/30 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-foreground">{fechamento.nomeBanca}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{fechamento.totalPecas}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{formatarMoeda(fechamento.valorTotal)}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">
-                          <Badge 
-                            className={
-                              fechamento.status === 'pendente' 
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
-                                : fechamento.status === 'pago'
-                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                                  : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                            }
-                          >
-                            {fechamento.status === 'pendente' ? 'Pendente' : 
-                             fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
-                          </Badge>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-muted-foreground">{fechamento.dataPagamento || '-'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <div className="p-4 sm:p-6 pt-4 border-t border-border flex-shrink-0 bg-background">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleGerarRelatorioHistorico(selectedHistoricoRelatorio)}
+                  disabled={isGerandoRelatorio}
+                  className="border-border hover:bg-accent hover:text-accent-foreground"
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  {isGerandoRelatorio ? 'Gerando...' : 'Imprimir Relatório'}
+                </Button>
+                <Button 
+                  variant="secondary"
+                  onClick={handleCloseHistoricoDetails}
+                  className="bg-muted hover:bg-muted/80 text-muted-foreground"
+                >
+                  Fechar
+                </Button>
               </div>
-            </div>
-            
-            <div className="mt-4 flex justify-end">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleGerarRelatorioHistorico(selectedHistoricoRelatorio)}
-                disabled={isGerandoRelatorio}
-                className="mr-2 border-border hover:bg-accent hover:text-accent-foreground"
-              >
-                <Printer className="h-4 w-4 mr-2" />
-                {isGerandoRelatorio ? 'Gerando...' : 'Imprimir Relatório'}
-              </Button>
-              <Button 
-                variant="secondary"
-                onClick={handleCloseHistoricoDetails}
-                className="bg-muted hover:bg-muted/80 text-muted-foreground"
-              >
-                Fechar
-              </Button>
             </div>
           </DialogContent>
         </Dialog>

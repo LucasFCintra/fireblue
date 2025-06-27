@@ -233,9 +233,9 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
   };
 
   return (
-    <Card className="w-full border border-border hover:shadow-md transition-all animate-in fade-in duration-1000 dark:shadow-lg dark:shadow-black/20">
-      <CardHeader className="px-0 pt-0">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+    <Card className="border border-border hover:shadow-md transition-all animate-in fade-in duration-1000 dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
+      <CardHeader className="bg-muted/30 border-b border-border dark:bg-muted/20">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <CardTitle className="text-xl font-bold text-foreground">
               Relatório de Fechamento Semanal
@@ -259,152 +259,169 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
         </div>
       </CardHeader>
       
-      <CardContent className="px-0">
+      <CardContent className="pt-6">
         {/* Resumo geral */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border border-border hover:shadow-sm dark:shadow-md dark:shadow-black/10">
-            <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium text-foreground">Total de Bancas</CardTitle>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-blue-200 bg-blue-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-blue-800 dark:bg-blue-950 dark:hover:shadow-lg dark:hover:shadow-black/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-blue-800 dark:text-blue-200">Total de Bancas</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-foreground">{relatorio.fechamentos.length}</p>
+              <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{relatorio.fechamentos.length}</div>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                Bancas com fechamento
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="border border-border hover:shadow-sm dark:shadow-md dark:shadow-black/10">
-            <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium text-foreground">Total de Peças</CardTitle>
+          <Card className="border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-green-800 dark:bg-green-950 dark:hover:shadow-lg dark:hover:shadow-black/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">Total de Peças</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-foreground">{relatorio.totalPecas.toLocaleString()}</p>
+              <div className="text-2xl font-bold text-green-700 dark:text-green-300">{relatorio.totalPecas.toLocaleString()}</div>
+              <p className="text-xs text-green-600 dark:text-green-400">
+                Peças entregues
+              </p>
             </CardContent>
           </Card>
           
-          <Card className="border border-border hover:shadow-sm dark:shadow-md dark:shadow-black/10">
-            <CardHeader className="py-4">
-              <CardTitle className="text-sm font-medium text-foreground">Valor Total</CardTitle>
+          <Card className="border-purple-200 bg-purple-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-purple-800 dark:bg-purple-950 dark:hover:shadow-lg dark:hover:shadow-black/20">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-purple-800 dark:text-purple-200">Valor Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-primary">{formatarMoeda(relatorio.valorTotal)}</p>
+              <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{formatarMoeda(relatorio.valorTotal)}</div>
+              <p className="text-xs text-purple-600 dark:text-purple-400">
+                Valor a receber
+              </p>
             </CardContent>
           </Card>
         </div>
         
         {/* Tabela de fechamentos por banca */}
-        <div className="mt-6">
-          <h3 className="text-lg font-medium mb-4 text-foreground">Fechamento por Banca</h3>
-          <div className="overflow-x-auto border border-border rounded-md">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50 dark:bg-muted/30">
-                  <TableHead className="text-foreground">Banca</TableHead>
-                  <TableHead className="text-foreground">Peças Entregues</TableHead>
-                  <TableHead className="text-foreground">Valor a Pagar</TableHead>
-                  <TableHead className="text-foreground">Status</TableHead>
-                  <TableHead className="text-right text-foreground">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {relatorio.fechamentos.map((fechamento) => (
-                  <TableRow key={fechamento.id} className="hover:bg-muted/30 transition-colors">
-                    <TableCell className="font-medium text-foreground">{fechamento.nomeBanca}</TableCell>
-                    <TableCell className="text-muted-foreground">{fechamento.totalPecas.toLocaleString()}</TableCell>
-                    <TableCell className="text-muted-foreground">{formatarMoeda(fechamento.valorTotal)}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        className={
-                          fechamento.status === 'pendente' 
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
-                            : fechamento.status === 'pago'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                        }
-                      >
-                        {fechamento.status === 'pendente' ? 'Pendente' : 
-                         fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-muted/50"
-                          onClick={() => onVerDetalhesBanca(fechamento)}
-                          title="Ver detalhes"
-                        >
-                          <FileText className="h-4 w-4" />
-                          <span className="sr-only">Ver detalhes</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-muted/50"
-                          onClick={() => onImprimirComprovante(fechamento)}
-                          title="Imprimir comprovante"
-                          disabled={relatorio.status === 'fechado' || fechamento.status === 'pago'}
-                        >
-                          <Receipt className="h-4 w-4" />
-                          <span className="sr-only">Imprimir comprovante</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-muted/50"
-                          onClick={() => onFinalizarBanca(fechamento.idBanca)}
-                          title="Finalizar fechamento"
-                          disabled={relatorio.status === 'fechado' || fechamento.status === 'pago'}
-                        >
-                          <FileCheck className="h-4 w-4" />
-                          <span className="sr-only">Finalizar fechamento</span>
-                        </Button>
-                      </div>
-                    </TableCell>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-medium text-foreground">Fechamento por Banca</h3>
+            <div className="text-sm text-muted-foreground">
+              {contadorStatus.pagas} de {contadorStatus.total} bancas pagas
+            </div>
+          </div>
+          <div className="bg-card border border-border rounded-lg shadow-sm hover:shadow-md transition-all dark:shadow-lg dark:shadow-black/20 dark:hover:shadow-xl dark:hover:shadow-black/30">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50 dark:bg-muted/30">
+                    <TableHead className="text-foreground font-medium">Banca</TableHead>
+                    <TableHead className="text-foreground font-medium">Peças Entregues</TableHead>
+                    <TableHead className="text-foreground font-medium">Valor a Pagar</TableHead>
+                    <TableHead className="text-foreground font-medium">Status</TableHead>
+                    <TableHead className="text-right text-foreground font-medium">Ações</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-              <TableCaption className="text-muted-foreground">
-                Total de {relatorio.fechamentos.length} bancas com fechamento na semana.
-              </TableCaption>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {relatorio.fechamentos.map((fechamento) => (
+                    <TableRow key={fechamento.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium text-foreground">{fechamento.nomeBanca}</TableCell>
+                      <TableCell className="text-muted-foreground">{fechamento.totalPecas.toLocaleString()}</TableCell>
+                      <TableCell className="text-muted-foreground font-medium">{formatarMoeda(fechamento.valorTotal)}</TableCell>
+                      <TableCell>
+                        <Badge 
+                          className={
+                            fechamento.status === 'pendente' 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
+                              : fechamento.status === 'pago'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                          }
+                        >
+                          {fechamento.status === 'pendente' ? 'Pendente' : 
+                           fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+                            onClick={() => onVerDetalhesBanca(fechamento)}
+                            title="Ver detalhes"
+                          >
+                            <FileText className="h-4 w-4" />
+                            <span className="sr-only">Ver detalhes</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-yellow-100 dark:hover:bg-yellow-900/20 text-yellow-600 dark:text-yellow-400"
+                            onClick={() => onImprimirComprovante(fechamento)}
+                            title="Imprimir comprovante"
+                            disabled={relatorio.status === 'fechado' || fechamento.status === 'pago'}
+                          >
+                            <Receipt className="h-4 w-4" />
+                            <span className="sr-only">Imprimir comprovante</span>
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-green-100 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400"
+                            onClick={() => onFinalizarBanca(fechamento.idBanca)}
+                            title="Finalizar fechamento"
+                            disabled={relatorio.status === 'fechado' || fechamento.status === 'pago'}
+                          >
+                            <FileCheck className="h-4 w-4" />
+                            <span className="sr-only">Finalizar fechamento</span>
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </div>
         
         {/* Seção de Chaves PIX */}
         {relatorio.fechamentos.some(f => f.chave_pix) && (
-          <div className="mt-6">
-            <h3 className="text-lg font-medium mb-4 text-foreground">Chaves PIX para Pagamento</h3>
+          <div className="mt-6 space-y-4">
+            <h3 className="text-lg font-medium text-foreground">Chaves PIX para Pagamento</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {relatorio.fechamentos
                 .filter(f => f.chave_pix)
                 .map((fechamento) => (
-                  <Card key={fechamento.id} className="p-4 border-green-200 bg-green-50 dark:border-green-800/50 dark:bg-green-950/30">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h4 className="font-semibold text-green-800 dark:text-green-200">{fechamento.nomeBanca}</h4>
-                        <p className="text-sm text-green-600 dark:text-green-400 mb-2">
-                          Valor: {formatarMoeda(fechamento.valorTotal)}
-                        </p>
+                  <Card key={fechamento.id} className="border-green-200 bg-green-50 hover:shadow-md transition-all hover:-translate-y-1 dark:border-green-800 dark:bg-green-950 dark:hover:shadow-lg dark:hover:shadow-black/20">
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-sm font-medium text-green-800 dark:text-green-200">{fechamento.nomeBanca}</CardTitle>
+                          <CardDescription className="text-green-600 dark:text-green-400">
+                            Valor: {formatarMoeda(fechamento.valorTotal)}
+                          </CardDescription>
+                        </div>
+                        <Badge 
+                          className={
+                            fechamento.status === 'pendente' 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
+                              : fechamento.status === 'pago'
+                                ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
+                                : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
+                          }
+                        >
+                          {fechamento.status === 'pendente' ? 'Pendente' : 
+                           fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
+                        </Badge>
                       </div>
-                      <Badge 
-                        className={
-                          fechamento.status === 'pendente' 
-                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-200' 
-                            : fechamento.status === 'pago'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200'
-                              : 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-200'
-                        }
-                      >
-                        {fechamento.status === 'pendente' ? 'Pendente' : 
-                         fechamento.status === 'pago' ? 'Pago' : 'Cancelado'}
-                      </Badge>
-                    </div>
-                    <div className="mt-2 p-2 bg-white dark:bg-muted/50 rounded border border-green-300 dark:border-green-700/50">
-                      <span className="text-xs font-medium text-green-700 dark:text-green-300">Chave PIX:</span>
-                      <div className="font-mono text-sm text-green-600 dark:text-green-400 break-all mt-1">
-                        {fechamento.chave_pix}
+                    </CardHeader>
+                    <CardContent>
+                      <div className="p-3 bg-white dark:bg-muted/50 rounded-md border border-green-300 dark:border-green-700/50">
+                        <div className="text-xs font-medium text-green-700 dark:text-green-300 mb-1">Chave PIX:</div>
+                        <div className="font-mono text-sm text-green-600 dark:text-green-400 break-all">
+                          {fechamento.chave_pix}
+                        </div>
                       </div>
-                    </div>
+                    </CardContent>
                   </Card>
                 ))}
             </div>
@@ -412,7 +429,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
         )}
       </CardContent>
       
-      <CardFooter className="flex justify-between pt-6 px-0 pb-0 border-t border-border mt-6">
+      <CardFooter className="flex justify-between pt-6 border-t border-border bg-muted/30 dark:bg-muted/20">
         <div className="flex space-x-2">
           <Button 
             variant="outline" 
@@ -431,7 +448,7 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
             variant="default"
             disabled={isLoading || relatorio.status !== 'aberto' || !todasBancasPagas || existemBancasPendentes}
             onClick={onFinalizar}
-            className="bg-indigo-600 hover:bg-indigo-700 shadow-sm dark:shadow-md dark:shadow-black/20"
+            className="bg-primary hover:bg-primary/90"
             title={!todasBancasPagas ? "Todas as bancas devem estar pagas para finalizar o fechamento" : ""}
           >
             {todasBancasPagas 

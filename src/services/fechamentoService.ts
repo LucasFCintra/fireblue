@@ -4,6 +4,8 @@ import { bancasMock } from "@/data/bancasMock";
 import { fichasRecebidas } from "@/data/fichasMock";
 import { Banca, FechamentoBanca, FichaFechamento, RelatorioSemanal } from "@/types/fechamento";
 import { formatDateBR, getCurrentWeekRange, getWeekString, parseDate } from "@/utils/dateUtils";
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const API_URL = 'http://26.203.75.236:8687/api';
 
@@ -198,20 +200,21 @@ export async function finalizarFechamentoBanca(fechamentoId: string, bancaId: st
 export async function listarFechamentosHistoricos(): Promise<RelatorioSemanal[]> {
   try {
     const response = await axios.get(`${API_URL}/fechamentos`);
-    console.log(response)
     const fechamentos = response.data;
-    
-    return fechamentos.map((fechamento: any) => ({
-      id: fechamento.id,
-      semana: fechamento.semana,
-      dataInicio: formatarData(fechamento.data_inicio),
-      dataFim: formatarData(fechamento.data_fim),
-      totalPecas: fechamento.total_pecas,
-      valorTotal: fechamento.valor_total,
-      status: fechamento.status,
-      dataCriacao: formatarData(fechamento.data_criacao),
-      fechamentos: [] // Será carregado separadamente se necessário
-    }));
+    // Filtrar apenas fechamentos pagos
+    return fechamentos
+      .filter((fechamento: any) => fechamento.status === 'pago')
+      .map((fechamento: any) => ({
+        id: fechamento.id,
+        semana: fechamento.semana,
+        dataInicio: formatarData(fechamento.data_inicio),
+        dataFim: formatarData(fechamento.data_fim),
+        totalPecas: fechamento.total_pecas,
+        valorTotal: fechamento.valor_total,
+        status: fechamento.status,
+        dataCriacao: formatarData(fechamento.data_criacao),
+        fechamentos: [] // Será carregado separadamente se necessário
+      }));
   } catch (error) {
     console.error('Erro ao listar fechamentos históricos:', error);
     return [];
@@ -297,8 +300,69 @@ export async function buscarBancasComMovimentacao(dataInicio: Date, dataFim: Dat
  */
 export async function gerarComprovantePDF(fechamento: FechamentoBanca): Promise<boolean> {
   try {
-    // Implementar geração de PDF
-    // Por enquanto, apenas simula o sucesso
+    // Formatação de moeda
+    const formatarMoeda = (valor) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    // Nome do arquivo
+    const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+    const nomeArquivo = `Comprovante_Fechamento_${fechamento.nomeBanca.replace(/\s+/g, '_')}_${dataAtual}`;
+    // Criar PDF
+    const doc = new jsPDF();
+    // Título
+    doc.setFontSize(18);
+    doc.text('COMPROVANTE DE FECHAMENTO SEMANAL', 105, 20, { align: 'center' });
+    // Dados da banca
+    doc.setFontSize(12);
+    let y = 35;
+    doc.text('Dados da Banca', 14, y);
+    y += 10;
+    doc.setFontSize(11);
+    doc.text(`Nome: ${fechamento.nomeBanca}`, 14, y);
+    y += 8;
+    doc.text(`Período: ${fechamento.dataInicio} a ${fechamento.dataFim}`, 14, y);
+    y += 8;
+    doc.text(`Total de Peças: ${fechamento.totalPecas}`, 14, y);
+    y += 8;
+    doc.text(`Valor Total: ${formatarMoeda(fechamento.valorTotal)}`, 14, y);
+    y += 10;
+    // Tabela de produtos
+    autoTable(doc, {
+      startY: y,
+      head: [['Produto', 'Quantidade', 'Valor Unit.', 'Valor Total']],
+      body: fechamento.fichasEntregues.map(ficha => [
+        ficha.descricao,
+        ficha.quantidade,
+        formatarMoeda(ficha.valorUnitario),
+        formatarMoeda(ficha.valorTotal)
+      ]),
+      theme: 'striped',
+      headStyles: { fillColor: [80, 80, 80], textColor: 255, fontStyle: 'bold' },
+      bodyStyles: { textColor: 80 },
+      styles: { fontSize: 11 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles: {
+        0: { cellWidth: 90 },
+        1: { cellWidth: 25, halign: 'center' },
+        2: { cellWidth: 35, halign: 'right' },
+        3: { cellWidth: 35, halign: 'right' }
+      },
+    });
+    // Espaço para assinaturas
+    let yAssinatura = (doc as any).lastAutoTable.finalY + 20;
+    doc.setFontSize(11);
+    doc.text('Assinaturas:', 14, yAssinatura);
+    yAssinatura += 20;
+    // Linhas de assinatura
+    doc.line(20, yAssinatura, 90, yAssinatura);
+    doc.line(120, yAssinatura, 190, yAssinatura);
+    doc.setFontSize(10);
+    doc.text('Banca', 45, yAssinatura + 6, { align: 'center' });
+    doc.text('Fire Blue', 155, yAssinatura + 6, { align: 'center' });
+    // Data no rodapé
+    const dataRodape = new Date().toLocaleDateString('pt-BR');
+    doc.setFontSize(10);
+    doc.text(`Data: ${dataRodape}`, 20, yAssinatura + 20);
+    // Salvar PDF
+    doc.save(`${nomeArquivo}.pdf`);
     return true;
   } catch (error) {
     console.error('Erro ao gerar comprovante PDF:', error);

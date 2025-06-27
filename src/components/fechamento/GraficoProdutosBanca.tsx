@@ -62,57 +62,78 @@ export const GraficoProdutosBanca: React.FC<GraficoProdutosBancaProps> = ({ fech
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Quantidade por Produto</CardTitle>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={dadosGrafico}
-              layout="vertical"
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="nome" type="category" width={100} />
-              <Tooltip formatter={(value) => [`${value} unidades`, 'Quantidade']} />
-              <Legend />
-              <Bar dataKey="quantidade" name="Quantidade" fill="#0f172a" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Distribuição de Valor</CardTitle>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+        <Card className="border border-border dark:shadow-lg dark:shadow-black/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base text-foreground">Quantidade por Produto</CardTitle>
+          </CardHeader>
+          <CardContent className="h-80 sm:h-96 lg:h-[450px] p-2 sm:p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
                 data={dadosGrafico}
-                cx="50%"
-                cy="50%"
-                labelLine={true}
-                label={({ nome, percent }) => `${nome} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="valor"
-                nameKey="nome"
+                layout="vertical"
+                margin={{ top: 10, right: 20, left: 15, bottom: 5 }}
               >
-                {dadosGrafico.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => [formatarMoeda(value as number), 'Valor']} />
-              <Legend />
-            </PieChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis type="number" stroke="#64748b" fontSize={12} />
+                <YAxis dataKey="nome" type="category" width={80} stroke="#64748b" fontSize={11} />
+                <Tooltip 
+                  formatter={(value) => [`${value} unidades`, 'Quantidade']}
+                  contentStyle={{
+                    backgroundColor: 'var(--background)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="quantidade" name="Quantidade" fill="#0f172a" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-border dark:shadow-lg dark:shadow-black/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm sm:text-base text-foreground">Distribuição de Valor</CardTitle>
+          </CardHeader>
+          <CardContent className="h-80 sm:h-96 lg:h-[450px] p-2 sm:p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={dadosGrafico}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={true}
+                  label={({ nome, percent }) => `${nome} (${(percent * 100).toFixed(0)}%)`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="valor"
+                  nameKey="nome"
+                >
+                  {dadosGrafico.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value) => [formatarMoeda(value as number), 'Valor']}
+                  contentStyle={{
+                    backgroundColor: 'var(--background)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '6px',
+                    fontSize: '12px'
+                  }}
+                />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* Espaçamento adicional para garantir scroll */}
+      <div className="h-8"></div>
     </div>
   );
 }; 

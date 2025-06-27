@@ -65,6 +65,12 @@ export default function MateriaPrima() {
   const [cores, setCores] = useState<string[]>([]);
   const [coresPorTipoTecido, setCoresPorTipoTecido] = useState<string[]>([]);
   
+  // Dados estáticos de tipos de tecido e cores
+  const dadosTecidos = {
+    "moletom": ["preto", "bege", "chumbo", "branco", "marrom", "rosa", "bordô", "azul", "cinza mescla"],
+    "meia malha": ["preto", "bege", "marrom", "branco", "azul", "rosa", "verde"]
+  };
+  
   // Estado para o formulário de nova bobina
   const [novaBobina, setNovaBobina] = useState<Omit<Bobina, 'id'>>({
     tipo_tecido: "",
@@ -199,7 +205,8 @@ export default function MateriaPrima() {
   // Função para carregar tipos de tecido
   const carregarTiposTecido = async () => {
     try {
-      const tipos = await materiaPrimaService.buscarTiposTecido();
+      // Usar dados estáticos ao invés de buscar do banco
+      const tipos = Object.keys(dadosTecidos);
       setTiposTecido(tipos);
       console.log('Tipos de tecido carregados:', tipos); // DEBUG
     } catch (error) {
@@ -211,8 +218,10 @@ export default function MateriaPrima() {
   // Função para carregar cores
   const carregarCores = async () => {
     try {
-      const coresData = await materiaPrimaService.buscarCores();
-      setCores(coresData);
+      // Usar dados estáticos ao invés de buscar do banco
+      const todasCores = Object.values(dadosTecidos).flat();
+      const coresUnicas = [...new Set(todasCores)];
+      setCores(coresUnicas);
     } catch (error) {
       toast.error("Erro ao carregar cores");
       console.error(error);
@@ -220,9 +229,10 @@ export default function MateriaPrima() {
   };
   
   // Função para carregar cores por tipo de tecido
-  const carregarCoresPorTipoTecido = async (tipoTecido: string) => {
+  const carregarCoresPorTipoTecido = (tipoTecido: string) => {
     try {
-      const coresData = await materiaPrimaService.buscarCoresPorTipoTecido(tipoTecido);
+      // Usar dados estáticos ao invés de buscar do banco
+      const coresData = dadosTecidos[tipoTecido as keyof typeof dadosTecidos] || [];
       setCoresPorTipoTecido(coresData);
       console.log('Cores carregadas para', tipoTecido, ':', coresData); // DEBUG
     } catch (error) {
@@ -545,7 +555,7 @@ export default function MateriaPrima() {
     setIsEditDialogOpen(true);
     // Carregar cores para o tipo de tecido da bobina sendo editada
     if (bobina.tipo_tecido) {
-      await carregarCoresPorTipoTecido(bobina.tipo_tecido);
+      carregarCoresPorTipoTecido(bobina.tipo_tecido);
     }
   };
   
