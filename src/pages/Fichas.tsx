@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import DataTable from "@/components/DataTable";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -1234,25 +1235,289 @@ export default function Fichas() {
       
       {/* Modal de Edição */}
       <Dialog open={isEditDialogOpen} onOpenChange={handleCloseEditDialog}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Editar Ficha</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-indigo-600" />
+              Editar Ficha
+            </DialogTitle>
             <DialogDescription>
-              Edite os dados da ficha de produção.
+              Edite os dados da ficha de produção. Todos os campos marcados com * são obrigatórios.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {fichaEditando && (
-              <>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="banca" className="text-right text-foreground">
-                    Banca
+
+          {fichaEditando ? (
+            <form onSubmit={(e) => { e.preventDefault(); handleEdit(); }} className="space-y-4">
+              {/* Informações da Ficha */}
+              <div className="bg-muted/30 p-4 rounded-lg space-y-2">
+                <h4 className="font-medium text-sm">Informações da Ficha</h4>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Código:</span>
+                    <span className="ml-2 font-medium">{fichaEditando.codigo}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Status:</span>
+                    <span className="ml-2 font-medium">{fichaEditando.status}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Quantidade:</span>
+                    <span className="ml-2 font-medium">{fichaEditando.quantidade} unid.</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Recebido:</span>
+                    <span className="ml-2 font-medium">{fichaEditando.quantidade_recebida || 0} unid.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Informações Principais */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm">Informações Principais</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Banca <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={fichaEditando.banca}
+                      onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Selecione uma banca" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <div className="px-2 pb-2">
+                          <Input
+                            placeholder="Buscar banca..."
+                            value={bancaSearchQuery}
+                            onChange={(e) => setBancaSearchQuery(e.target.value)}
+                            className="h-8 bg-background border-border text-foreground"
+                          />
+                        </div>
+                        {filteredBancas.map((banca) => (
+                          <SelectItem key={banca.id} value={banca.nome}>
+                            {banca.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Produto (ID) <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={fichaEditando?.produto_id || ''}
+                      onValueChange={(value) => setFichaEditando(prev => prev ? { ...prev, produto_id: value } : null)}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Selecione o produto pelo ID" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {produtos.map((produto) => (
+                          <SelectItem key={produto.id} value={produto.id}>
+                            {produto.nome_produto} (ID: {produto.id})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Cor <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      value={fichaEditando.cor}
+                      onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
+                      placeholder="Informe a cor"
+                      className="bg-background border-border text-foreground"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Tamanho <span className="text-red-500">*</span>
+                    </Label>
+                    <Select
+                      value={fichaEditando.tamanho}
+                      onValueChange={(value) => setFichaEditando({ ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" })}
+                    >
+                      <SelectTrigger className="bg-background border-border text-foreground">
+                        <SelectValue placeholder="Selecione um tamanho" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="P">P</SelectItem>
+                        <SelectItem value="M">M</SelectItem>
+                        <SelectItem value="G">G</SelectItem>
+                        <SelectItem value="GG">GG</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Quantidade <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      type="number"
+                      value={fichaEditando.quantidade}
+                      onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
+                      placeholder="0"
+                      className="bg-background border-border text-foreground"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Datas */}
+              <div className="space-y-4">
+                <h4 className="font-medium text-sm">Datas</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Data de Entrada <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
+                        onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
+                        className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.getElementById('dataEntrada') as HTMLInputElement;
+                          if (input && 'showPicker' in input) {
+                            input.showPicker();
+                          }
+                        }}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-muted/50 rounded-r-md transition-colors"
+                      >
+                        <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium">
+                      Data de Previsão <span className="text-red-500">*</span>
+                    </Label>
+                    <div className="relative">
+                      <Input
+                        type="date"
+                        value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
+                        onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
+                        className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const input = document.getElementById('dataPrevisao') as HTMLInputElement;
+                          if (input && 'showPicker' in input) {
+                            input.showPicker();
+                          }
+                        }}
+                        className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-muted/50 rounded-r-md transition-colors"
+                      >
+                        <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Observações */}
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Observações</Label>
+                <Textarea
+                  value={fichaEditando.observacoes}
+                  onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
+                  placeholder="Informe observações adicionais (opcional)"
+                  rows={3}
+                  className="bg-background border-border text-foreground"
+                />
+              </div>
+
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleCloseEditDialog}
+                  disabled={isLoading}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={isLoading}
+                  className="bg-indigo-600 hover:bg-indigo-700"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    <>
+                      <Edit className="mr-2 h-4 w-4" />
+                      Salvar Alterações
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          ) : (
+            <div className="p-4 text-center">
+              <Alert variant="destructive">
+                <AlertDescription>
+                  Nenhuma ficha selecionada para edição.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Modal de Nova Ficha */}
+      <Dialog open={isNovaFichaDialogOpen} onOpenChange={handleCloseNovaFichaDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5 text-green-600" />
+              Nova Ficha
+            </DialogTitle>
+            <DialogDescription>
+              Preencha os dados da nova ficha de produção. Todos os campos marcados com * são obrigatórios.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={(e) => { e.preventDefault(); handleCreateFicha(); }} className="space-y-4">
+            {/* Informações Principais */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm">Informações Principais</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Banca <span className="text-red-500">*</span>
                   </Label>
                   <Select
-                    value={fichaEditando.banca}
-                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, banca: value })}
+                    value={novaFicha.banca}
+                    onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}
                   >
-                    <SelectTrigger className="col-span-3 bg-background border-border text-foreground">
+                    <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Selecione uma banca" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1272,16 +1537,16 @@ export default function Fichas() {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="produto_id" className="text-right text-foreground">
-                    Produto (ID)
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Produto (ID) <span className="text-red-500">*</span>
                   </Label>
                   <Select
-                    value={fichaEditando?.produto_id || ''}
-                    onValueChange={(value) => setFichaEditando(prev => prev ? { ...prev, produto_id: value } : null)}
+                    value={novaFicha.produto_id || ''}
+                    onValueChange={(value) => setNovaFicha({ ...novaFicha, produto_id: value })}
                   >
-                    <SelectTrigger className="col-span-3 bg-background border-border text-foreground">
+                    <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Selecione o produto pelo ID" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1293,28 +1558,30 @@ export default function Fichas() {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="cor" className="text-right text-foreground">
-                    Cor
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Cor <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id="cor"
-                    value={fichaEditando.cor}
-                    onChange={(e) => setFichaEditando({ ...fichaEditando, cor: e.target.value })}
-                    className="col-span-3 bg-background border-border text-foreground"
+                    value={novaFicha.cor}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
+                    placeholder="Informe a cor"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="tamanho" className="text-right text-foreground">
-                    Tamanho
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Tamanho <span className="text-red-500">*</span>
                   </Label>
                   <Select
-                    value={fichaEditando.tamanho}
-                    onValueChange={(value) => setFichaEditando({ ...fichaEditando, tamanho: value as "P" | "M" | "G" | "GG" })}
+                    value={novaFicha.tamanho}
+                    onValueChange={(value) => setNovaFicha({ ...novaFicha, tamanho: value as "P" | "M" | "G" | "GG" })}
                   >
-                    <SelectTrigger className="col-span-3 bg-background border-border text-foreground">
+                    <SelectTrigger className="bg-background border-border text-foreground">
                       <SelectValue placeholder="Selecione um tamanho" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1325,30 +1592,36 @@ export default function Fichas() {
                     </SelectContent>
                   </Select>
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="quantidade" className="text-right text-foreground">
-                    Quantidade
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Quantidade <span className="text-red-500">*</span>
                   </Label>
                   <Input
-                    id="quantidade"
                     type="number"
-                    value={fichaEditando.quantidade}
-                    onChange={(e) => setFichaEditando({ ...fichaEditando, quantidade: parseInt(e.target.value) })}
-                    className="col-span-3 bg-background border-border text-foreground"
+                    value={novaFicha.quantidade}
+                    onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) })}
+                    placeholder="0"
+                    className="bg-background border-border text-foreground"
                   />
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="dataEntrada" className="text-right text-foreground">
-                    Data Entrada
+              </div>
+            </div>
+
+            {/* Datas */}
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm">Datas</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Data de Entrada <span className="text-red-500">*</span>
                   </Label>
-                  <div className="col-span-3 relative">
+                  <div className="relative">
                     <Input
-                      id="dataEntrada"
                       type="date"
-                      value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
-                      onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
+                      value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
+                      onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
                       className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
                     />
                     <button
@@ -1367,17 +1640,16 @@ export default function Fichas() {
                     </button>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="dataPrevisao" className="text-right text-foreground">
-                    Previsão
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">
+                    Data de Previsão <span className="text-red-500">*</span>
                   </Label>
-                  <div className="col-span-3 relative">
+                  <div className="relative">
                     <Input
-                      id="dataPrevisao"
                       type="date"
-                      value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
-                      onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
+                      value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
+                      onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
                       className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
                     />
                     <button
@@ -1396,229 +1668,49 @@ export default function Fichas() {
                     </button>
                   </div>
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="observacoes" className="text-right">
-                    Observações
-                  </Label>
-                  <Textarea
-                    id="observacoes"
-                    value={fichaEditando.observacoes}
-                    onChange={(e) => setFichaEditando({ ...fichaEditando, observacoes: e.target.value })}
-                    className="col-span-3"
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={handleCloseEditDialog}>
-              Cancelar
-            </Button>
-            <Button onClick={handleEdit} className="bg-blue-600 hover:bg-blue-700">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                "Salvar Alterações"
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      {/* Modal de Nova Ficha */}
-      <Dialog open={isNovaFichaDialogOpen} onOpenChange={handleCloseNovaFichaDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Nova Ficha</DialogTitle>
-            <DialogDescription>
-              Preencha os dados da nova ficha de produção.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="banca" className="text-right text-foreground">
-                Banca
-              </Label>
-              <Select
-                value={novaFicha.banca}
-                onValueChange={(value) => setNovaFicha({ ...novaFicha, banca: value })}
-              >
-                <SelectTrigger className="col-span-3 bg-background border-border text-foreground">
-                  <SelectValue placeholder="Selecione uma banca" />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="px-2 pb-2">
-                    <Input
-                      placeholder="Buscar banca..."
-                      value={bancaSearchQuery}
-                      onChange={(e) => setBancaSearchQuery(e.target.value)}
-                      className="h-8 bg-background border-border text-foreground"
-                    />
-                  </div>
-                  {filteredBancas.map((banca) => (
-                    <SelectItem key={banca.id} value={banca.nome}>
-                      {banca.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="produto_id" className="text-right text-foreground">
-                Produto (ID)
-              </Label>
-              <Select
-                value={novaFicha.produto_id || ''}
-                onValueChange={(value) => setNovaFicha({ ...novaFicha, produto_id: value })}
-              >
-                <SelectTrigger className="col-span-3 bg-background border-border text-foreground">
-                  <SelectValue placeholder="Selecione o produto pelo ID" />
-                </SelectTrigger>
-                <SelectContent>
-                  {produtos.map((produto) => (
-                    <SelectItem key={produto.id} value={produto.id}>
-                      {produto.nome_produto} (ID: {produto.id})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="cor" className="text-right text-foreground">
-                Cor
-              </Label>
-              <Input
-                id="cor"
-                value={novaFicha.cor}
-                onChange={(e) => setNovaFicha({ ...novaFicha, cor: e.target.value })}
-                className="col-span-3 bg-background border-border text-foreground"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="tamanho" className="text-right text-foreground">
-                Tamanho
-              </Label>
-              <Select
-                value={novaFicha.tamanho}
-                onValueChange={(value) => setNovaFicha({ ...novaFicha, tamanho: value as "P" | "M" | "G" | "GG" })}
-              >
-                <SelectTrigger className="col-span-3 bg-background border-border text-foreground">
-                  <SelectValue placeholder="Selecione um tamanho" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="P">P</SelectItem>
-                  <SelectItem value="M">M</SelectItem>
-                  <SelectItem value="G">G</SelectItem>
-                  <SelectItem value="GG">GG</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="quantidade" className="text-right text-foreground">
-                Quantidade
-              </Label>
-              <Input
-                id="quantidade"
-                type="number"
-                value={novaFicha.quantidade}
-                onChange={(e) => setNovaFicha({ ...novaFicha, quantidade: parseInt(e.target.value) })}
-                className="col-span-3 bg-background border-border text-foreground"
-              />
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataEntrada" className="text-right text-foreground">
-                Data Entrada
-              </Label>
-              <div className="col-span-3 relative">
-                <Input
-                  id="dataEntrada"
-                  type="date"
-                  value={novaFicha.data_entrada instanceof Date ? novaFicha.data_entrada.toISOString().split('T')[0] : novaFicha.data_entrada}
-                  onChange={(e) => setNovaFicha({ ...novaFicha, data_entrada: new Date(e.target.value) })}
-                  className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const input = document.getElementById('dataEntrada') as HTMLInputElement;
-                    if (input && 'showPicker' in input) {
-                      input.showPicker();
-                    }
-                  }}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-muted/50 rounded-r-md transition-colors"
-                >
-                  <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </button>
               </div>
             </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="dataPrevisao" className="text-right text-foreground">
-                Previsão
-              </Label>
-              <div className="col-span-3 relative">
-                <Input
-                  id="dataPrevisao"
-                  type="date"
-                  value={novaFicha.data_previsao instanceof Date ? novaFicha.data_previsao.toISOString().split('T')[0] : novaFicha.data_previsao}
-                  onChange={(e) => setNovaFicha({ ...novaFicha, data_previsao: new Date(e.target.value) })}
-                  className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    const input = document.getElementById('dataPrevisao') as HTMLInputElement;
-                    if (input && 'showPicker' in input) {
-                      input.showPicker();
-                    }
-                  }}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 hover:bg-muted/50 rounded-r-md transition-colors"
-                >
-                  <svg className="h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="observacoes" className="text-right">
-                Observações
-              </Label>
+
+            {/* Observações */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Observações</Label>
               <Textarea
-                id="observacoes"
                 value={novaFicha.observacoes}
                 onChange={(e) => setNovaFicha({ ...novaFicha, observacoes: e.target.value })}
-                className="col-span-3"
+                placeholder="Informe observações adicionais (opcional)"
+                rows={3}
+                className="bg-background border-border text-foreground"
               />
             </div>
-          </div>
-          <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={handleCloseNovaFichaDialog}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreateFicha} className="bg-blue-600 hover:bg-blue-700">
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando...
-                </>
-              ) : (
-                "Criar Ficha"
-              )}
-            </Button>
-          </DialogFooter>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCloseNovaFichaDialog}
+                disabled={isLoading}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Criando...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Criar Ficha
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
