@@ -279,8 +279,10 @@ export default function Fichas() {
   const handleConcluirFicha = async () => {
     if (!selectedFicha) return;
     
-    // Calcular a quantidade em produção (quantidade total menos quantidade já recebida)
-    const quantidadeEmProducao = selectedFicha.quantidade - (selectedFicha.quantidade_recebida || 0);
+    // Calcular a quantidade em produção (quantidade total menos quantidade já recebida e perdida)
+    const quantidadeRecebida = selectedFicha.quantidade_recebida || 0;
+    const quantidadePerdida = selectedFicha.quantidade_perdida || 0;
+    const quantidadeEmProducao = selectedFicha.quantidade - quantidadeRecebida - quantidadePerdida;
     
     try {
       setIsLoading(true);
@@ -381,7 +383,7 @@ export default function Fichas() {
   // Função para exportar dados para Excel
   const exportarParaExcel = async () => {
     try {
-      // Preparar dados para exportação
+      // Preparar dados para exportação (fichas filtradas)
       const dadosParaExportar = filteredData.map(ficha => {
         const dataEntrada = ficha.data_entrada instanceof Date ? ficha.data_entrada : new Date(ficha.data_entrada);
         const dataPrevisao = ficha.data_previsao instanceof Date ? ficha.data_previsao : new Date(ficha.data_previsao);
@@ -402,39 +404,52 @@ export default function Fichas() {
         };
       });
       
-      // Criar workbook e worksheet
+      // Criar workbook
       const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(dadosParaExportar);
       
-      // Ajustar largura das colunas
-      const colWidths = [
-        { wch: 15 }, // Código
-        { wch: 20 }, // Banca
-        { wch: 15 }, // Data de Entrada
-        { wch: 18 }, // Previsão de Retorno
-        { wch: 12 }, // Quantidade
-        { wch: 18 }, // Quantidade Recebida
-        { wch: 18 }, // Quantidade Perdida
-        { wch: 20 }, // Status
-        { wch: 25 }, // Produto
-        { wch: 15 }, // Cor
-        { wch: 10 }, // Tamanho
-        { wch: 30 }  // Observações
+      // 1. Planilha principal com dados das fichas
+      const worksheetPrincipal = XLSX.utils.json_to_sheet(dadosParaExportar);
+      worksheetPrincipal['!cols'] = [
+        { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 }, 
+        { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, 
+        { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 30 }
       ];
-      worksheet['!cols'] = colWidths;
+      XLSX.utils.book_append_sheet(workbook, worksheetPrincipal, 'Fichas de Produção');
       
-      // Adicionar worksheet ao workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Fichas de Produção');
+      // 2. Planilha com resumo do rastreamento geral
+      const resumoRastreamento = [
+        { 'Status': 'Todas as Fichas', 'Quantidade': todasFichas.length, 'Total de Peças': totalPecasCortadas },
+        { 'Status': 'Aguardando Retirada', 'Quantidade': statusSummary.aguardando_retirada, 'Total de Peças': calcularQuantidadeAguardandoRetirada(filteredData) },
+        { 'Status': 'Em Produção', 'Quantidade': statusSummary.em_producao, 'Total de Peças': calcularQuantidadeEmProducao(filteredData) },
+        { 'Status': 'Recebido Parcialmente', 'Quantidade': statusSummary.recebido_parcialmente, 'Total de Peças': calcularQuantidadeRecebidaParcialmente(filteredData) },
+        { 'Status': 'Concluído', 'Quantidade': statusSummary.concluido, 'Total de Peças': calcularQuantidadeConcluida(filteredData) }
+      ];
       
-      // Gerar nome do arquivo com data atual
+      const worksheetResumo = XLSX.utils.json_to_sheet(resumoRastreamento);
+      worksheetResumo['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(workbook, worksheetResumo, 'Rastreamento Geral');
+      
+      // 3. Planilha com estatísticas gerais
+      const estatisticasGerais = [
+        { 'Métrica': 'Total de Peças Cortadas', 'Valor': totalPecasCortadas },
+        { 'Métrica': 'Total de Fichas Criadas', 'Valor': totalFichasCriadas },
+        { 'Métrica': 'Total de Fichas Concluídas', 'Valor': totalFichasConcluidas },
+        { 'Métrica': 'Taxa de Conclusão (%)', 'Valor': totalFichasCriadas > 0 ? ((totalFichasConcluidas / totalFichasCriadas) * 100).toFixed(2) : '0.00' }
+      ];
+      
+      const worksheetEstatisticas = XLSX.utils.json_to_sheet(estatisticasGerais);
+      worksheetEstatisticas['!cols'] = [{ wch: 30 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(workbook, worksheetEstatisticas, 'Estatísticas Gerais');
+      
+      // Gerar nome do arquivo
       const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
       const horaAtual = new Date().toLocaleTimeString('pt-BR').replace(/:/g, '-').substring(0, 5);
-      const nomeArquivo = `Fichas_Producao_${dataAtual}_${horaAtual}.xlsx`;
+      const nomeArquivo = `Relatorio_Fichas_${dataAtual}_${horaAtual}.xlsx`;
       
       // Salvar arquivo
       XLSX.writeFile(workbook, nomeArquivo);
       
-      toast.success(`Dados exportados com sucesso: ${nomeArquivo}`);
+      toast.success(`Relatório Excel exportado com sucesso: ${nomeArquivo}`);
     } catch (error) {
       console.error('Erro ao exportar para Excel:', error);
       toast.error("Erro ao exportar dados para Excel");
@@ -462,17 +477,33 @@ export default function Fichas() {
       doc.setFontSize(12);
       doc.setTextColor(52, 73, 94);
       doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30);
-      doc.text(`Total de fichas: ${filteredData.length}`, 14, 37);
+      doc.text(`Total de fichas analisadas: ${filteredData.length}`, 14, 37);
       doc.text(`Período: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 14, 44);
       
-      // Estatísticas rápidas
-      const fichasEmProducao = filteredData.filter(f => f.status === 'em_producao').length;
-      const fichasConcluidas = filteredData.filter(f => f.status === 'concluido').length;
-      const fichasAguardando = filteredData.filter(f => f.status === 'aguardando_retirada').length;
+      // Estatísticas gerais
+      doc.setFontSize(14);
+      doc.setTextColor(44, 62, 80);
+      doc.text('Estatísticas Gerais', 14, 55);
       
-      doc.text(`Fichas em produção: ${fichasEmProducao}`, 14, 51);
-      doc.text(`Fichas concluídas: ${fichasConcluidas}`, 14, 58);
-      doc.text(`Fichas aguardando retirada: ${fichasAguardando}`, 14, 65);
+      doc.setFontSize(11);
+      doc.setTextColor(52, 73, 94);
+      doc.text(`• Total de peças cortadas: ${totalPecasCortadas}`, 20, 65);
+      doc.text(`• Total de fichas criadas: ${totalFichasCriadas}`, 20, 72);
+      doc.text(`• Total de fichas concluídas: ${totalFichasConcluidas}`, 20, 79);
+      doc.text(`• Taxa de conclusão: ${totalFichasCriadas > 0 ? ((totalFichasConcluidas / totalFichasCriadas) * 100).toFixed(2) : '0.00'}%`, 20, 86);
+      
+      // Rastreamento geral
+      doc.setFontSize(14);
+      doc.setTextColor(44, 62, 80);
+      doc.text('Rastreamento Geral', 14, 100);
+      
+      doc.setFontSize(11);
+      doc.setTextColor(52, 73, 94);
+      doc.text(`• Todas as fichas: ${todasFichas.length} fichas (${totalPecasCortadas} peças)`, 20, 110);
+      doc.text(`• Aguardando retirada: ${statusSummary.aguardando_retirada} fichas (${calcularQuantidadeAguardandoRetirada(filteredData)} peças)`, 20, 117);
+      doc.text(`• Em produção: ${statusSummary.em_producao} fichas (${calcularQuantidadeEmProducao(filteredData)} peças)`, 20, 124);
+      doc.text(`• Recebido parcialmente: ${statusSummary.recebido_parcialmente} fichas (${calcularQuantidadeRecebidaParcialmente(filteredData)} peças)`, 20, 131);
+      doc.text(`• Concluído: ${statusSummary.concluido} fichas (${calcularQuantidadeConcluida(filteredData)} peças)`, 20, 138);
       
       // Preparar dados para a tabela
       const dadosTabela = filteredData.map(ficha => {
@@ -485,6 +516,8 @@ export default function Fichas() {
           format(dataEntrada, 'dd/MM/yyyy', { locale: ptBR }),
           format(dataPrevisao, 'dd/MM/yyyy', { locale: ptBR }),
           ficha.quantidade.toString(),
+          (ficha.quantidade_recebida || 0).toString(),
+          (ficha.quantidade_perdida || 0).toString(),
           getStatusDisplayName(ficha.status),
           ficha.produto,
           ficha.cor,
@@ -494,37 +527,39 @@ export default function Fichas() {
       
       // Adicionar tabela
       autoTable(doc, {
-        startY: 75,
-        head: [['Código', 'Banca', 'Entrada', 'Previsão', 'Qtd', 'Status', 'Produto', 'Cor', 'Tamanho']],
+        startY: 150,
+        head: [['Código', 'Banca', 'Entrada', 'Previsão', 'Qtd', 'Recebido', 'Perdido', 'Status', 'Produto', 'Cor', 'Tamanho']],
         body: dadosTabela,
         theme: 'grid',
         headStyles: { 
           fillColor: [52, 73, 94],
           textColor: 255,
-          fontSize: 10
+          fontSize: 9
         },
         bodyStyles: { 
-          fontSize: 9,
+          fontSize: 8,
           textColor: 44
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245]
         },
-        margin: { top: 75 },
+        margin: { top: 150 },
         styles: {
-          cellPadding: 3,
+          cellPadding: 2,
           lineWidth: 0.1
         },
         columnStyles: {
-          0: { cellWidth: 20 }, // Código
-          1: { cellWidth: 25 }, // Banca
-          2: { cellWidth: 20 }, // Entrada
-          3: { cellWidth: 20 }, // Previsão
-          4: { cellWidth: 15 }, // Qtd
-          5: { cellWidth: 25 }, // Status
-          6: { cellWidth: 25 }, // Produto
-          7: { cellWidth: 15 }, // Cor
-          8: { cellWidth: 15 }  // Tamanho
+          0: { cellWidth: 18 }, // Código
+          1: { cellWidth: 20 }, // Banca
+          2: { cellWidth: 18 }, // Entrada
+          3: { cellWidth: 18 }, // Previsão
+          4: { cellWidth: 12 }, // Qtd
+          5: { cellWidth: 12 }, // Recebido
+          6: { cellWidth: 12 }, // Perdido
+          7: { cellWidth: 18 }, // Status
+          8: { cellWidth: 20 }, // Produto
+          9: { cellWidth: 12 }, // Cor
+          10: { cellWidth: 12 }  // Tamanho
         }
       });
       
@@ -696,18 +731,18 @@ export default function Fichas() {
     if (filtros.status === "recebido_parcialmente") {
       return fichas
         .filter(f => f.status === "em_producao" && f.quantidade_recebida > 0)
-        .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0)), 0);
+        .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0) - (f.quantidade_perdida || 0)), 0);
     }
     // Se estiver filtrado por em_producao, mostrar apenas os itens filtrados
     if (filtros.status === "em_producao") {
       return fichas
         .filter(f => f.status === "em_producao")
-        .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0)), 0);
+        .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0) - (f.quantidade_perdida || 0)), 0);
     }
     // Para outros casos, mostrar o total de todos os itens em produção
     return todasFichas
       .filter(f => f.status === "em_producao")
-      .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0)), 0);
+      .reduce((total, f) => total + (f.quantidade - (f.quantidade_recebida || 0) - (f.quantidade_perdida || 0)), 0);
   };
 
   // Função para calcular a quantidade recebida parcialmente
@@ -800,12 +835,17 @@ export default function Fichas() {
             <div className="text-sm text-gray-500 space-y-1">
               {row.status === "em_producao" && (
                 <div>
-                  Em produção: {row.quantidade - (row.quantidade_recebida || 0)} unid.
+                  Em produção: {row.quantidade - (row.quantidade_recebida || 0) - (row.quantidade_perdida || 0)} unid.
                 </div>
               )}
               {(row.quantidade_recebida > 0) && (
                 <div>
                   Recebido: {row.quantidade_recebida} unid.
+                </div>
+              )}
+              {(row.quantidade_perdida > 0) && (
+                <div className="text-red-500">
+                  Perdido: {row.quantidade_perdida} unid.
                 </div>
               )}
             </div>
@@ -815,9 +855,9 @@ export default function Fichas() {
               <div>
                 Recebido: {row.quantidade_recebida} unid.
               </div>
-              {perdasPorFicha[row.id] > 0 && (
-                <div>
-                  Perdas: {perdasPorFicha[row.id]} unid.
+              {(row.quantidade_perdida > 0) && (
+                <div className="text-red-500">
+                  Perdido: {row.quantidade_perdida} unid.
                 </div>
               )}
             </div>
@@ -980,487 +1020,6 @@ export default function Fichas() {
     setIsRegistroPerdaDialogOpen(false);
   };
   
-  // Função para exportar relatório detalhado
-  const exportarRelatorioDetalhado = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Criar workbook
-      const workbook = XLSX.utils.book_new();
-      
-      // 1. Planilha principal com dados das fichas
-      const dadosPrincipais = filteredData.map(ficha => {
-        const dataEntrada = ficha.data_entrada instanceof Date ? ficha.data_entrada : new Date(ficha.data_entrada);
-        const dataPrevisao = ficha.data_previsao instanceof Date ? ficha.data_previsao : new Date(ficha.data_previsao);
-        
-        return {
-          'Código': ficha.codigo,
-          'Banca': ficha.banca,
-          'Data de Entrada': format(dataEntrada, 'dd/MM/yyyy', { locale: ptBR }),
-          'Previsão de Retorno': format(dataPrevisao, 'dd/MM/yyyy', { locale: ptBR }),
-          'Quantidade': ficha.quantidade,
-          'Quantidade Recebida': ficha.quantidade_recebida || 0,
-          'Quantidade Perdida': ficha.quantidade_perdida || 0,
-          'Status': getStatusDisplayName(ficha.status),
-          'Produto': ficha.produto,
-          'Cor': ficha.cor,
-          'Tamanho': ficha.tamanho,
-          'Observações': ficha.observacoes || ''
-        };
-      });
-      
-      const worksheetPrincipal = XLSX.utils.json_to_sheet(dadosPrincipais);
-      worksheetPrincipal['!cols'] = [
-        { wch: 15 }, { wch: 20 }, { wch: 15 }, { wch: 18 }, 
-        { wch: 12 }, { wch: 18 }, { wch: 18 }, { wch: 20 }, 
-        { wch: 25 }, { wch: 15 }, { wch: 10 }, { wch: 30 }
-      ];
-      XLSX.utils.book_append_sheet(workbook, worksheetPrincipal, 'Fichas de Produção');
-      
-      // 2. Planilha com resumo por status
-      const resumoPorStatus = [
-        { 'Status': 'Aguardando Retirada', 'Quantidade': statusSummary.aguardando_retirada, 'Total de Peças': calcularQuantidadeAguardandoRetirada(filteredData) },
-        { 'Status': 'Em Produção', 'Quantidade': statusSummary.em_producao, 'Total de Peças': calcularQuantidadeEmProducao(filteredData) },
-        { 'Status': 'Recebido Parcialmente', 'Quantidade': statusSummary.recebido_parcialmente, 'Total de Peças': calcularQuantidadeRecebidaParcialmente(filteredData) },
-        { 'Status': 'Concluído', 'Quantidade': statusSummary.concluido, 'Total de Peças': calcularQuantidadeConcluida(filteredData) }
-      ];
-      
-      const worksheetResumo = XLSX.utils.json_to_sheet(resumoPorStatus);
-      worksheetResumo['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }];
-      XLSX.utils.book_append_sheet(workbook, worksheetResumo, 'Resumo por Status');
-      
-      // 3. Planilha com estatísticas gerais
-      const estatisticasGerais = [
-        { 'Métrica': 'Total de Peças Cortadas', 'Valor': totalPecasCortadas },
-        { 'Métrica': 'Total de Fichas Criadas', 'Valor': totalFichasCriadas },
-        { 'Métrica': 'Total de Fichas Concluídas', 'Valor': totalFichasConcluidas },
-        { 'Métrica': 'Taxa de Conclusão (%)', 'Valor': totalFichasCriadas > 0 ? ((totalFichasConcluidas / totalFichasCriadas) * 100).toFixed(2) : '0.00' }
-      ];
-      
-      const worksheetEstatisticas = XLSX.utils.json_to_sheet(estatisticasGerais);
-      worksheetEstatisticas['!cols'] = [{ wch: 30 }, { wch: 15 }];
-      XLSX.utils.book_append_sheet(workbook, worksheetEstatisticas, 'Estatísticas Gerais');
-      
-      // 4. Planilha com resumo por banca
-      const resumoPorBanca = filteredData.reduce((acc, ficha) => {
-        const banca = acc.find(b => b['Banca'] === ficha.banca);
-        if (banca) {
-          banca['Total de Fichas'] += 1;
-          banca['Total de Peças'] += ficha.quantidade;
-          banca['Total Recebido'] += ficha.quantidade_recebida || 0;
-        } else {
-          acc.push({
-            'Banca': ficha.banca,
-            'Total de Fichas': 1,
-            'Total de Peças': ficha.quantidade,
-            'Total Recebido': ficha.quantidade_recebida || 0
-          });
-        }
-        return acc;
-      }, [] as any[]);
-      
-      const worksheetBancas = XLSX.utils.json_to_sheet(resumoPorBanca);
-      worksheetBancas['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
-      XLSX.utils.book_append_sheet(workbook, worksheetBancas, 'Resumo por Banca');
-      
-      // Gerar nome do arquivo
-      const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      const horaAtual = new Date().toLocaleTimeString('pt-BR').replace(/:/g, '-').substring(0, 5);
-      const nomeArquivo = `Relatorio_Detalhado_Fichas_${dataAtual}_${horaAtual}.xlsx`;
-      
-      // Salvar arquivo
-      XLSX.writeFile(workbook, nomeArquivo);
-      
-      toast.success(`Relatório detalhado exportado com sucesso: ${nomeArquivo}`);
-    } catch (error) {
-      console.error('Erro ao exportar relatório detalhado:', error);
-      toast.error("Erro ao exportar relatório detalhado");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Função para exportar todas as fichas (não filtradas)
-  const exportarTodasFichas = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Preparar dados para exportação (todas as fichas)
-      const dadosParaExportar = todasFichas.map(ficha => {
-        const dataEntrada = ficha.data_entrada instanceof Date ? ficha.data_entrada : new Date(ficha.data_entrada);
-        const dataPrevisao = ficha.data_previsao instanceof Date ? ficha.data_previsao : new Date(ficha.data_previsao);
-        
-        return {
-          'Código': ficha.codigo,
-          'Banca': ficha.banca,
-          'Data de Entrada': format(dataEntrada, 'dd/MM/yyyy', { locale: ptBR }),
-          'Previsão de Retorno': format(dataPrevisao, 'dd/MM/yyyy', { locale: ptBR }),
-          'Quantidade': ficha.quantidade,
-          'Quantidade Recebida': ficha.quantidade_recebida || 0,
-          'Quantidade Perdida': ficha.quantidade_perdida || 0,
-          'Status': getStatusDisplayName(ficha.status),
-          'Produto': ficha.produto,
-          'Cor': ficha.cor,
-          'Tamanho': ficha.tamanho,
-          'Observações': ficha.observacoes || ''
-        };
-      });
-      
-      // Criar workbook e worksheet
-      const workbook = XLSX.utils.book_new();
-      const worksheet = XLSX.utils.json_to_sheet(dadosParaExportar);
-      
-      // Ajustar largura das colunas
-      const colWidths = [
-        { wch: 15 }, // Código
-        { wch: 20 }, // Banca
-        { wch: 15 }, // Data de Entrada
-        { wch: 18 }, // Previsão de Retorno
-        { wch: 12 }, // Quantidade
-        { wch: 18 }, // Quantidade Recebida
-        { wch: 18 }, // Quantidade Perdida
-        { wch: 20 }, // Status
-        { wch: 25 }, // Produto
-        { wch: 15 }, // Cor
-        { wch: 10 }, // Tamanho
-        { wch: 30 }  // Observações
-      ];
-      worksheet['!cols'] = colWidths;
-      
-      // Adicionar worksheet ao workbook
-      XLSX.utils.book_append_sheet(workbook, worksheet, 'Todas as Fichas');
-      
-      // Gerar nome do arquivo com data atual
-      const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      const horaAtual = new Date().toLocaleTimeString('pt-BR').replace(/:/g, '-').substring(0, 5);
-      const nomeArquivo = `Todas_Fichas_Producao_${dataAtual}_${horaAtual}.xlsx`;
-      
-      // Salvar arquivo
-      XLSX.writeFile(workbook, nomeArquivo);
-      
-      toast.success(`Todas as fichas exportadas com sucesso: ${nomeArquivo}`);
-    } catch (error) {
-      console.error('Erro ao exportar todas as fichas:', error);
-      toast.error("Erro ao exportar todas as fichas");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Função para gerar relatório PDF detalhado
-  const gerarRelatorioPDFDetalhado = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Criar novo documento PDF
-      const doc = new jsPDF();
-      
-      // Configurar fonte
-      doc.setFont('helvetica');
-      
-      // PÁGINA 1 - Cabeçalho e Resumo
-      doc.setFontSize(24);
-      doc.setTextColor(44, 62, 80);
-      doc.text('Relatório Detalhado de Fichas', 14, 20);
-      
-      doc.setFontSize(12);
-      doc.setTextColor(52, 73, 94);
-      doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 35);
-      doc.text(`Hora: ${new Date().toLocaleTimeString('pt-BR')}`, 14, 42);
-      doc.text(`Total de fichas analisadas: ${filteredData.length}`, 14, 49);
-      
-      // Estatísticas gerais
-      doc.setFontSize(14);
-      doc.setTextColor(44, 62, 80);
-      doc.text('Estatísticas Gerais', 14, 65);
-      
-      doc.setFontSize(11);
-      doc.setTextColor(52, 73, 94);
-      doc.text(`• Total de peças cortadas: ${totalPecasCortadas}`, 20, 75);
-      doc.text(`• Total de fichas criadas: ${totalFichasCriadas}`, 20, 82);
-      doc.text(`• Total de fichas concluídas: ${totalFichasConcluidas}`, 20, 89);
-      doc.text(`• Taxa de conclusão: ${totalFichasCriadas > 0 ? ((totalFichasConcluidas / totalFichasCriadas) * 100).toFixed(2) : '0.00'}%`, 20, 96);
-      
-      // Resumo por status
-      doc.setFontSize(14);
-      doc.setTextColor(44, 62, 80);
-      doc.text('Resumo por Status', 14, 110);
-      
-      doc.setFontSize(11);
-      doc.setTextColor(52, 73, 94);
-      doc.text(`• Aguardando retirada: ${statusSummary.aguardando_retirada} fichas`, 20, 120);
-      doc.text(`• Em produção: ${statusSummary.em_producao} fichas`, 20, 127);
-      doc.text(`• Recebido parcialmente: ${statusSummary.recebido_parcialmente} fichas`, 20, 134);
-      doc.text(`• Concluído: ${statusSummary.concluido} fichas`, 20, 141);
-      
-      // PÁGINA 2 - Tabela de Fichas
-      doc.addPage();
-      
-      doc.setFontSize(18);
-      doc.setTextColor(44, 62, 80);
-      doc.text('Detalhamento das Fichas', 14, 20);
-      
-      // Preparar dados para a tabela
-      const dadosTabela = filteredData.map(ficha => {
-        const dataEntrada = ficha.data_entrada instanceof Date ? ficha.data_entrada : new Date(ficha.data_entrada);
-        const dataPrevisao = ficha.data_previsao instanceof Date ? ficha.data_previsao : new Date(ficha.data_previsao);
-        
-        return [
-          ficha.codigo,
-          ficha.banca,
-          format(dataEntrada, 'dd/MM/yyyy', { locale: ptBR }),
-          format(dataPrevisao, 'dd/MM/yyyy', { locale: ptBR }),
-          ficha.quantidade.toString(),
-          (ficha.quantidade_recebida || 0).toString(),
-          getStatusDisplayName(ficha.status),
-          ficha.produto,
-          ficha.cor,
-          ficha.tamanho
-        ];
-      });
-      
-      // Adicionar tabela
-      autoTable(doc, {
-        startY: 30,
-        head: [['Código', 'Banca', 'Entrada', 'Previsão', 'Qtd', 'Recebido', 'Status', 'Produto', 'Cor', 'Tamanho']],
-        body: dadosTabela,
-        theme: 'grid',
-        headStyles: { 
-          fillColor: [52, 73, 94],
-          textColor: 255,
-          fontSize: 9
-        },
-        bodyStyles: { 
-          fontSize: 8,
-          textColor: 44
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
-        margin: { top: 30 },
-        styles: {
-          cellPadding: 2,
-          lineWidth: 0.1
-        },
-        columnStyles: {
-          0: { cellWidth: 18 }, // Código
-          1: { cellWidth: 22 }, // Banca
-          2: { cellWidth: 18 }, // Entrada
-          3: { cellWidth: 18 }, // Previsão
-          4: { cellWidth: 12 }, // Qtd
-          5: { cellWidth: 12 }, // Recebido
-          6: { cellWidth: 20 }, // Status
-          7: { cellWidth: 22 }, // Produto
-          8: { cellWidth: 12 }, // Cor
-          9: { cellWidth: 12 }  // Tamanho
-        }
-      });
-      
-      // PÁGINA 3 - Resumo por Banca
-      doc.addPage();
-      
-      doc.setFontSize(18);
-      doc.setTextColor(44, 62, 80);
-      doc.text('Resumo por Banca', 14, 20);
-      
-      // Agrupar dados por banca
-      const resumoPorBanca = filteredData.reduce((acc, ficha) => {
-        const banca = acc.find(b => b.banca === ficha.banca);
-        if (banca) {
-          banca.totalFichas += 1;
-          banca.totalPecas += ficha.quantidade;
-          banca.totalRecebido += ficha.quantidade_recebida || 0;
-        } else {
-          acc.push({
-            banca: ficha.banca,
-            totalFichas: 1,
-            totalPecas: ficha.quantidade,
-            totalRecebido: ficha.quantidade_recebida || 0
-          });
-        }
-        return acc;
-      }, [] as any[]);
-      
-      // Tabela de resumo por banca
-      const dadosBancas = resumoPorBanca.map(banca => [
-        banca.banca,
-        banca.totalFichas.toString(),
-        banca.totalPecas.toString(),
-        banca.totalRecebido.toString()
-      ]);
-      
-      autoTable(doc, {
-        startY: 30,
-        head: [['Banca', 'Total Fichas', 'Total Peças', 'Total Recebido']],
-        body: dadosBancas,
-        theme: 'grid',
-        headStyles: { 
-          fillColor: [52, 73, 94],
-          textColor: 255,
-          fontSize: 10
-        },
-        bodyStyles: { 
-          fontSize: 9,
-          textColor: 44
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
-        margin: { top: 30 },
-        styles: {
-          cellPadding: 4,
-          lineWidth: 0.1
-        },
-        columnStyles: {
-          0: { cellWidth: 50 }, // Banca
-          1: { cellWidth: 30 }, // Total Fichas
-          2: { cellWidth: 30 }, // Total Peças
-          3: { cellWidth: 30 }  // Total Recebido
-        }
-      });
-      
-      // Adicionar rodapé em todas as páginas
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(128);
-        doc.text(`Página ${i} de ${pageCount}`, 14, doc.internal.pageSize.height - 10);
-        doc.text(`Relatório gerado em ${new Date().toLocaleString('pt-BR')}`, 14, doc.internal.pageSize.height - 5);
-      }
-      
-      // Salvar arquivo
-      const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      const horaAtual = new Date().toLocaleTimeString('pt-BR').replace(/:/g, '-').substring(0, 5);
-      const nomeArquivo = `Relatorio_Detalhado_Fichas_${dataAtual}_${horaAtual}.pdf`;
-      
-      doc.save(nomeArquivo);
-      
-      toast.success(`Relatório detalhado PDF gerado com sucesso: ${nomeArquivo}`);
-    } catch (error) {
-      console.error('Erro ao gerar relatório PDF detalhado:', error);
-      toast.error("Erro ao gerar relatório PDF detalhado");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  // Função para exportar todas as fichas em PDF
-  const exportarTodasFichasPDF = async () => {
-    try {
-      setIsLoading(true);
-      
-      // Criar novo documento PDF
-      const doc = new jsPDF();
-      
-      // Configurar fonte para suportar caracteres especiais
-      doc.setFont('helvetica');
-      
-      // Título do documento
-      doc.setFontSize(20);
-      doc.setTextColor(44, 62, 80);
-      doc.text('Relatório Completo de Fichas', 14, 20);
-      
-      // Informações do relatório
-      doc.setFontSize(12);
-      doc.setTextColor(52, 73, 94);
-      doc.text(`Data de geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30);
-      doc.text(`Total de fichas: ${todasFichas.length}`, 14, 37);
-      doc.text(`Período: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 14, 44);
-      
-      // Estatísticas rápidas
-      const fichasEmProducao = todasFichas.filter(f => f.status === 'em_producao').length;
-      const fichasConcluidas = todasFichas.filter(f => f.status === 'concluido').length;
-      const fichasAguardando = todasFichas.filter(f => f.status === 'aguardando_retirada').length;
-      
-      doc.text(`Fichas em produção: ${fichasEmProducao}`, 14, 51);
-      doc.text(`Fichas concluídas: ${fichasConcluidas}`, 14, 58);
-      doc.text(`Fichas aguardando retirada: ${fichasAguardando}`, 14, 65);
-      
-      // Preparar dados para a tabela (todas as fichas)
-      const dadosTabela = todasFichas.map(ficha => {
-        const dataEntrada = ficha.data_entrada instanceof Date ? ficha.data_entrada : new Date(ficha.data_entrada);
-        const dataPrevisao = ficha.data_previsao instanceof Date ? ficha.data_previsao : new Date(ficha.data_previsao);
-        
-        return [
-          ficha.codigo,
-          ficha.banca,
-          format(dataEntrada, 'dd/MM/yyyy', { locale: ptBR }),
-          format(dataPrevisao, 'dd/MM/yyyy', { locale: ptBR }),
-          ficha.quantidade.toString(),
-          getStatusDisplayName(ficha.status),
-          ficha.produto,
-          ficha.cor,
-          ficha.tamanho
-        ];
-      });
-      
-      // Adicionar tabela
-      autoTable(doc, {
-        startY: 75,
-        head: [['Código', 'Banca', 'Entrada', 'Previsão', 'Qtd', 'Status', 'Produto', 'Cor', 'Tamanho']],
-        body: dadosTabela,
-        theme: 'grid',
-        headStyles: { 
-          fillColor: [52, 73, 94],
-          textColor: 255,
-          fontSize: 10
-        },
-        bodyStyles: { 
-          fontSize: 9,
-          textColor: 44
-        },
-        alternateRowStyles: {
-          fillColor: [245, 245, 245]
-        },
-        margin: { top: 75 },
-        styles: {
-          cellPadding: 3,
-          lineWidth: 0.1
-        },
-        columnStyles: {
-          0: { cellWidth: 20 }, // Código
-          1: { cellWidth: 25 }, // Banca
-          2: { cellWidth: 20 }, // Entrada
-          3: { cellWidth: 20 }, // Previsão
-          4: { cellWidth: 15 }, // Qtd
-          5: { cellWidth: 25 }, // Status
-          6: { cellWidth: 25 }, // Produto
-          7: { cellWidth: 15 }, // Cor
-          8: { cellWidth: 15 }  // Tamanho
-        }
-      });
-      
-      // Adicionar rodapé
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(128);
-        doc.text(`Página ${i} de ${pageCount}`, 14, doc.internal.pageSize.height - 10);
-        doc.text(`Gerado em ${new Date().toLocaleString('pt-BR')}`, 14, doc.internal.pageSize.height - 5);
-      }
-      
-      // Salvar arquivo
-      const dataAtual = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
-      const horaAtual = new Date().toLocaleTimeString('pt-BR').replace(/:/g, '-').substring(0, 5);
-      const nomeArquivo = `Todas_Fichas_${dataAtual}_${horaAtual}.pdf`;
-      
-      doc.save(nomeArquivo);
-      
-      toast.success(`Todas as fichas exportadas em PDF: ${nomeArquivo}`);
-    } catch (error) {
-      console.error('Erro ao exportar todas as fichas em PDF:', error);
-      toast.error("Erro ao gerar PDF de todas as fichas");
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex justify-between items-center border-b border-border pb-4">
@@ -1481,31 +1040,11 @@ export default function Fichas() {
             <DropdownMenuContent>
               <DropdownMenuItem onClick={() => handleExport("excel")}>
                 <Download className="w-4 h-4 mr-2" /> 
-                Excel - Fichas Filtradas
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportarTodasFichas}>
-                <Download className="w-4 h-4 mr-2" /> 
-                Excel - Todas as Fichas
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportarRelatorioDetalhado}>
-                <FileText className="w-4 h-4 mr-2" /> 
-                Excel - Relatório Detalhado
+                Excel
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleExport("pdf")}> 
                 <Download className="w-4 h-4 mr-2" /> 
-                PDF - Fichas Filtradas
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={exportarTodasFichasPDF}> 
-                <Download className="w-4 h-4 mr-2" /> 
-                PDF - Todas as Fichas
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={gerarRelatorioPDFDetalhado}> 
-                <FileText className="w-4 h-4 mr-2" /> 
-                PDF - Relatório Detalhado
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("csv")}> 
-                <Download className="w-4 h-4 mr-2" /> 
-                CSV 
+                PDF
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

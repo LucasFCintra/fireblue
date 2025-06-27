@@ -191,6 +191,22 @@ class FichasModel {
         responsavel
       });
 
+      // Buscar a ficha atual para verificar quantidades
+      const ficha = await this.findById(fichaId);
+      if (!ficha) {
+        throw new Error('Ficha não encontrada');
+      }
+
+      // Se for uma perda, atualizar a quantidade_perdida na ficha
+      if (tipo === 'Perda') {
+        const novaQuantidadePerdida = (ficha.quantidade_perdida || 0) + quantidade;
+        await knex('fichas')
+          .where({ id: fichaId })
+          .update({ quantidade_perdida: novaQuantidadePerdida });
+        
+        console.log(`Perda registrada: ${quantidade} unidades. Total perdido: ${novaQuantidadePerdida}`);
+      }
+
       // Atualizar o status da ficha se for uma conclusão
       if (tipo === 'Conclusão') {
         await knex('fichas')
@@ -198,10 +214,22 @@ class FichasModel {
           .update({ status: 'concluido' });
       }
 
-      // Atualizar a quantidade do produto relacionado
-      const ficha = await this.findById(fichaId);
-      console.log('1',ficha,ficha.produto_id)
-      if (ficha && ficha.produto_id && quantidade > 0) {
+      // Verificar se a ficha deve ser marcada como concluída
+      // Uma ficha é concluída quando: quantidade_recebida + quantidade_perdida >= quantidade
+      const quantidadeRecebida = ficha.quantidade_recebida || 0;
+      const quantidadePerdida = ficha.quantidade_perdida || 0;
+      const quantidadeTotal = ficha.quantidade;
+      
+      if ((quantidadeRecebida + quantidadePerdida) >= quantidadeTotal) {
+        await knex('fichas')
+          .where({ id: fichaId })
+          .update({ status: 'concluido' });
+        
+        console.log(`Ficha ${fichaId} marcada como concluída. Recebido: ${quantidadeRecebida}, Perdido: ${quantidadePerdida}, Total: ${quantidadeTotal}`);
+      }
+
+      // Atualizar a quantidade do produto relacionado (apenas para recebimentos, não para perdas)
+      if (ficha.produto_id && quantidade > 0 && tipo !== 'Perda') {
         const produto = await Produtos.findById(ficha.produto_id);
         console.log(produto)
         console.log('RM: '+ficha.produto_id)        
@@ -212,6 +240,13 @@ class FichasModel {
           console.log(attProd)
         }
       }
+
+      // Buscar a ficha atualizada para emitir via Socket
+      const fichaAtualizada = await this.findById(fichaId);
+      if (global.io && fichaAtualizada) {
+        global.io.emit('ficha_atualizada', fichaAtualizada);
+      }
+
       return id;
     } catch (err) {
       console.log(err);
@@ -243,8 +278,9 @@ class FichasModel {
         throw new Error('Ficha não encontrada');
       }
 
-      // Calcular quantidade restante
-      const quantidade_restante = ficha.quantidade - quantidade_recebida;
+      // Calcular quantidade restante considerando perdas
+      const quantidadePerdida = ficha.quantidade_perdida || 0;
+      const quantidade_restante = ficha.quantidade - quantidade_recebida - quantidadePerdida;
       
       // Registrar o recebimento parcial
       const [id] = await knex('recebimentos_parciais').insert({
@@ -255,11 +291,13 @@ class FichasModel {
         data_recebimento: new Date(data_recebimento)
       });
 
-      // Se a quantidade restante for 0, atualizar o status para concluído
-      if (quantidade_restante === 0) { 
+      // Se a quantidade restante for 0 ou menor, atualizar o status para concluído
+      if (quantidade_restante <= 0) { 
         await knex('fichas')
           .where({ id: fichaId })
           .update({ status: 'concluido' });
+        
+        console.log(`Ficha ${fichaId} marcada como concluída após recebimento parcial. Recebido: ${quantidade_recebida}, Perdido: ${quantidadePerdida}, Restante: ${quantidade_restante}`);
       }
 
       // Atualizar a quantidade do produto relacionado

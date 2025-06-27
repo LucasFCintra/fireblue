@@ -65,7 +65,7 @@ export function RegistroPerdaModal({
       if (isNaN(quantidadePerdidaNum) || quantidadePerdidaNum <= 0) {
         newErrors.quantidadePerdida = 'Quantidade deve ser um número maior que zero';
       } else {
-        const quantidadeDisponivel = ficha.quantidade - (ficha.quantidade_perdida || 0);
+        const quantidadeDisponivel = ficha.quantidade - (ficha.quantidade_recebida || 0) - (ficha.quantidade_perdida || 0);
         if (quantidadePerdidaNum > quantidadeDisponivel) {
           newErrors.quantidadePerdida = `Quantidade não pode ser maior que ${quantidadeDisponivel} (quantidade disponível)`;
         }
@@ -120,15 +120,6 @@ export function RegistroPerdaModal({
         data: new Date().toISOString()
       });
 
-      // Atualizar a quantidade_perdida na ficha
-      const novaQuantidadePerdida = (ficha.quantidade_perdida || 0) + quantidadePerdidaNum;
-      const fichaAtualizada = {
-        ...ficha,
-        quantidade_perdida: novaQuantidadePerdida
-      };
-      
-      await fichasService.atualizarFicha(fichaAtualizada);
-
       toast({
         title: "Perda Registrada",
         description: `Perda de ${quantidadePerdidaNum} unidades registrada com sucesso na ficha ${ficha.codigo}`,
@@ -157,8 +148,8 @@ export function RegistroPerdaModal({
   // Calcular quantidades
   const quantidadeTotal = ficha?.quantidade || 0;
   const quantidadeJaPerdida = ficha?.quantidade_perdida || 0;
-  const quantidadeDisponivel = quantidadeTotal - quantidadeJaPerdida;
   const quantidadeRecebida = ficha?.quantidade_recebida || 0;
+  const quantidadeDisponivel = quantidadeTotal - quantidadeRecebida - quantidadeJaPerdida;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -199,12 +190,22 @@ export function RegistroPerdaModal({
             </div>
 
             {/* Quantidades */}
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Quantidade Total</Label>
                 <Input
                   type="number"
                   value={quantidadeTotal}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Quantidade Recebida</Label>
+                <Input
+                  type="number"
+                  value={quantidadeRecebida}
                   disabled
                   className="bg-muted"
                 />
@@ -221,7 +222,7 @@ export function RegistroPerdaModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-sm font-medium">Disponível</Label>
+                <Label className="text-sm font-medium">Disponível para Perda</Label>
                 <Input
                   type="number"
                   value={quantidadeDisponivel}
@@ -230,19 +231,6 @@ export function RegistroPerdaModal({
                 />
               </div>
             </div>
-
-            {/* Quantidade Recebida (se houver) */}
-            {quantidadeRecebida > 0 && (
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Quantidade Recebida</Label>
-                <Input
-                  type="number"
-                  value={quantidadeRecebida}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-            )}
 
             {/* Quantidade Perdida Agora - OBRIGATÓRIO */}
             <div className="space-y-2">
