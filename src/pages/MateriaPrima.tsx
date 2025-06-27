@@ -37,7 +37,7 @@ import { io } from 'socket.io-client';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 
-const API_URL = 'http://localhost:8687/api';
+const API_URL = 'http://192.168.100.134:8687/api';
 
 export default function MateriaPrima() {
   const [isLoading, setIsLoading] = useState(false);
@@ -181,8 +181,15 @@ export default function MateriaPrima() {
     try {
       setIsLoading(true);
       const bobinas = await materiaPrimaService.listarBobinas();
-      setBobinasOriginais(bobinas);
-      setFilteredData(bobinas);
+      // Garantir que os dados estejam no formato correto
+      const bobinasFormatadas = bobinas.map(bobina => ({
+        ...bobina,
+        id: String(bobina.id),
+        quantidade_total: Number(bobina.quantidade_total),
+        quantidade_disponivel: Number(bobina.quantidade_disponivel)
+      }));
+      setBobinasOriginais(bobinasFormatadas);
+      setFilteredData(bobinasFormatadas);
     } catch (error) {
       toast.error("Erro ao carregar bobinas");
       console.error(error);
@@ -542,8 +549,9 @@ export default function MateriaPrima() {
       setSelectedRow(null);
       toast.success(`Bobina ${selectedRow.tipo_tecido} removida com sucesso`);
     } catch (error) {
-      toast.error("Erro ao excluir bobina");
-      console.error(error);
+      const mensagem = error instanceof Error ? error.message : "Erro ao excluir bobina";
+      toast.error(mensagem);
+      console.error('Erro ao excluir bobina:', error);
     } finally {
       setIsLoading(false);
     }
@@ -551,7 +559,14 @@ export default function MateriaPrima() {
   
   // Função para abrir o diálogo de edição
   const handleOpenEditDialog = async (bobina: Bobina) => {
-    setBobinaEditando(bobina);
+    // Garantir que os dados estejam no formato correto
+    const bobinaFormatada = {
+      ...bobina,
+      id: String(bobina.id),
+      quantidade_total: Number(bobina.quantidade_total),
+      quantidade_disponivel: Number(bobina.quantidade_disponivel)
+    };
+    setBobinaEditando(bobinaFormatada);
     setIsEditDialogOpen(true);
     // Carregar cores para o tipo de tecido da bobina sendo editada
     if (bobina.tipo_tecido) {
@@ -565,7 +580,14 @@ export default function MateriaPrima() {
     
     try {
       setIsLoading(true);
-      await materiaPrimaService.atualizarBobina(bobinaEditando);
+      // Garantir que os dados estejam no formato correto antes de enviar
+      const bobinaParaAtualizar = {
+        ...bobinaEditando,
+        id: String(bobinaEditando.id),
+        quantidade_total: Number(bobinaEditando.quantidade_total),
+        quantidade_disponivel: Number(bobinaEditando.quantidade_disponivel)
+      };
+      await materiaPrimaService.atualizarBobina(bobinaParaAtualizar);
       await carregarBobinas();
       setIsEditDialogOpen(false);
       setBobinaEditando(null);
@@ -878,11 +900,12 @@ export default function MateriaPrima() {
   
   // Configurar Socket.IO
   useEffect(() => {
-    const newSocket = io('http://26.203.75.236:8687');
+    const newSocket = io('http://192.168.100.134:8687');
     setSocket(newSocket);
 
     // Escutar eventos de atualização
     newSocket.on('bobina_status_atualizado', (data) => {
+      console.log('data:', data);
       setBobinasOriginais(prevData => 
         prevData.map(bobina => 
           bobina.id === data.id 
@@ -1284,11 +1307,9 @@ export default function MateriaPrima() {
                   )}
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-2 gap-4">
                 <div className="space-y-2">
-                  <label htmlFor="quantidade_total" className="text-sm font-medium">
-                    Quantidade Total <span className="text-red-500">*</span>
-                  </label>
+                  <label htmlFor="quantidade_total">Quantidade Total</label>
                   <Input
                     id="quantidade_total"
                     type="number"
@@ -1307,6 +1328,21 @@ export default function MateriaPrima() {
                   )}
                 </div>
                 <div className="space-y-2">
+                  <label htmlFor="quantidade_disponivel">Quantidade Disponível</label>
+                  <Input
+                    id="quantidade_disponivel"
+                    type="number"
+                    value={novaBobina.quantidade_disponivel}
+                    onChange={(e) => setNovaBobina({ ...novaBobina, quantidade_disponivel: parseFloat(e.target.value) })}
+                    className={errosValidacao.quantidade_disponivel ? "border-red-500" : ""}
+                  />
+                  {errosValidacao.quantidade_disponivel && (
+                    <p className="text-sm text-red-500">{errosValidacao.quantidade_disponivel}</p>
+                  )}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <label htmlFor="unidade" className="text-sm font-medium">Unidade</label>
                   <Select
                     value={novaBobina.unidade}
@@ -1322,8 +1358,6 @@ export default function MateriaPrima() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="localizacao" className="text-sm font-medium">
                     Localização <span className="text-red-500">*</span>
@@ -1344,6 +1378,8 @@ export default function MateriaPrima() {
                     <p className="text-sm text-red-500">{errosValidacao.localizacao}</p>
                   )}
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="data_entrada" className="text-sm font-medium">
                     Data de Entrada <span className="text-red-500">*</span>
@@ -1365,29 +1401,29 @@ export default function MateriaPrima() {
                     <p className="text-sm text-red-500">{errosValidacao.data_entrada}</p>
                   )}
                 </div>
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="codigo_barras" className="text-sm font-medium">
-                  Código de Barras
-                </label>
-                <Input
-                  id="codigo_barras"
-                  value={novaBobina.codigo_barras}
-                  onChange={async (e) => {
-                    const codigo = e.target.value;
-                    setNovaBobina({ ...novaBobina, codigo_barras: codigo });
-                    // Verificar código de barras em tempo real
-                    if (codigo.trim()) {
-                      await verificarCodigoBarras(codigo);
-                    } else {
-                      setCodigoBarrasExiste(false);
-                    }
-                  }}
-                  className={codigoBarrasExiste ? "border-red-500" : ""}
-                />
-                {codigoBarrasExiste && (
-                  <p className="text-sm text-red-500">Código de barras já existe no sistema</p>
-                )}
+                <div className="space-y-2">
+                  <label htmlFor="codigo_barras" className="text-sm font-medium">
+                    Código de Barras
+                  </label>
+                  <Input
+                    id="codigo_barras"
+                    value={novaBobina.codigo_barras}
+                    onChange={async (e) => {
+                      const codigo = e.target.value;
+                      setNovaBobina({ ...novaBobina, codigo_barras: codigo });
+                      // Verificar código de barras em tempo real
+                      if (codigo.trim()) {
+                        await verificarCodigoBarras(codigo);
+                      } else {
+                        setCodigoBarrasExiste(false);
+                      }
+                    }}
+                    className={codigoBarrasExiste ? "border-red-500" : ""}
+                  />
+                  {codigoBarrasExiste && (
+                    <p className="text-sm text-red-500">Código de barras já existe no sistema</p>
+                  )}
+                </div>
               </div>
               <div className="space-y-2">
                 <label htmlFor="observacoes" className="text-sm font-medium">Observações</label>

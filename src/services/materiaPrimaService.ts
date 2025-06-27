@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://26.203.75.236:8687';
+const API_URL = 'http://192.168.100.134:8687';
 
 export interface Bobina {
   id: string;
@@ -12,10 +12,13 @@ export interface Bobina {
   quantidade_disponivel: number;
   unidade: string;
   localizacao: string;
-  data_entrada: Date;
+  data_entrada: Date | string;
   status: "em_estoque" | "baixo_estoque" | "sem_estoque";
-  codigo_barras: string;
-  observacoes?: string;
+  codigo_barras?: string | null;
+  codigoBarras?: string | null;
+  observacoes?: string | null;
+  criado_em?: string | Date;
+  atualizado_em?: string | Date;
 }
 
 export interface Movimentacao {
@@ -55,12 +58,45 @@ export const materiaPrimaService = {
   },
 
   async atualizarBobina(bobina: Bobina): Promise<Bobina> {
-    const response = await axios.put(`${API_URL}/api/materia-prima`, bobina);
-    return response.data.data;
+    console.log('bobina:', bobina);
+    if (!bobina.id) {
+      throw new Error('ID da bobina é obrigatório para atualização');
+    }
+
+    // Remove o ID do corpo da requisição
+    const { id, ...dadosParaAtualizar } = bobina;
+
+    const response = await axios.put(`${API_URL}/api/materia-prima/${id}`, dadosParaAtualizar, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    return response.data;
   },
 
   async excluirBobina(id: string): Promise<void> {
-    await axios.delete(`${API_URL}/api/materia-prima/${id}`);
+    try {
+      console.log('Excluindo bobina com ID:', id);
+      const response = await axios.delete(`${API_URL}/api/materia-prima/${id}`);
+      console.log('Resposta da exclusão:', response.data);
+      
+      if (!response.data.status && response.data.error) {
+        throw new Error(response.data.error);
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao excluir bobina:', error);
+      if (error.response?.data?.error) {
+        throw new Error(error.response.data.error);
+      } else if (error.message) {
+        throw new Error(error.message);
+      } else {
+        throw new Error("Erro ao excluir bobina");
+      }
+    }
   },
 
   async registrarCorte(id: string, quantidade: number, ordemProducao?: string, responsavel?: string): Promise<Bobina> {

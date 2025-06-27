@@ -40,19 +40,29 @@ class TerceirosController {
   }
 
   async update(req, res) {
-    const { idTerceiro, ...dados } = req.body
-    if (idTerceiro) {
-      const result = await Terceiros.update(idTerceiro, dados)
+    try {
+      const idTerceiro = req.params.idTerceiro;
+      const dados = req.body;
+      
+      if (!idTerceiro) {
+        return res.status(400).json({ error: "ID é obrigatório" });
+      }
+
+      console.log('Atualizando terceiro:', { idTerceiro, dados });
+
+      const result = await Terceiros.update(idTerceiro, dados);
       if (result.status) {
         res.status(200).json({
           message: "Terceiro atualizado com sucesso",
           data: result.data
-        })
+        });
       } else {
-        res.status(406).send(result.err)
+        console.error('Erro ao atualizar terceiro:', result.err);
+        res.status(400).json({ error: result.err });
       }
-    } else {
-      res.status(406).send("ID inválido")
+    } catch (error) {
+      console.error('Erro ao atualizar terceiro:', error);
+      res.status(500).json({ error: "Erro interno do servidor" });
     }
   }
 

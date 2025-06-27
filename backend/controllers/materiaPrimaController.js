@@ -41,15 +41,16 @@ class MateriasPrimasController {
 
   async update(req, res) {
     try {
-      const { id, ...dados } = req.body;
-      console.log('ID do corpo:', id);
+      const idParams = req.params.id;
+      const dados = req.body;
+      console.log('ID dos parâmetros:', idParams);
       console.log('Dados do corpo:', dados);
       
-      if (!id) {
+      if (!idParams) {
         return res.status(400).json({ error: "ID é obrigatório" });
       }
 
-      const result = await MateriasPrimas.update(id, dados);
+      const result = await MateriasPrimas.update(idParams, dados);
       if (result.status) {
         res.status(200).json({
           message: "Matéria-prima atualizada com sucesso",
@@ -65,15 +66,30 @@ class MateriasPrimasController {
   }
 
   async delete(req, res) {
-    const id = req.params.id;
-    const result = await MateriasPrimas.delete(id);
-    if (result.status) {
-      res.status(200).json({
-        message: "Matéria-prima excluída com sucesso",
-        data: result.data
-      });
-    } else {
-      res.status(406).send(result.err);
+    try {
+      const id = req.params.id;
+      console.log('Tentando excluir matéria prima com ID:', id);
+      
+      if (!id) {
+        console.log('ID não fornecido');
+        return res.status(400).json({ error: "ID é obrigatório" });
+      }
+
+      const result = await MateriasPrimas.delete(id);
+      console.log('Resultado da exclusão:', result);
+      
+      if (result.status) {
+        res.status(200).json({
+          message: "Matéria-prima excluída com sucesso",
+          data: result.data
+        });
+      } else {
+        console.error('Erro ao excluir:', result.err);
+        res.status(400).json({ error: result.err });
+      }
+    } catch (error) {
+      console.error('Erro ao excluir matéria prima:', error);
+      res.status(500).json({ error: "Erro interno do servidor" });
     }
   }
 

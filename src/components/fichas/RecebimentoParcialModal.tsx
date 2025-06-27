@@ -76,7 +76,7 @@ export function RecebimentoParcialModal({
 
     try {
       // Registrar o recebimento parcial
-      await axios.post('http://26.203.75.236:8687/api/recebimentos-parciais', {
+      await axios.post('http://192.168.100.134:8687/api/recebimentos-parciais', {
         ficha_id: ficha.id,
         quantidade_recebida: parseInt(quantidadeRecebida),
         observacoes: observacoes.trim(),

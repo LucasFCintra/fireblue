@@ -109,20 +109,39 @@ class MateriasPrimasModel {
   }
 
   async delete(id) {
+    // Iniciar uma transação
+    const trx = await knex.transaction();
+    
     try {
       // Buscar a matéria prima antes de excluir para poder enviar os dados via Socket
-      const materiaPrimaExcluida = await this.findById(id);
+      const materiaPrimaExcluida = await trx.select(["*"]).where({ id }).table("materias_primas").first();
+      console.log('materiaPrimaExcluida:', materiaPrimaExcluida);
+
+      if (!materiaPrimaExcluida) {
+        await trx.rollback();
+        return { status: false, err: "Matéria prima não encontrada" };
+      }
+
+      // Primeiro excluir todas as movimentações relacionadas
+      await trx("movimentacoes").where({ materias_primas_id: id }).delete();
       
-      await knex.delete().where({ id }).table("materias_primas");
+      // Depois excluir a matéria prima
+      await trx("materias_primas").where({ id }).delete();
+      
+      // Commit da transação
+      await trx.commit();
       
       // Emitir evento para todos os clientes conectados
-      if (global.io && materiaPrimaExcluida) {
+      if (global.io) {
         global.io.emit("materias_primas_excluida", materiaPrimaExcluida);
       }
       
       return { status: true, data: materiaPrimaExcluida };
     } catch (err) {
-      return { status: false, err };
+      // Em caso de erro, fazer rollback da transação
+      await trx.rollback();
+      console.error('Erro ao excluir matéria prima:', err);
+      return { status: false, err: err.message || "Erro ao excluir matéria prima" };
     }
   }
 

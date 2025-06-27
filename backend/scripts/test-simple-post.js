@@ -5,7 +5,7 @@ async function testSimplePost() {
     console.log('Testando POST simples...');
     
     // Testar POST para produtos (que sabemos que funciona)
-    const response = await axios.post('http://26.203.75.236:8687/api/produtos', {
+    const response = await axios.post('http://192.168.100.134:8687/api/produtos', {
       nome: 'Teste',
       descricao: 'Teste',
       preco_venda: 10.00
@@ -24,7 +24,7 @@ async function testSimplePost() {
     console.log('\nTestando POST para fechamento...');
     
     // Testar POST para fechamento
-    const response = await axios.post('http://26.203.75.236:8687/api/fechamentos/gerar', {
+    const response = await axios.post('http://192.168.100.134:8687/api/fechamentos/gerar', {
       dataInicio: '2024-01-01',
       dataFim: '2024-12-31'
     });

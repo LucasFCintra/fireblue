@@ -5,7 +5,7 @@ async function testFechamentoEndpoint() {
     console.log('Testando endpoint de fechamento...');
     
     // Testar se o servidor está respondendo
-    const serverStatus = await axios.get('http://26.203.75.236:8687/api/server-status');
+    const serverStatus = await axios.get('http://192.168.100.134:8687/api/server-status');
     console.log('Status do servidor:', serverStatus.data);
     
     // Testar endpoint de fechamento
@@ -13,7 +13,7 @@ async function testFechamentoEndpoint() {
     const dataFim = '2024-12-31';
     
     console.log('\nTestando geração de fechamento...');
-    const response = await axios.post('http://26.203.75.236:8687/api/fechamentos/gerar', {
+    const response = await axios.post('http://192.168.100.134:8687/api/fechamentos/gerar', {
       dataInicio: dataInicio,
       dataFim: dataFim
     });

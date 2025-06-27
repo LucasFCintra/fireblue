@@ -144,7 +144,7 @@ router.get('/api/materia-prima/:id/historico', materiaPrimaController.historico)
 router.get('/api/materia-prima', materiaPrimaController.index);
 router.get('/api/materia-prima/:id', materiaPrimaController.indexOne);
 router.post('/api/materia-prima', materiaPrimaController.create);
-router.put('/api/materia-prima', materiaPrimaController.update);
+router.put('/api/materia-prima/:id', materiaPrimaController.update);
 router.delete('/api/materia-prima/:id', materiaPrimaController.delete);
 
 // ROTAS PRODUTOS
@@ -176,7 +176,7 @@ router.get('/api/terceiros', terceirosController.index);
 router.get('/api/terceiros/:idTerceiro', terceirosController.indexOne);
 router.get('/api/terceiros/tipo/:tipo', terceirosController.indexByTipo);
 router.post('/api/terceiros', terceirosController.create);
-router.put('/api/terceiros', terceirosController.update);
+router.put('/api/terceiros/:idTerceiro', terceirosController.update);
 router.delete('/api/terceiros/:idTerceiro', terceirosController.delete);
 
 // ROTAS ORDENS

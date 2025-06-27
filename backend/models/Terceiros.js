@@ -64,18 +64,47 @@ class TerceirosModel {
 
   async update(idTerceiro, terceiro) {
     try {
-      await knex.update(terceiro).where({ idTerceiro }).table("terceiros")
+      // Verificar se o terceiro existe
+      const existente = await this.findById(idTerceiro);
+      if (!existente) {
+        return { status: false, err: "Terceiro não encontrado" };
+      }
+
+      // Garantir que os dados estejam no formato correto
+      const dadosParaAtualizar = {
+        nome: terceiro.nome,
+        cnpj: terceiro.cnpj || '',
+        email: terceiro.email || '',
+        telefone: terceiro.telefone || '',
+        endereco: terceiro.endereco || '',
+        cidade: terceiro.cidade || '',
+        estado: terceiro.estado || '',
+        cep: terceiro.cep || '',
+        tipo: terceiro.tipo,
+        observacoes: terceiro.observacoes || null,
+        complemento: terceiro.complemento || '',
+        numero: terceiro.numero || '',
+        chave_pix: terceiro.chave_pix || ''
+      };
+
+      await knex.update(dadosParaAtualizar).where({ idTerceiro }).table("terceiros");
       
       // Após atualizar, buscar o terceiro completo para enviar via Socket
-      const terceiroAtualizado = await this.findById(idTerceiro)
+      const terceiroAtualizado = await this.findById(idTerceiro);
+      
+      if (!terceiroAtualizado) {
+        return { status: false, err: "Erro ao buscar terceiro atualizado" };
+      }
+
       // Emitir evento para todos os clientes conectados
       if (global.io) {
-        global.io.emit('terceiro_atualizado', terceiroAtualizado)
+        global.io.emit('terceiro_atualizado', terceiroAtualizado);
       }
       
-      return { status: true, data: terceiroAtualizado }
+      return { status: true, data: terceiroAtualizado };
     } catch (err) {
-      return { status: false, err }
+      console.error('Erro ao atualizar terceiro:', err);
+      return { status: false, err: err.message || "Erro ao atualizar terceiro" };
     }
   }
 

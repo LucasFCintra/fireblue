@@ -20,7 +20,7 @@ export interface Terceiro {
   chave_pix?: string;
 }
 
-const api = 'http://26.203.75.236:8687';
+const api = 'http://192.168.100.134:8687';
 
 export function useTerceiros() {
   const [terceiros, setTerceiros] = useState<Terceiro[]>([]);
@@ -79,15 +79,37 @@ export function useTerceiros() {
     setIsLoading(true);
     setError(null);
     try {
-      await axios.put(`${api}/api/terceiros`, terceiro);
-      setTerceiros(prev => prev.map(item => 
-        (item.idTerceiro || item.id) === (terceiro.idTerceiro || terceiro.id) ? terceiro : item
-      ));
-      toast.success("Terceiro atualizado com sucesso!");
-      return true;
+      const id = terceiro.idTerceiro || terceiro.id;
+      if (!id) {
+        throw new Error("ID do terceiro não encontrado");
+      }
+
+      // Remove os campos id e idTerceiro do objeto antes de enviar
+      const { idTerceiro, id: _, ...dadosParaAtualizar } = terceiro;
+
+      console.log('Atualizando terceiro:', { id, dadosParaAtualizar });
+
+      const response = await axios.put(`${api}/api/terceiros/${id}`, dadosParaAtualizar, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (response.data && response.data.data) {
+        setTerceiros(prev => prev.map(item => 
+          (item.idTerceiro || item.id) === id ? { ...response.data.data, idTerceiro: id } : item
+        ));
+        toast.success(response.data.message || "Terceiro atualizado com sucesso!");
+        return true;
+      } else {
+        throw new Error("Resposta inválida do servidor");
+      }
     } catch (err) {
-      setError("Erro ao atualizar terceiro");
-      toast.error("Erro ao atualizar terceiro");
+      console.error("Erro ao atualizar terceiro:", err);
+      const mensagem = err.response?.data?.error || err.message || "Erro ao atualizar terceiro";
+      setError(mensagem);
+      toast.error(mensagem);
       return false;
     } finally {
       setIsLoading(false);

@@ -30,7 +30,7 @@ import { useTerceiros, Terceiro } from "@/hooks/use-terceiros";
 import { useCep } from "@/hooks/use-cep";
 import axios from "axios";
 
-const API_URL = 'http://26.203.75.236:8687';
+const API_URL = 'http://192.168.100.134:8687';
 
 export default function Terceiros() {
   const [searchQuery, setSearchQuery] = useState("");

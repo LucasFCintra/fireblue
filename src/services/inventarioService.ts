@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { toast } from "@/components/ui/sonner";
 
-const API_URL = 'http://26.203.75.236:8687/api';
+const API_URL = 'http://192.168.100.134:8687/api';
 
 export interface ItemEstoque {
   id?: number;

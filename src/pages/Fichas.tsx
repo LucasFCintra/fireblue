@@ -126,7 +126,7 @@ export default function Fichas() {
       
       // Para cada ficha concluída, buscar as movimentações de perda
       for (const ficha of fichas.filter(f => f.status === "concluido")) {
-        const response = await fetch(`http://26.203.75.236:8687/api/movimentacoes-fichas/${ficha.id}`);
+        const response = await fetch(`http://192.168.100.134:8687/api/movimentacoes-fichas/${ficha.id}`);
         const movimentacoes = await response.json();
         
         // Somar todas as perdas da ficha
@@ -152,7 +152,7 @@ export default function Fichas() {
       setFilteredData(fichas);
       
       // Carregar resumo de status
-      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const response = await fetch('http://192.168.100.134:8687/api/fichas/summary/status');
       const summary = await response.json();
       setStatusSummary(summary);
       
@@ -230,7 +230,19 @@ export default function Fichas() {
   const handleOpenEditDialog = (ficha: Ficha) => {
     setBancaSearchQuery("");
     setProdutoSearchQuery("");
-    setFichaEditando({...ficha});
+    
+    // Formatar as datas corretamente
+    const fichaComDatasFormatadas = {
+      ...ficha,
+      data_entrada: ficha.data_entrada instanceof Date 
+        ? ficha.data_entrada.toISOString().split('T')[0]
+        : new Date(ficha.data_entrada).toISOString().split('T')[0],
+      data_previsao: ficha.data_previsao instanceof Date
+        ? ficha.data_previsao.toISOString().split('T')[0]
+        : new Date(ficha.data_previsao).toISOString().split('T')[0]
+    };
+    
+    setFichaEditando(fichaComDatasFormatadas);
     setIsEditDialogOpen(true);
   };
   
@@ -242,12 +254,14 @@ export default function Fichas() {
       setIsLoading(true);
       const fichaParaAtualizar = {
         ...fichaEditando,
-        data_entrada: fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString() : fichaEditando.data_entrada,
-        data_previsao: fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString() : fichaEditando.data_previsao,
+        data_entrada: new Date(fichaEditando.data_entrada).toISOString(),
+        data_previsao: new Date(fichaEditando.data_previsao).toISOString(),
         quantidade: Number(fichaEditando.quantidade)
       };
+      
       const fichaAtualizada = await fichasService.atualizarFicha(fichaParaAtualizar);
       
+      // Atualizar a lista local
       const novaLista = filteredData.map(ficha => 
         ficha.id === fichaAtualizada.id ? fichaAtualizada : ficha
       );
@@ -256,6 +270,9 @@ export default function Fichas() {
       setIsEditDialogOpen(false);
       setFichaEditando(null);
       toast.success(`Ficha ${fichaAtualizada.codigo} atualizada com sucesso`);
+      
+      // Recarregar todas as fichas para garantir dados atualizados
+      await carregarFichas();
     } catch (error) {
       toast.error("Erro ao atualizar ficha");
       console.error(error);
@@ -619,15 +636,15 @@ export default function Fichas() {
       let fichas;
       
       if (status === "em_producao") {
-        const response = await fetch('http://26.203.75.236:8687/api/fichas');
+        const response = await fetch('http://192.168.100.134:8687/api/fichas');
         const todasFichas = await response.json();
         fichas = todasFichas.filter(f => f.status === "em_producao");
       } else if (status === "recebido_parcialmente") {
-        const response = await fetch('http://26.203.75.236:8687/api/fichas');
+        const response = await fetch('http://192.168.100.134:8687/api/fichas');
         const todasFichas = await response.json();
         fichas = todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0);
       } else {
-        const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+        const response = await fetch(`http://192.168.100.134:8687/api/fichas/list/${status}`);
         fichas = await response.json();
       }
       
@@ -698,7 +715,7 @@ export default function Fichas() {
       setFilteredData(novaLista);
       
       // Atualizar o resumo de status
-      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const response = await fetch('http://192.168.100.134:8687/api/fichas/summary/status');
       const summary = await response.json();
       setStatusSummary(summary);
       
@@ -1311,10 +1328,21 @@ export default function Fichas() {
                     </Label>
                     <Select
                       value={fichaEditando?.produto_id || ''}
-                      onValueChange={(value) => setFichaEditando(prev => prev ? { ...prev, produto_id: value } : null)}
+                      onValueChange={(value) => {
+                        const produtoSelecionado = produtos.find(p => p.id === value);
+                        if (produtoSelecionado && fichaEditando) {
+                          setFichaEditando({
+                            ...fichaEditando,
+                            produto_id: value,
+                            produto: produtoSelecionado.nome_produto
+                          });
+                        }
+                      }}
                     >
                       <SelectTrigger className="bg-background border-border text-foreground">
-                        <SelectValue placeholder="Selecione o produto pelo ID" />
+                        <SelectValue placeholder="Selecione o produto pelo ID">
+                          {fichaEditando?.produto || "Selecione o produto"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         {produtos.map((produto) => (
@@ -1387,8 +1415,11 @@ export default function Fichas() {
                     <div className="relative">
                       <Input
                         type="date"
-                        value={fichaEditando.data_entrada instanceof Date ? fichaEditando.data_entrada.toISOString().split('T')[0] : fichaEditando.data_entrada}
-                        onChange={(e) => setFichaEditando({ ...fichaEditando, data_entrada: new Date(e.target.value) })}
+                        value={typeof fichaEditando?.data_entrada === 'string' ? fichaEditando.data_entrada : ''}
+                        onChange={(e) => setFichaEditando(prev => prev ? { 
+                          ...prev, 
+                          data_entrada: e.target.value 
+                        } : null)}
                         className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
                       />
                       <button
@@ -1415,8 +1446,11 @@ export default function Fichas() {
                     <div className="relative">
                       <Input
                         type="date"
-                        value={fichaEditando.data_previsao instanceof Date ? fichaEditando.data_previsao.toISOString().split('T')[0] : fichaEditando.data_previsao}
-                        onChange={(e) => setFichaEditando({ ...fichaEditando, data_previsao: new Date(e.target.value) })}
+                        value={typeof fichaEditando?.data_previsao === 'string' ? fichaEditando.data_previsao : ''}
+                        onChange={(e) => setFichaEditando(prev => prev ? { 
+                          ...prev, 
+                          data_previsao: e.target.value 
+                        } : null)}
                         className="bg-background border-border text-foreground pr-10 [&::-webkit-calendar-picker-indicator]:hidden [&::-moz-calendar-picker-indicator]:hidden"
                       />
                       <button
@@ -1544,10 +1578,21 @@ export default function Fichas() {
                   </Label>
                   <Select
                     value={novaFicha.produto_id || ''}
-                    onValueChange={(value) => setNovaFicha({ ...novaFicha, produto_id: value })}
+                    onValueChange={(value) => {
+                      const produtoSelecionado = produtos.find(p => p.id === value);
+                      if (produtoSelecionado) {
+                        setNovaFicha({
+                          ...novaFicha,
+                          produto_id: value,
+                          produto: produtoSelecionado.nome_produto
+                        });
+                      }
+                    }}
                   >
                     <SelectTrigger className="bg-background border-border text-foreground">
-                      <SelectValue placeholder="Selecione o produto pelo ID" />
+                      <SelectValue placeholder="Selecione o produto pelo ID">
+                        {novaFicha.produto || "Selecione o produto"}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {produtos.map((produto) => (

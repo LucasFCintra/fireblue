@@ -20,7 +20,7 @@ async function testRelatorioAPI() {
     
     console.log('Período de teste:', dataInicio, 'a', dataFim);
     
-    const url = 'http://26.203.75.236:8687/api/fichas/relatorio';
+    const url = 'http://192.168.100.134:8687/api/fichas/relatorio';
     const params = { dataInicio, dataFim };
     
     console.log('URL:', url);

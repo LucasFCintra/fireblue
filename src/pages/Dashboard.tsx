@@ -121,21 +121,21 @@ export default function Dashboard() {
   const carregarDashboard = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://26.203.75.236:8687/api/fichas/summary/status');
+      const response = await fetch('http://192.168.100.134:8687/api/fichas/summary/status');
       const data = await response.json();
 
 
       // Buscar todas as fichas para calcular recebimento parcial
-      const fichasResponse = await fetch('http://26.203.75.236:8687/api/fichas');
+      const fichasResponse = await fetch('http://192.168.100.134:8687/api/fichas');
       const fichas = await fichasResponse.json();
       const fichasRecebidasParcialmente = fichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0).length;
       
       // Buscar produtos com estoque baixo
-      const lowStockResponse = await fetch('http://26.203.75.236:8687/api/produtos/low-stock');
+      const lowStockResponse = await fetch('http://192.168.100.134:8687/api/produtos/low-stock');
       const lowStockData = await lowStockResponse.json();
       console.log(lowStockData)
       // Buscar estatísticas mensais
-      const monthlyStatsResponse = await fetch('http://26.203.75.236:8687/api/fichas/stats/monthly');
+      const monthlyStatsResponse = await fetch('http://192.168.100.134:8687/api/fichas/stats/monthly');
       const monthlyStatsData = await monthlyStatsResponse.json();
 
       setMonthlyStats(monthlyStatsData);
@@ -154,17 +154,17 @@ export default function Dashboard() {
       setLowStockItems(Array.isArray(lowStockData) ? lowStockData : []);
 
       // Carregar dados de produção semanal
-      const producaoResponse = await fetch('http://26.203.75.236:8687/api/dashboard/producao-semanal');
+      const producaoResponse = await fetch('http://192.168.100.134:8687/api/dashboard/producao-semanal');
       const producaoData = await producaoResponse.json();
       setProducaoSemanal(producaoData);
 
       // Buscar dados de peças recebidas por mês
-      const recebidosResponse = await fetch('http://26.203.75.236:8687/api/fichas/recebidos/ultimos-meses');
+      const recebidosResponse = await fetch('http://192.168.100.134:8687/api/fichas/recebidos/ultimos-meses');
       const recebidosData = await recebidosResponse.json();
       setRecebidosUltimosMeses(recebidosData);
 
       // Buscar dados de peças perdidas por mês
-      const perdidasResponse = await fetch('http://26.203.75.236:8687/api/fichas/perdidas/ultimos-meses');
+      const perdidasResponse = await fetch('http://192.168.100.134:8687/api/fichas/perdidas/ultimos-meses');
       const perdidasData = await perdidasResponse.json();
       setPerdidasUltimosMeses(perdidasData);
     } catch (error) {
@@ -189,11 +189,11 @@ export default function Dashboard() {
       
       let fichas;
       if (status === "recebido_parcialmente") {
-        const response = await fetch('http://26.203.75.236:8687/api/fichas');
+        const response = await fetch('http://192.168.100.134:8687/api/fichas');
         const todasFichas = await response.json();
         fichas = todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0);
       } else {
-        const response = await fetch(`http://26.203.75.236:8687/api/fichas/list/${status}`);
+        const response = await fetch(`http://192.168.100.134:8687/api/fichas/list/${status}`);
         fichas = await response.json();
       }
       

@@ -17,7 +17,7 @@ interface Produto {
   fornecedor?: string | null;
   descricao?: string;
 }
-const url = 'http://26.203.75.236:8687' 
+const url = 'http://192.168.100.134:8687' 
 export function useProdutos() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
