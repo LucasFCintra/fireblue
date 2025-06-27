@@ -324,6 +324,22 @@ export async function gerarComprovantePDF(fechamento: FechamentoBanca): Promise<
     y += 8;
     doc.text(`Valor Total: ${formatarMoeda(fechamento.valorTotal)}`, 14, y);
     y += 10;
+    
+    // Seção destacada da Chave PIX
+    if (fechamento.chave_pix) {
+      y += 4;
+      // Fundo destacado para a chave PIX
+      doc.setFillColor(240, 248, 255); // Azul claro
+      doc.rect(14, y - 2, 182, 16, 'F');
+      doc.setFontSize(12);
+      doc.setFont(undefined, 'bold');
+      doc.text('Chave PIX para Pagamento:', 14, y + 2);
+      doc.setFontSize(11);
+      doc.setFont(undefined, 'normal');
+      doc.text(fechamento.chave_pix, 14, y + 10);
+      y += 20;
+    }
+    
     // Tabela de produtos
     autoTable(doc, {
       startY: y,

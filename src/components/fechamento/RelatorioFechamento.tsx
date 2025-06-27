@@ -203,6 +203,33 @@ export const RelatorioFechamento: React.FC<RelatorioFechamentoProps> = ({
         headStyles: { fillColor: [66, 66, 66] }
       });
       
+      // Seção de Chaves PIX
+      const bancasComPix = relatorio.fechamentos.filter(f => f.chave_pix);
+      if (bancasComPix.length > 0) {
+        const finalY3 = (doc as any).lastAutoTable.finalY + 15;
+        doc.text('Chaves PIX para Pagamento', 14, finalY3);
+        
+        const dadosPix = bancasComPix.map(banca => [
+          banca.nomeBanca,
+          formatarMoeda(banca.valorTotal),
+          banca.chave_pix,
+          banca.status === 'pendente' ? 'Pendente' : 
+            banca.status === 'pago' ? 'Pago' : 'Cancelado'
+        ]);
+        
+        autoTable(doc, {
+          startY: finalY3 + 5,
+          head: [['Banca', 'Valor', 'Chave PIX', 'Status']],
+          body: dadosPix,
+          theme: 'striped',
+          headStyles: { fillColor: [66, 66, 66] },
+          styles: { overflow: 'linebreak' },
+          columnStyles: {
+            2: { cellWidth: 60 } // Largura maior para coluna da chave PIX
+          }
+        });
+      }
+      
       // Adicionar rodapé em todas as páginas
       const pageCount = doc.getNumberOfPages();
       for (let i = 1; i <= pageCount; i++) {
