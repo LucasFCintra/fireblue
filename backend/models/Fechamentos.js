@@ -307,10 +307,10 @@ class FechamentosModel {
       
       console.log(`TOTAIS para ${banca.nome}: ${totalPecas} peças, R$ ${valorTotal.toFixed(2)}`);
       
-      const bancaObj = await Terceiros.findByNome(banca.nome);
-      const bancaId = Array.isArray(bancaObj) ? bancaObj[0]?.idTerceiro : bancaObj?.idTerceiro;
+      // Usar diretamente o idTerceiro que já temos da banca
+      const bancaId = banca.idTerceiro;
       
-      console.log('bancaId: '+bancaId+ ' | ' + bancaObj )
+      console.log('bancaId: '+bancaId+ ' | ' + banca.nome )
       console.log('Dados completos da banca:', JSON.stringify(banca));
       
       // Verificar se já existe fechamento de banca para esta banca neste fechamento semanal
