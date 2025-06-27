@@ -211,8 +211,8 @@ export default function Fichas() {
       setIsLoading(true);
       await fichasService.excluirFicha(selectedFicha.id);
       
-      const novaLista = filteredData.filter(ficha => ficha.id !== selectedFicha.id);
-      setFilteredData(novaLista);
+      // Recarregar todas as fichas para garantir dados atualizados
+      await carregarFichas();
       
       setIsDeleteDialogOpen(false);
       setSelectedFicha(null);

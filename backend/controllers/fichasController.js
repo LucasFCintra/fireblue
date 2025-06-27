@@ -79,11 +79,11 @@ class FichasController {
   }
 
   async delete(req, res) {
-    const id = req.params.idTerceiro
+    const id = req.params.id
     const result = await Fichas.delete(id)
     if (result.status) {
       res.status(200).json({
-        message: "Terceiro excluído com sucesso",
+        message: "Ficha excluída com sucesso",
         data: result.data
       })
     } else {

@@ -132,21 +132,44 @@ class FichasModel {
     }
   }
 
-  async delete(idFichas) {
+  async delete(id) {
     try {
-      // Buscar o fichas antes de excluir para poder enviar os dados via Socket
-      const fichasExcluido = await this.findById(idFichas)
+      console.log('Iniciando exclusão da ficha ID:', id);
       
-      await knex.delete().where({ idFichas }).table("fichas")
+      // Buscar o fichas antes de excluir para poder enviar os dados via Socket
+      const fichasExcluido = await this.findById(id)
+      console.log('Ficha encontrada:', fichasExcluido);
+      
+      if (!fichasExcluido) {
+        console.log('Ficha não encontrada');
+        return { status: false, err: "Ficha não encontrada" }
+      }
+      
+      // Excluir movimentações relacionadas primeiro
+      console.log('Excluindo movimentações...');
+      const movimentacoesDeletadas = await knex.delete().where({ ficha_id: id }).table("movimentacoes_fichas")
+      console.log('Movimentações deletadas:', movimentacoesDeletadas);
+      
+      // Excluir recebimentos parciais relacionados
+      console.log('Excluindo recebimentos parciais...');
+      const recebimentosDeletados = await knex.delete().where({ ficha_id: id }).table("recebimentos_parciais")
+      console.log('Recebimentos deletados:', recebimentosDeletados);
+      
+      // Excluir a ficha
+      console.log('Excluindo a ficha...');
+      const fichaDeletada = await knex.delete().where({ id }).table("fichas")
+      console.log('Ficha deletada:', fichaDeletada);
       
       // Emitir evento para todos os clientes conectados
       if (global.io && fichasExcluido) {
         global.io.emit('fichas_excluido', fichasExcluido)
       }
       
+      console.log('Exclusão concluída com sucesso');
       return { status: true, data: fichasExcluido }
     } catch (err) {
-      return { status: false, err }
+      console.log('Erro ao excluir ficha:', err)
+      return { status: false, err: err.message || "Erro ao excluir ficha" }
     }
   }
 
