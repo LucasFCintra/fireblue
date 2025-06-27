@@ -128,7 +128,7 @@ export const MovimentacaoModal: React.FC<MovimentacaoModalProps> = ({
                   <SelectContent>
                     <SelectItem value="Entrada">Entrada</SelectItem>
                     <SelectItem value="Saída">Saída</SelectItem>
-                    <SelectItem value="Perca">Perca</SelectItem>
+                    <SelectItem value="Perda">Perda</SelectItem>
                     <SelectItem value="Conclusão">Conclusão</SelectItem>
                   </SelectContent>
                 </Select>

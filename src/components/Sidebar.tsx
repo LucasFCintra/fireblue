@@ -151,7 +151,7 @@ export default function Sidebar({ open, setOpen }: SidebarProps) {
         <TooltipProvider>
           <nav className="flex-1 overflow-y-auto scrollbar-thin p-2 space-y-1">
             <NavItem to="/" icon={BarChart3} label="Dashboard" end open={open} />
-            <NavItem to="/estoque" icon={Warehouse} label="Estoque" open={open} />
+            {/* <NavItem to="/estoque" icon={Warehouse} label="Estoque" open={open} /> */}
             <NavItem to="/materia-prima" icon={Cylinder} label="Materia Prima" open={open} />
             <NavItem to="/produtos" icon={Package} label="Produtos" open={open} />
             {/* <NavItem to="/vendas" icon={ShoppingCart} label="Vendas" open={open} /> */}

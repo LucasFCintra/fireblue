@@ -24,7 +24,7 @@ export interface Movimentacao {
   id: number;
   ficha_id: number;
   data: string | Date;
-  tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão";
+  tipo: "Entrada" | "Saída" | "Retorno" | "Conclusão" | "Perda";
   quantidade: number;
   descricao: string;
   responsavel: string;
@@ -67,7 +67,7 @@ export const fichasService = {
 
   async registrarMovimentacao(
     id: number, 
-    tipo:  "Entrada" | "Saída" | "Retorno" | "Conclusão", 
+    tipo:  "Entrada" | "Saída" | "Retorno" | "Conclusão" | "Perda", 
     quantidade: number, 
     descricao: string, 
     responsavel?: string
@@ -95,6 +95,8 @@ export const fichasService = {
         responsavel,
         data: new Date().toISOString()
       });
+
+      console.log(response)
 
       return fichaAtualizada;
     } catch (error) {
