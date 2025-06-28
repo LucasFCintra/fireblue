@@ -67,7 +67,7 @@ class MateriasPrimasController {
 
   async delete(req, res) {
     try {
-      const id = req.params.id;
+    const id = req.params.id;
       console.log('Tentando excluir matéria prima com ID:', id);
       
       if (!id) {
@@ -75,15 +75,15 @@ class MateriasPrimasController {
         return res.status(400).json({ error: "ID é obrigatório" });
       }
 
-      const result = await MateriasPrimas.delete(id);
+    const result = await MateriasPrimas.delete(id);
       console.log('Resultado da exclusão:', result);
       
-      if (result.status) {
-        res.status(200).json({
-          message: "Matéria-prima excluída com sucesso",
-          data: result.data
-        });
-      } else {
+    if (result.status) {
+      res.status(200).json({
+        message: "Matéria-prima excluída com sucesso",
+        data: result.data
+      });
+    } else {
         console.error('Erro ao excluir:', result.err);
         res.status(400).json({ error: result.err });
       }
