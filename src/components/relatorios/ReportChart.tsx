@@ -71,36 +71,7 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
     if ((type === "pecas-cortadas" || type === "pecas-recebidas" || type === "pecas-perdidas") && chartData.length > 0) {
       return chartData;
     }
-    
-    // Dados mockados como fallback
-    switch (type) {
-      case "pecas-perdidas":
-        return [
-          { name: 'Jan', quantidade: 40, motivo: 'Quebra' },
-          { name: 'Fev', quantidade: 30, motivo: 'Quebra' },
-          { name: 'Mar', quantidade: 50, motivo: 'Quebra' },
-          { name: 'Abr', quantidade: 45, motivo: 'Quebra' },
-          { name: 'Mai', quantidade: 60, motivo: 'Quebra' },
-        ];
-      case "pecas-recebidas":
-        return [
-          { name: 'Jan', quantidade: 1200 },
-          { name: 'Fev', quantidade: 800 },
-          { name: 'Mar', quantidade: 1500 },
-          { name: 'Abr', quantidade: 1100 },
-          { name: 'Mai', quantidade: 1800 },
-        ];
-      case "pecas-cortadas":
-        return [
-          { name: 'Jan', quantidade: 1100 },
-          { name: 'Fev', quantidade: 750 },
-          { name: 'Mar', quantidade: 1400 },
-          { name: 'Abr', quantidade: 1000 },
-          { name: 'Mai', quantidade: 1700 },
-        ];
-      default:
-        return [];
-    }
+    return [];
   }, [type, chartData]);
   
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
@@ -112,6 +83,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-2"></div>
             <p className="text-sm text-muted-foreground">Carregando dados do relatório...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!loading && chartData.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-sm text-muted-foreground mb-2">Nenhum dado disponível para o período selecionado</p>
+            <p className="text-xs text-muted-foreground">Tente selecionar um período diferente</p>
           </div>
         </div>
       );

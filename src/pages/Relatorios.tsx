@@ -159,26 +159,26 @@ export default function Relatorios() {
       console.error("Relatórios - Erro ao carregar estatísticas:", error);
       toast.error("Erro ao carregar estatísticas do período selecionado");
       
-      // Em caso de erro, usar dados mockados como fallback
-      const fallbackStats = {
-        totalPecasCortadas: 1250,
-        totalPecasPerdidas: 45,
-        totalPecasRecebidas: 1205,
-        taxaEficiencia: 96.4,
-        tendenciaCortadas: 12.5,
-        tendenciaPerdidas: -5.2,
-        tendenciaRecebidas: 8.7,
-        tendenciaEficiencia: 2.1,
-        mediaCortadas: 250,
-        mediaRecebidas: 241,
-        mediaPerdidas: 9,
-        maiorCorte: 300,
-        maiorRecebimento: 350,
-        maiorPerda: 15
+      // Em caso de erro, zerar as estatísticas
+      const statsVazios = {
+        totalPecasCortadas: 0,
+        totalPecasPerdidas: 0,
+        totalPecasRecebidas: 0,
+        taxaEficiencia: 0,
+        tendenciaCortadas: 0,
+        tendenciaPerdidas: 0,
+        tendenciaRecebidas: 0,
+        tendenciaEficiencia: 0,
+        mediaCortadas: 0,
+        mediaRecebidas: 0,
+        mediaPerdidas: 0,
+        maiorCorte: 0,
+        maiorRecebimento: 0,
+        maiorPerda: 0
       };
       
-      console.log('Relatórios - Usando dados de fallback:', fallbackStats);
-      setStats(fallbackStats);
+      console.log('Relatórios - Erro ao carregar dados, zerando estatísticas');
+      setStats(statsVazios);
     } finally {
       setIsLoading(false);
     }

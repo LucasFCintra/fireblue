@@ -106,7 +106,8 @@ export default function Dashboard() {
   const [monthlyStats, setMonthlyStats] = useState({
     total_criadas: 0,
     total_concluidas: 0,
-    total_recebidas: 0
+    total_recebidas: 0,
+    total_cortadas: 0
   });
 
   // Estado para os dados de peças recebidas por mês
@@ -114,6 +115,9 @@ export default function Dashboard() {
 
   // Estado para os dados de peças perdidas por mês
   const [perdidasUltimosMeses, setPerdidasUltimosMeses] = useState<Array<{ mes: string, total_perdido: number }>>([]);
+
+  // Estado para os dados de peças cortadas por mês
+  const [cortadasUltimosMeses, setCortadasUltimosMeses] = useState<Array<{ mes: string, total_cortada: number }>>([]);
 
   const { showSuccess, showError, showWarning, showInfo } = useNotificationToast();
 
@@ -124,7 +128,6 @@ export default function Dashboard() {
       const response = await fetch('http://192.168.100.134:8687/api/fichas/summary/status');
       const data = await response.json();
 
-
       // Buscar todas as fichas para calcular recebimento parcial
       const fichasResponse = await fetch('http://192.168.100.134:8687/api/fichas');
       const fichas = await fichasResponse.json();
@@ -133,30 +136,36 @@ export default function Dashboard() {
       // Buscar produtos com estoque baixo
       const lowStockResponse = await fetch('http://192.168.100.134:8687/api/produtos/low-stock');
       const lowStockData = await lowStockResponse.json();
-      console.log(lowStockData)
+
       // Buscar estatísticas mensais
       const monthlyStatsResponse = await fetch('http://192.168.100.134:8687/api/fichas/stats/monthly');
       const monthlyStatsData = await monthlyStatsResponse.json();
 
-      setMonthlyStats(monthlyStatsData);
+      // Buscar dados de peças cortadas por mês
+      const cortadasResponse = await fetch('http://192.168.100.134:8687/api/fichas/cortadas/ultimos-meses');
+      const cortadasData = await cortadasResponse.json();
+      setCortadasUltimosMeses(cortadasData);
+
+      // Calcular total de peças cortadas
+      const totalCortadas = cortadasData.reduce((acc, item) => acc + (Number(item.total_cortada) || 0), 0);
+
+      setMonthlyStats({
+        ...monthlyStatsData,
+        total_cortadas: totalCortadas
+      });
       
       setDashboardData({
         aguardandoRetirada: data.aguardando_retirada || 0,
         emProducao: data.em_producao || 0,
         recebidoParcialmente: fichasRecebidasParcialmente,
         concluido: data.concluido || 0,
-        totalProdutos: monthlyStatsData.total_recebidas, // Dados mockados por enquanto
+        totalProdutos: totalCortadas,
         totalSaidas: monthlyStatsData.total_criadas,
         totalEntradas: monthlyStatsData.total_recebidas,
         itensBaixoEstoque: Array.isArray(lowStockData) ? lowStockData.length : 0
       });
 
       setLowStockItems(Array.isArray(lowStockData) ? lowStockData : []);
-
-      // Carregar dados de produção semanal
-      const producaoResponse = await fetch('http://192.168.100.134:8687/api/dashboard/producao-semanal');
-      const producaoData = await producaoResponse.json();
-      setProducaoSemanal(producaoData);
 
       // Buscar dados de peças recebidas por mês
       const recebidosResponse = await fetch('http://192.168.100.134:8687/api/fichas/recebidos/ultimos-meses');
@@ -208,9 +217,9 @@ export default function Dashboard() {
   };
 
   // Montar os dados do gráfico de peças cortadas
-  const dadosGraficoCorte = recebidosUltimosMeses.map(item => ({
+  const dadosGraficoCorte = cortadasUltimosMeses.map(item => ({
     name: item.mes.split('-').reverse().join('/'), // Ex: 2024-06 -> 06/2024
-    quantidade: Number(item.total_recebido) || 0
+    quantidade: Number(item.total_cortada) || 0
   }));
 
   // Montar os dados do gráfico de peças perdidas
@@ -473,6 +482,10 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-muted-foreground">Total de Fichas Recebidas</span>
                 <span className="text-2xl font-bold">{monthlyStats.total_recebidas}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Total de Peças Cortadas</span>
+                <span className="text-2xl font-bold">{monthlyStats.total_cortadas}</span>
               </div>
             </div>
           </CardContent>
