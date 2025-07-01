@@ -175,5 +175,44 @@ export const fichasService = {
     
     const response = await axios.get(`${API_URL}/fichas/cortadas/ultimos-meses`, { params });
     return response.data;
+  },
+
+  async buscarDadosConsolidadosPeriodo(dataInicio?: string, dataFim?: string): Promise<any> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/dados-consolidados`, { params });
+    return response.data;
+  },
+
+  // Buscar dados detalhados de peças recebidas por banca
+  async buscarRecebidosDetalhadosPorBanca(dataInicio: string, dataFim: string): Promise<any[]> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/recebidos/detalhados-por-banca`, { params });
+    return response.data;
+  },
+
+  // Buscar dados detalhados de peças perdidas por banca
+  async buscarPerdidasDetalhadasPorBanca(dataInicio: string, dataFim: string): Promise<any[]> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/perdidas/detalhadas-por-banca`, { params });
+    return response.data;
+  },
+
+  // Buscar dados detalhados de peças cortadas por banca
+  async buscarCortadasDetalhadasPorBanca(dataInicio: string, dataFim: string): Promise<any[]> {
+    const params: any = {};
+    if (dataInicio) params.dataInicio = dataInicio;
+    if (dataFim) params.dataFim = dataFim;
+    
+    const response = await axios.get(`${API_URL}/fichas/cortadas/detalhadas-por-banca`, { params });
+    return response.data;
   }
 }; 

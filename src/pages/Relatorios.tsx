@@ -24,30 +24,13 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getCurrentWeekRange } from '@/utils/dateUtils';
 
 // Definindo o tipo para Date Range
 interface DateRange {
   from: Date;
   to?: Date;
 }
-
-// Função para obter o primeiro e último dia da semana atual
-const getCurrentWeekRange = (): DateRange => {
-  const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Domingo, 1 = Segunda, etc.
-  
-  // Calcular o primeiro dia da semana (Segunda-feira)
-  const firstDay = new Date(now);
-  firstDay.setDate(now.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1));
-  firstDay.setHours(0, 0, 0, 0);
-  
-  // Calcular o último dia da semana (Domingo)
-  const lastDay = new Date(firstDay);
-  lastDay.setDate(firstDay.getDate() + 6);
-  lastDay.setHours(23, 59, 59, 999);
-  
-  return { from: firstDay, to: lastDay };
-};
 
 // Função para calcular tendência
 const calcularTendencia = (atual: number, anterior: number): number => {
@@ -57,8 +40,12 @@ const calcularTendencia = (atual: number, anterior: number): number => {
 
 export default function Relatorios() {
   const [activeTab, setActiveTab] = useState("pecas-cortadas");
-  const [dateRange, setDateRange] = useState<DateRange>(getCurrentWeekRange());
+  const [dateRange, setDateRange] = useState<DateRange>(() => {
+    const week = getCurrentWeekRange();
+    return { from: week.start, to: week.end };
+  });
   const [isLoading, setIsLoading] = useState(false);
+
   const [stats, setStats] = useState({
     totalPecasCortadas: 0,
     totalPecasPerdidas: 0,
@@ -79,32 +66,59 @@ export default function Relatorios() {
 
   const handleDateChange = (range: DateRange) => {
     setDateRange(range);
-    carregarEstatisticas(range);
   };
 
   const carregarEstatisticas = async (range: DateRange) => {
     try {
       setIsLoading(true);
       
-      // Formatar as datas para a API
-      const dataInicio = range.from ? range.from.toISOString().split('T')[0] : '';
-      const dataFim = range.to ? range.to.toISOString().split('T')[0] : '';
+      // Formatar as datas para a API no formato MySQL (YYYY-MM-DD) - mesmo padrão do Fechamento Semanal
+      const dataInicio = range?.from ? range.from.toISOString().split('T')[0] : '';
+      const dataFim = range?.to ? range.to.toISOString().split('T')[0] : '';
       
       console.log('Relatórios - Buscando dados para período:', dataInicio, 'a', dataFim);
+      console.log('Relatórios - Datas originais:', range.from, 'a', range.to);
       
-      // Buscar dados dos últimos meses para cada tipo de relatório, passando as datas
+      // Verificar se as datas são válidas
+      if (!dataInicio || !dataFim) {
+        console.error('Relatórios - Datas inválidas:', { dataInicio, dataFim });
+        toast.error("Período de datas inválido");
+        return;
+      }
+      
+      console.log('Relatórios - Datas válidas, fazendo requisições...');
+      
+      // Buscar dados consolidados do período selecionado
+      console.log('Relatórios - Fazendo requisição para dados consolidados...');
+      const dadosConsolidados = await fichasService.buscarDadosConsolidadosPeriodo(dataInicio, dataFim);
+      console.log('Relatórios - Dados consolidados recebidos:', dadosConsolidados);
+      
+      // Buscar dados dos gráficos (agrupados por mês)
+      console.log('Relatórios - Fazendo requisições para dados dos gráficos...');
       const [cortadasData, recebidasData, perdidasData] = await Promise.all([
         fichasService.buscarCortadasUltimosMeses(dataInicio, dataFim),
         fichasService.buscarRecebidosUltimosMeses(dataInicio, dataFim),
         fichasService.buscarPerdidasUltimosMeses(dataInicio, dataFim)
       ]);
+      console.log('Relatórios - Dados dos gráficos recebidos:', { cortadasData, recebidasData, perdidasData });
       
-      console.log('Relatórios - Dados recebidos:', { cortadasData, recebidasData, perdidasData });
+      // Buscar dados detalhados por banca para exportações
+      console.log('Relatórios - Buscando dados detalhados por banca...');
+      const [cortadasDetalhadas, recebidasDetalhadas, perdidasDetalhadas] = await Promise.all([
+        fichasService.buscarCortadasDetalhadasPorBanca(dataInicio, dataFim),
+        fichasService.buscarRecebidosDetalhadosPorBanca(dataInicio, dataFim),
+        fichasService.buscarPerdidasDetalhadasPorBanca(dataInicio, dataFim)
+      ]);
+      console.log('Relatórios - Dados detalhados por banca recebidos:', { 
+        cortadasDetalhadas, 
+        recebidasDetalhadas, 
+        perdidasDetalhadas 
+      });
       
-      // Calcular estatísticas baseadas nos dados dos gráficos (mesma lógica dos cards abaixo dos gráficos)
-      const totalCortadas = cortadasData.reduce((acc, item) => acc + (Number(item.total_cortada) || 0), 0);
-      const totalRecebidas = recebidasData.reduce((acc, item) => acc + (Number(item.total_recebido) || 0), 0);
-      const totalPerdidas = perdidasData.reduce((acc, item) => acc + (Number(item.total_perdido) || 0), 0);
+      // Usar dados consolidados para os totais dos cards
+      const totalCortadas = dadosConsolidados.total_cortadas || 0;
+      const totalRecebidas = dadosConsolidados.total_recebidas || 0;
+      const totalPerdidas = dadosConsolidados.total_perdidas || 0;
       
       // Calcular médias mensais
       const mediaCortadas = cortadasData.length > 0 ? Math.round(totalCortadas / cortadasData.length) : 0;
@@ -188,9 +202,9 @@ export default function Relatorios() {
     try {
       setIsLoading(true);
       
-      // Formatar as datas para incluir no nome do arquivo
-      const dataInicio = dateRange.from ? dateRange.from.toISOString().split('T')[0] : '';
-      const dataFim = dateRange.to ? dateRange.to.toISOString().split('T')[0] : '';
+      // Formatar as datas para a API no formato MySQL (YYYY-MM-DD) - mesmo padrão do Fechamento Semanal
+      const dataInicio = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : '';
+      const dataFim = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : '';
       
       // Buscar todos os dados dos relatórios
       const [cortadasData, recebidasData, perdidasData] = await Promise.all([
@@ -199,10 +213,17 @@ export default function Relatorios() {
         fichasService.buscarPerdidasUltimosMeses(dataInicio, dataFim)
       ]);
       
+      // Buscar dados detalhados por banca
+      const [cortadasDetalhadas, recebidasDetalhadas, perdidasDetalhadas] = await Promise.all([
+        fichasService.buscarCortadasDetalhadasPorBanca(dataInicio, dataFim),
+        fichasService.buscarRecebidosDetalhadosPorBanca(dataInicio, dataFim),
+        fichasService.buscarPerdidasDetalhadasPorBanca(dataInicio, dataFim)
+      ]);
+      
       if (format === "excel") {
-        await exportarExcel(cortadasData, recebidasData, perdidasData, dataInicio, dataFim);
+        await exportarExcel(cortadasData, recebidasData, perdidasData, dataInicio, dataFim, cortadasDetalhadas, recebidasDetalhadas, perdidasDetalhadas);
       } else {
-        await exportarPDF(cortadasData, recebidasData, perdidasData, dataInicio, dataFim);
+        await exportarPDF(cortadasData, recebidasData, perdidasData, dataInicio, dataFim, cortadasDetalhadas, recebidasDetalhadas, perdidasDetalhadas);
       }
       
     } catch (error) {
@@ -217,33 +238,37 @@ export default function Relatorios() {
     try {
       setIsLoading(true);
       
-      // Formatar as datas para incluir no nome do arquivo
-      const dataInicio = dateRange.from ? dateRange.from.toISOString().split('T')[0] : '';
-      const dataFim = dateRange.to ? dateRange.to.toISOString().split('T')[0] : '';
+      // Formatar as datas para a API no formato MySQL (YYYY-MM-DD) - mesmo padrão do Fechamento Semanal
+      const dataInicio = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : '';
+      const dataFim = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : '';
       
       let data;
+      let dataDetalhada;
       let reportName;
       
       // Buscar dados específicos do relatório
       switch (reportType) {
         case "cortadas":
           data = await fichasService.buscarCortadasUltimosMeses(dataInicio, dataFim);
+          dataDetalhada = await fichasService.buscarCortadasDetalhadasPorBanca(dataInicio, dataFim);
           reportName = "peças cortadas";
           break;
         case "recebidas":
           data = await fichasService.buscarRecebidosUltimosMeses(dataInicio, dataFim);
+          dataDetalhada = await fichasService.buscarRecebidosDetalhadosPorBanca(dataInicio, dataFim);
           reportName = "peças recebidas";
           break;
         case "perdidas":
           data = await fichasService.buscarPerdidasUltimosMeses(dataInicio, dataFim);
+          dataDetalhada = await fichasService.buscarPerdidasDetalhadasPorBanca(dataInicio, dataFim);
           reportName = "peças perdidas";
           break;
       }
       
       if (format === "excel") {
-        await exportarExcelEspecifico(data, reportType, dataInicio, dataFim);
+        await exportarExcelEspecifico(data, reportType, dataInicio, dataFim, dataDetalhada);
       } else {
-        await exportarPDFEspecifico(data, reportType, dataInicio, dataFim);
+        await exportarPDFEspecifico(data, reportType, dataInicio, dataFim, dataDetalhada);
       }
       
     } catch (error) {
@@ -254,7 +279,7 @@ export default function Relatorios() {
     }
   };
 
-  const exportarExcel = async (cortadasData: any[], recebidasData: any[], perdidasData: any[], dataInicio: string, dataFim: string) => {
+  const exportarExcel = async (cortadasData: any[], recebidasData: any[], perdidasData: any[], dataInicio: string, dataFim: string, cortadasDetalhadas?: any[], recebidasDetalhadas?: any[], perdidasDetalhadas?: any[]) => {
     // Criar workbook
     const workbook = XLSX.utils.book_new();
     
@@ -336,6 +361,46 @@ export default function Relatorios() {
     const worksheetAnalise = XLSX.utils.json_to_sheet(analiseComparativa);
     worksheetAnalise['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
     XLSX.utils.book_append_sheet(workbook, worksheetAnalise, 'Análise Comparativa');
+
+    // 6. Planilha de Dados Detalhados por Banca (se disponível)
+    if (cortadasDetalhadas && cortadasDetalhadas.length > 0) {
+      const dadosCortadasPorBanca = cortadasDetalhadas.map(item => ({
+        'Banca': item.banca || 'N/A',
+        'Mês': item.mes || 'N/A',
+        'Total Cortada': Number(item.total_cortada) || 0,
+        'Total Fichas': Number(item.total_fichas) || 0
+      }));
+      
+      const worksheetCortadasPorBanca = XLSX.utils.json_to_sheet(dadosCortadasPorBanca);
+      worksheetCortadasPorBanca['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
+      XLSX.utils.book_append_sheet(workbook, worksheetCortadasPorBanca, 'Cortadas por Banca');
+    }
+
+    if (recebidasDetalhadas && recebidasDetalhadas.length > 0) {
+      const dadosRecebidasPorBanca = recebidasDetalhadas.map(item => ({
+        'Banca': item.banca || 'N/A',
+        'Mês': item.mes || 'N/A',
+        'Total Recebido': Number(item.total_recebido) || 0,
+        'Total Movimentações': Number(item.total_movimentacoes) || 0
+      }));
+      
+      const worksheetRecebidasPorBanca = XLSX.utils.json_to_sheet(dadosRecebidasPorBanca);
+      worksheetRecebidasPorBanca['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+      XLSX.utils.book_append_sheet(workbook, worksheetRecebidasPorBanca, 'Recebidas por Banca');
+    }
+
+    if (perdidasDetalhadas && perdidasDetalhadas.length > 0) {
+      const dadosPerdidasPorBanca = perdidasDetalhadas.map(item => ({
+        'Banca': item.banca || 'N/A',
+        'Mês': item.mes || 'N/A',
+        'Total Perdido': Number(item.total_perdido) || 0,
+        'Total Movimentações': Number(item.total_movimentacoes) || 0
+      }));
+      
+      const worksheetPerdidasPorBanca = XLSX.utils.json_to_sheet(dadosPerdidasPorBanca);
+      worksheetPerdidasPorBanca['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+      XLSX.utils.book_append_sheet(workbook, worksheetPerdidasPorBanca, 'Perdidas por Banca');
+    }
     
     // Configurar propriedades do workbook
     workbook.Props = {
@@ -357,7 +422,7 @@ export default function Relatorios() {
     toast.success(`Relatório Excel exportado com sucesso: ${nomeArquivo}`);
   };
 
-  const exportarPDF = async (cortadasData: any[], recebidasData: any[], perdidasData: any[], dataInicio: string, dataFim: string) => {
+  const exportarPDF = async (cortadasData: any[], recebidasData: any[], perdidasData: any[], dataInicio: string, dataFim: string, cortadasDetalhadas?: any[], recebidasDetalhadas?: any[], perdidasDetalhadas?: any[]) => {
     // Importar jspdf-autotable dinamicamente
     const autoTable = await import('jspdf-autotable');
     
@@ -616,7 +681,7 @@ export default function Relatorios() {
     toast.success(`Relatório PDF exportado com sucesso: ${nomeArquivo}`);
   };
 
-  const exportarExcelEspecifico = async (data: any[], reportType: string, dataInicio: string, dataFim: string) => {
+  const exportarExcelEspecifico = async (data: any[], reportType: string, dataInicio: string, dataFim: string, dataDetalhada?: any[]) => {
     // Criar workbook
     const workbook = XLSX.utils.book_new();
     
@@ -659,17 +724,72 @@ export default function Relatorios() {
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     worksheet['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+
+    // Planilha de dados detalhados por banca (se disponível)
+    if (dataDetalhada && dataDetalhada.length > 0) {
+      let dadosPorBanca;
+      let sheetNameDetalhado;
+      
+      switch (reportType) {
+        case "cortadas":
+          dadosPorBanca = dataDetalhada.map(item => ({
+            'Banca': item.banca || 'N/A',
+            'Mês': item.mes || 'N/A',
+            'Total Cortada': Number(item.total_cortada) || 0,
+            'Total Fichas': Number(item.total_fichas) || 0
+          }));
+          sheetNameDetalhado = 'Dados por Banca';
+          break;
+        case "recebidas":
+          dadosPorBanca = dataDetalhada.map(item => ({
+            'Banca': item.banca || 'N/A',
+            'Mês': item.mes || 'N/A',
+            'Total Recebido': Number(item.total_recebido) || 0,
+            'Total Movimentações': Number(item.total_movimentacoes) || 0
+          }));
+          sheetNameDetalhado = 'Dados por Banca';
+          break;
+        case "perdidas":
+          dadosPorBanca = dataDetalhada.map(item => ({
+            'Banca': item.banca || 'N/A',
+            'Mês': item.mes || 'N/A',
+            'Total Perdido': Number(item.total_perdido) || 0,
+            'Total Movimentações': Number(item.total_movimentacoes) || 0
+          }));
+          sheetNameDetalhado = 'Dados por Banca';
+          break;
+      }
+      
+      if (dadosPorBanca) {
+        const worksheetDetalhado = XLSX.utils.json_to_sheet(dadosPorBanca);
+        worksheetDetalhado['!cols'] = [{ wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(workbook, worksheetDetalhado, sheetNameDetalhado);
+      }
+    }
     
     // Planilha de resumo
     const total = data.reduce((acc, item) => acc + (Number(item[totalField]) || 0), 0);
     const media = data.length > 0 ? Math.round(total / data.length) : 0;
     const maior = data.reduce((max, item) => (Number(item[totalField]) || 0) > max ? (Number(item[totalField]) || 0) : max, 0);
     
+    // Calcular estatísticas por banca (se disponível)
+    let totalBancas = 0;
+    let bancasUnicas = new Set();
+    
+    if (dataDetalhada && dataDetalhada.length > 0) {
+      dataDetalhada.forEach(item => {
+        if (item.banca) bancasUnicas.add(item.banca);
+      });
+      totalBancas = bancasUnicas.size;
+    }
+    
     const resumo = [
       { 'Métrica': 'Total', 'Valor': total },
       { 'Métrica': 'Média Mensal', 'Valor': media },
       { 'Métrica': 'Maior Valor Mensal', 'Valor': maior },
       { 'Métrica': 'Quantidade de Meses', 'Valor': data.length },
+      { 'Métrica': 'Total de Bancas', 'Valor': totalBancas },
+      { 'Métrica': 'Bancas Envolvidas', 'Valor': Array.from(bancasUnicas).join(', ') || 'N/A' },
       { 'Métrica': '', 'Valor': '' },
       { 'Métrica': 'Período do Relatório', 'Valor': `${dataInicio} a ${dataFim}` },
       { 'Métrica': 'Data de Geração', 'Valor': format(new Date(), 'dd/MM/yyyy às HH:mm', { locale: ptBR }) },
@@ -700,7 +820,7 @@ export default function Relatorios() {
     toast.success(`Relatório Excel de ${sheetName} exportado com sucesso: ${nomeArquivo}`);
   };
 
-  const exportarPDFEspecifico = async (data: any[], reportType: string, dataInicio: string, dataFim: string) => {
+  const exportarPDFEspecifico = async (data: any[], reportType: string, dataInicio: string, dataFim: string, dataDetalhada?: any[]) => {
     // Importar jspdf-autotable dinamicamente
     const autoTable = await import('jspdf-autotable');
     
@@ -833,11 +953,13 @@ export default function Relatorios() {
     );
   };
 
+  // Atualizar estatísticas sempre que o período mudar e estiver completo
   useEffect(() => {
-    console.log('Relatorios - useEffect executado');
-    console.log('Relatorios - dateRange inicial:', dateRange);
-    carregarEstatisticas(dateRange);
-  }, []);
+    if (dateRange?.from && dateRange?.to) {
+      carregarEstatisticas(dateRange);
+    }
+    // Não faz nada se só o from estiver preenchido - mantém os dados atuais
+  }, [dateRange]);
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
@@ -878,6 +1000,16 @@ export default function Relatorios() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Aviso quando período está incompleto */}
+      {(!dateRange?.from || !dateRange?.to) && (
+        <div className="flex items-center justify-center p-4 bg-blue-50 border border-blue-200 rounded-lg dark:bg-blue-950/50 dark:border-blue-800/50">
+          <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+          <span className="text-sm text-blue-700 dark:text-blue-300">
+            Selecione o período completo para filtrar os dados
+          </span>
+        </div>
+      )}
 
       {/* Cards de estatísticas */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 animate-in fade-in duration-700">

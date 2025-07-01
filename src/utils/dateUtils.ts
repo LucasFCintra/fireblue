@@ -65,3 +65,24 @@ export function parseDate(dateString: string): Date {
   const parts = dateString.split('/');
   return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
 } 
+
+/**
+ * Formata uma data para o formato MySQL (YYYY-MM-DD)
+ */
+export function formatDateMySQL(date: Date): string {
+  const ano = date.getFullYear();
+  const mes = String(date.getMonth() + 1).padStart(2, '0');
+  const dia = String(date.getDate()).padStart(2, '0');
+  return `${ano}-${mes}-${dia}`;
+}
+
+/**
+ * Formata uma data para o formato MySQL com hora (YYYY-MM-DD HH:mm:ss)
+ */
+export function formatDateTimeMySQL(date: Date): string {
+  const dataStr = formatDateMySQL(date);
+  const hora = String(date.getHours()).padStart(2, '0');
+  const minuto = String(date.getMinutes()).padStart(2, '0');
+  const segundo = String(date.getSeconds()).padStart(2, '0');
+  return `${dataStr} ${hora}:${minuto}:${segundo}`;
+} 

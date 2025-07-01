@@ -372,7 +372,7 @@ class FichasModel {
       let firstDay = dataInicio ? new Date(dataInicio) : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
       let lastDay = dataFim ? new Date(dataFim) : new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
 
-      console.log('FichasModel - Buscando relatório para período:', firstDay, 'a', lastDay);
+      // console.log('FichasModel - Buscando relatório para período:', firstDay, 'a', lastDay);
 
       const [stats] = await knex.raw(`
         SELECT 
@@ -385,7 +385,7 @@ class FichasModel {
         WHERE data_entrada BETWEEN ? AND ?
       `, [firstDay, lastDay]);
 
-      console.log('FichasModel - Resultado bruto da consulta:', stats[0]);
+      // console.log('FichasModel - Resultado bruto da consulta:', stats[0]);
 
       const resultado = {
         total_cortadas: parseInt(stats[0].total_cortadas) || 0,
@@ -395,7 +395,7 @@ class FichasModel {
         total_concluidas: parseInt(stats[0].total_concluidas) || 0
       };
 
-      console.log('FichasModel - Resultado processado:', resultado);
+      // console.log('FichasModel - Resultado processado:', resultado);
 
       return resultado;
     } catch (error) {
@@ -406,93 +406,248 @@ class FichasModel {
 
   async getRecebidosUltimosMeses(qtdMeses = 5, dataInicio = null, dataFim = null) {
     try {
-      let query = knex('fichas')
+     // // console.log('FichasModel - getRecebidosUltimosMeses - Parâmetros:', { qtdMeses, dataInicio, dataFim });
+      
+      let query = knex('movimentacoes_fichas as mf')
+        .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
         .select(
-          knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
-          knex.raw("SUM(quantidade_recebida) as total_recebido")
+          knex.raw("DATE_FORMAT(mf.data, '%Y-%m') as mes"),
+          knex.raw("SUM(COALESCE(mf.quantidade, 0)) as total_recebido"),
+          knex.raw("COUNT(DISTINCT f.banca) as total_bancas"),
+          knex.raw("GROUP_CONCAT(DISTINCT f.banca SEPARATOR ', ') as bancas")
         )
-        .whereNotNull('quantidade_recebida');
+        .whereIn('mf.tipo', ['Retorno', 'Conclusão']);
 
-      // Se foram fornecidas datas específicas, usar elas
       if (dataInicio && dataFim) {
-        query = query.andWhere('data_entrada', '>=', dataInicio)
-                    .andWhere('data_entrada', '<=', dataFim);
+        // console.log('FichasModel - getRecebidosUltimosMeses - Usando filtro de datas:', dataInicio, 'a', dataFim);
+        query = query.whereRaw('DATE(mf.data) BETWEEN ? AND ?', [dataInicio, dataFim]);
       } else {
-        // Caso contrário, usar os últimos X meses
-        query = query.andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
+        // console.log('FichasModel - getRecebidosUltimosMeses - Usando filtro de meses:', qtdMeses);
+        query = query.andWhere('mf.data', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
       }
-
+      console.log( query.toString())
       const result = await query
-        .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
-        .orderByRaw("mes DESC")
-        .limit(qtdMeses);
+        .groupByRaw("DATE_FORMAT(mf.data, '%Y-%m')")
+        .orderByRaw("mes ASC");
 
-      // Ordena do mais antigo para o mais recente
-      return result.reverse();
+     // // console.log('FichasModel - getRecebidosUltimosMeses - Resultado:', result);
+      return result;
     } catch (error) {
-      console.error('Erro ao buscar recebidos últimos meses:', error);
+      console.error('FichasModel - getRecebidosUltimosMeses - Erro:', error);
       throw error;
     }
   }
 
   async getPerdidasUltimosMeses(qtdMeses = 5, dataInicio = null, dataFim = null) {
     try {
-      let query = knex('fichas')
+      // console.log('FichasModel - getPerdidasUltimosMeses - Parâmetros:', { qtdMeses, dataInicio, dataFim });
+      
+      let query = knex('movimentacoes_fichas as mf')
+        .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
         .select(
-          knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
-          knex.raw("SUM(quantidade_perdida) as total_perdido")
+          knex.raw("DATE_FORMAT(mf.data, '%Y-%m') as mes"),
+          knex.raw("SUM(COALESCE(mf.quantidade, 0)) as total_perdido"),
+          knex.raw("COUNT(DISTINCT f.banca) as total_bancas"),
+          knex.raw("GROUP_CONCAT(DISTINCT f.banca SEPARATOR ', ') as bancas")
         )
-        .whereNotNull('quantidade_perdida');
+        .where('mf.tipo', 'Perda');
 
-      // Se foram fornecidas datas específicas, usar elas
       if (dataInicio && dataFim) {
-        query = query.andWhere('data_entrada', '>=', dataInicio)
-                    .andWhere('data_entrada', '<=', dataFim);
+        // console.log('FichasModel - getPerdidasUltimosMeses - Usando filtro de datas:', dataInicio, 'a', dataFim);
+        query = query.whereRaw('DATE(mf.data) BETWEEN ? AND ?', [dataInicio, dataFim]);
       } else {
-        // Caso contrário, usar os últimos X meses
-        query = query.andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
+        // console.log('FichasModel - getPerdidasUltimosMeses - Usando filtro de meses:', qtdMeses);
+        query = query.andWhere('mf.data', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
       }
 
       const result = await query
-        .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
-        .orderByRaw("mes DESC")
-        .limit(qtdMeses);
+        .groupByRaw("DATE_FORMAT(mf.data, '%Y-%m')")
+        .orderByRaw("mes ASC");
 
-      // Ordena do mais antigo para o mais recente
-      return result.reverse();
+      // console.log('FichasModel - getPerdidasUltimosMeses - Resultado:', result);
+      return result;
     } catch (error) {
-      console.error('Erro ao buscar perdidos últimos meses:', error);
+      console.error('FichasModel - getPerdidasUltimosMeses - Erro:', error);
       throw error;
     }
   }
 
   async getCortadasUltimosMeses(qtdMeses = 5, dataInicio = null, dataFim = null) {
     try {
+      // console.log('FichasModel - getCortadasUltimosMeses - Parâmetros:', { qtdMeses, dataInicio, dataFim });
+      
       let query = knex('fichas')
         .select(
           knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
-          knex.raw("SUM(quantidade) as total_cortada")
-        )
-        .whereNotNull('quantidade');
+          knex.raw("SUM(COALESCE(quantidade, 0)) as total_cortada"),
+          knex.raw("COUNT(DISTINCT banca) as total_bancas"),
+          knex.raw("GROUP_CONCAT(DISTINCT banca SEPARATOR ', ') as bancas")
+        );
 
-      // Se foram fornecidas datas específicas, usar elas
       if (dataInicio && dataFim) {
-        query = query.andWhere('data_entrada', '>=', dataInicio)
-                    .andWhere('data_entrada', '<=', dataFim);
+        // console.log('FichasModel - getCortadasUltimosMeses - Usando filtro de datas:', dataInicio, 'a', dataFim);
+        query = query.whereRaw('DATE(data_entrada) BETWEEN ? AND ?', [dataInicio, dataFim]);
       } else {
-        // Caso contrário, usar os últimos X meses
+        // console.log('FichasModel - getCortadasUltimosMeses - Usando filtro de meses:', qtdMeses);
         query = query.andWhere('data_entrada', '>=', knex.raw(`DATE_SUB(CURDATE(), INTERVAL ${qtdMeses-1} MONTH)`));
       }
 
       const result = await query
         .groupByRaw("DATE_FORMAT(data_entrada, '%Y-%m')")
-        .orderByRaw("mes DESC")
-        .limit(qtdMeses);
+        .orderByRaw("mes ASC");
 
-      // Ordena do mais antigo para o mais recente
-      return result.reverse();
+      // console.log('FichasModel - getCortadasUltimosMeses - Resultado:', result);
+      return result;
     } catch (error) {
-      console.error('Erro ao buscar cortadas últimos meses:', error);
+      console.error('FichasModel - getCortadasUltimosMeses - Erro:', error);
+      throw error;
+    }
+  }
+
+  // Método para buscar dados consolidados de um período específico
+  async getDadosConsolidadosPeriodo(dataInicio, dataFim) {
+    try {
+      // console.log('FichasModel - Buscando dados consolidados para período:', dataInicio, 'a', dataFim);
+      // console.log('FichasModel - Tipos de dados:', typeof dataInicio, typeof dataFim);
+
+      // Verificar se as datas são válidas
+      if (!dataInicio || !dataFim) {
+        // console.log('FichasModel - Datas inválidas, retornando zeros');
+        return {
+          total_cortadas: 0,
+          total_recebidas: 0,
+          total_perdidas: 0,
+          total_fichas: 0,
+          total_concluidas: 0
+        };
+      }
+
+      // Buscar dados de peças cortadas (quantidade da tabela fichas)
+      const [cortadasStats] = await knex.raw(`
+        SELECT 
+          SUM(COALESCE(quantidade, 0)) as total_cortadas,
+          COUNT(*) as total_fichas,
+          COUNT(CASE WHEN status = 'concluido' THEN 1 END) as total_concluidas
+        FROM fichas
+        WHERE DATE(data_entrada) BETWEEN ? AND ?
+      `, [dataInicio, dataFim]);
+
+      // Buscar dados de peças recebidas (movimentações tipo Retorno ou Conclusão)
+      const [recebidasStats] = await knex.raw(`
+        SELECT 
+          SUM(COALESCE(mf.quantidade, 0)) as total_recebidas
+        FROM movimentacoes_fichas mf
+        INNER JOIN fichas f ON f.id = mf.ficha_id
+        WHERE DATE(mf.data) BETWEEN ? AND ?
+        AND mf.tipo IN ('Retorno', 'Conclusão')
+      `, [dataInicio, dataFim]);
+
+      // Buscar dados de peças perdidas (movimentações tipo Perda)
+      const [perdidasStats] = await knex.raw(`
+        SELECT 
+          SUM(COALESCE(mf.quantidade, 0)) as total_perdidas
+        FROM movimentacoes_fichas mf
+        INNER JOIN fichas f ON f.id = mf.ficha_id
+        WHERE DATE(mf.data) BETWEEN ? AND ?
+        AND mf.tipo = 'Perda'
+      `, [dataInicio, dataFim]);
+
+      /* console.log('FichasModel - Dados consolidados brutos:', {
+        cortadas: cortadasStats[0],
+        recebidas: recebidasStats[0],
+        perdidas: perdidasStats[0]
+      });*/
+
+      const resultado = {
+        total_cortadas: parseInt(cortadasStats[0].total_cortadas) || 0,
+        total_recebidas: parseInt(recebidasStats[0].total_recebidas) || 0,
+        total_perdidas: parseInt(perdidasStats[0].total_perdidas) || 0,
+        total_fichas: parseInt(cortadasStats[0].total_fichas) || 0,
+        total_concluidas: parseInt(cortadasStats[0].total_concluidas) || 0
+      };
+
+      // console.log('FichasModel - Resultado processado:', resultado);
+
+      return resultado;
+    } catch (error) {
+      console.error('FichasModel - Erro ao buscar dados consolidados:', error);
+      console.error('FichasModel - Stack trace:', error.stack);
+      throw error;
+    }
+  }
+
+  // Método para buscar dados detalhados de peças recebidas por banca
+  async getRecebidosDetalhadosPorBanca(dataInicio, dataFim) {
+    try {
+      // console.log('FichasModel - getRecebidosDetalhadosPorBanca - Parâmetros:', { dataInicio, dataFim });
+      
+      const result = await knex('movimentacoes_fichas as mf')
+        .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
+        .select(
+          'f.banca',
+          knex.raw("DATE_FORMAT(mf.data, '%Y-%m') as mes"),
+          knex.raw("SUM(COALESCE(mf.quantidade, 0)) as total_recebido"),
+          knex.raw("COUNT(*) as total_movimentacoes")
+        )
+        .whereIn('mf.tipo', ['Retorno', 'Conclusão'])
+        .whereRaw('DATE(mf.data) BETWEEN ? AND ?', [dataInicio, dataFim])
+        .groupBy('f.banca', knex.raw("DATE_FORMAT(mf.data, '%Y-%m')"))
+        .orderBy('f.banca', 'mes');
+
+      // console.log('FichasModel - getRecebidosDetalhadosPorBanca - Resultado:', result);
+      return result;
+    } catch (error) {
+      console.error('FichasModel - getRecebidosDetalhadosPorBanca - Erro:', error);
+      throw error;
+    }
+  }
+
+  // Método para buscar dados detalhados de peças perdidas por banca
+  async getPerdidasDetalhadasPorBanca(dataInicio, dataFim) {
+    try {
+      // console.log('FichasModel - getPerdidasDetalhadasPorBanca - Parâmetros:', { dataInicio, dataFim });
+      
+      const result = await knex('movimentacoes_fichas as mf')
+        .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
+        .select(
+          'f.banca',
+          knex.raw("DATE_FORMAT(mf.data, '%Y-%m') as mes"),
+          knex.raw("SUM(COALESCE(mf.quantidade, 0)) as total_perdido"),
+          knex.raw("COUNT(*) as total_movimentacoes")
+        )
+        .where('mf.tipo', 'Perda')
+        .whereRaw('DATE(mf.data) BETWEEN ? AND ?', [dataInicio, dataFim])
+        .groupBy('f.banca', knex.raw("DATE_FORMAT(mf.data, '%Y-%m')"))
+        .orderBy('f.banca', 'mes');
+
+      // console.log('FichasModel - getPerdidasDetalhadasPorBanca - Resultado:', result);
+      return result;
+    } catch (error) {
+      console.error('FichasModel - getPerdidasDetalhadasPorBanca - Erro:', error);
+      throw error;
+    }
+  }
+
+  // Método para buscar dados detalhados de peças cortadas por banca
+  async getCortadasDetalhadasPorBanca(dataInicio, dataFim) {
+    try {
+      // console.log('FichasModel - getCortadasDetalhadasPorBanca - Parâmetros:', { dataInicio, dataFim });
+      
+      const result = await knex('fichas')
+        .select(
+          'banca',
+          knex.raw("DATE_FORMAT(data_entrada, '%Y-%m') as mes"),
+          knex.raw("SUM(COALESCE(quantidade, 0)) as total_cortada"),
+          knex.raw("COUNT(*) as total_fichas")
+        )
+        .whereRaw('DATE(data_entrada) BETWEEN ? AND ?', [dataInicio, dataFim])
+        .groupBy('banca', knex.raw("DATE_FORMAT(data_entrada, '%Y-%m')"))
+        .orderBy('banca', 'mes');
+
+      // console.log('FichasModel - getCortadasDetalhadasPorBanca - Resultado:', result);
+      return result;
+    } catch (error) {
+      console.error('FichasModel - getCortadasDetalhadasPorBanca - Erro:', error);
       throw error;
     }
   }

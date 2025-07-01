@@ -19,6 +19,7 @@ import {
 } from 'recharts';
 import { fichasService } from "@/services/fichasService";
 
+
 interface ReportChartProps {
   type: "pecas-cortadas" | "pecas-perdidas" | "pecas-recebidas";
   dateRange?: DateRange;
@@ -32,33 +33,44 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
     async function fetchData() {
       setLoading(true);
       try {
-        // Formatar as datas para a API
+        // Formatar as datas para a API no formato MySQL (YYYY-MM-DD) - mesmo padrão do Fechamento Semanal
         const dataInicio = dateRange?.from ? dateRange.from.toISOString().split('T')[0] : '';
         const dataFim = dateRange?.to ? dateRange.to.toISOString().split('T')[0] : '';
+        
+        console.log('ReportChart - Buscando dados para período:', dataInicio, 'a', dataFim);
         
         let data;
         
         if (type === "pecas-cortadas") {
           data = await fichasService.buscarCortadasUltimosMeses(dataInicio, dataFim);
+          console.log('ReportChart - Dados cortadas recebidos:', data);
           setChartData(data.map(item => ({ 
             name: item.mes, 
-            quantidade: Number(item.total_cortada) || 0 
+            quantidade: Number(item.total_cortada) || 0,
+            bancas: item.bancas || 'N/A',
+            total_bancas: Number(item.total_bancas) || 0
           })));
         } else if (type === "pecas-recebidas") {
           data = await fichasService.buscarRecebidosUltimosMeses(dataInicio, dataFim);
+          console.log('ReportChart - Dados recebidas recebidos:', data);
           setChartData(data.map(item => ({ 
             name: item.mes, 
-            quantidade: Number(item.total_recebido) || 0 
+            quantidade: Number(item.total_recebido) || 0,
+            bancas: item.bancas || 'N/A',
+            total_bancas: Number(item.total_bancas) || 0
           })));
         } else if (type === "pecas-perdidas") {
           data = await fichasService.buscarPerdidasUltimosMeses(dataInicio, dataFim);
+          console.log('ReportChart - Dados perdidas recebidos:', data);
           setChartData(data.map(item => ({ 
             name: item.mes, 
-            quantidade: Number(item.total_perdido) || 0 
+            quantidade: Number(item.total_perdido) || 0,
+            bancas: item.bancas || 'N/A',
+            total_bancas: Number(item.total_bancas) || 0
           })));
         }
       } catch (e) {
-        console.error('Erro ao buscar dados do gráfico:', e);
+        console.error('ReportChart - Erro ao buscar dados do gráfico:', e);
         setChartData([]);
       } finally {
         setLoading(false);
@@ -161,8 +173,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
         const totalCortadas = chartData.reduce((acc, item) => acc + (item.quantidade || 0), 0);
         const mediaCortadas = chartData.length > 0 ? Math.round(totalCortadas / chartData.length) : 0;
         const maiorCorte = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
+        
+        // Calcular bancas únicas
+        const bancasUnicas = new Set();
+        chartData.forEach(item => {
+          if (item.bancas && item.bancas !== 'N/A') {
+            item.bancas.split(', ').forEach(banca => bancasUnicas.add(banca.trim()));
+          }
+        });
+        
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200 hover:shadow-sm transition-all dark:bg-blue-950/50 dark:border-blue-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
               <p className="text-sm text-blue-700 dark:text-blue-300">Total de Peças Cortadas</p>
               <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{totalCortadas} unid.</p>
@@ -175,6 +196,14 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
               <p className="text-sm text-purple-700 dark:text-purple-300">Maior Quantidade</p>
               <p className="text-xl font-bold text-purple-800 dark:text-purple-200">{maiorCorte} unid.</p>
             </div>
+            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200 hover:shadow-sm transition-all dark:bg-amber-950/50 dark:border-amber-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-amber-700 dark:text-amber-300">Bancas Envolvidas</p>
+              <p className="text-lg font-bold text-amber-800 dark:text-amber-200">{bancasUnicas.size}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                {Array.from(bancasUnicas).slice(0, 3).join(', ')}
+                {bancasUnicas.size > 3 && '...'}
+              </p>
+            </div>
           </div>
         );
       }
@@ -183,8 +212,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
         const totalPerdidas = chartData.reduce((acc, item) => acc + (item.quantidade || 0), 0);
         const mediaPerdidas = chartData.length > 0 ? Math.round(totalPerdidas / chartData.length) : 0;
         const maiorPerda = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
+        
+        // Calcular bancas únicas
+        const bancasUnicas = new Set();
+        chartData.forEach(item => {
+          if (item.bancas && item.bancas !== 'N/A') {
+            item.bancas.split(', ').forEach(banca => bancasUnicas.add(banca.trim()));
+          }
+        });
+        
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <div className="p-4 bg-red-50 rounded-lg border border-red-200 hover:shadow-sm transition-all dark:bg-red-950/50 dark:border-red-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
               <p className="text-sm text-red-700 dark:text-red-300">Total de Peças Perdidas</p>
               <p className="text-xl font-bold text-red-800 dark:text-red-200">{totalPerdidas} unid.</p>
@@ -197,6 +235,14 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
               <p className="text-sm text-blue-700 dark:text-blue-300">Maior Perda</p>
               <p className="text-xl font-bold text-blue-800 dark:text-blue-200">{maiorPerda} unid.</p>
             </div>
+            <div className="p-4 bg-orange-50 rounded-lg border border-orange-200 hover:shadow-sm transition-all dark:bg-orange-950/50 dark:border-orange-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-orange-700 dark:text-orange-300">Bancas Envolvidas</p>
+              <p className="text-lg font-bold text-orange-800 dark:text-orange-200">{bancasUnicas.size}</p>
+              <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                {Array.from(bancasUnicas).slice(0, 3).join(', ')}
+                {bancasUnicas.size > 3 && '...'}
+              </p>
+            </div>
           </div>
         );
       }
@@ -205,8 +251,17 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
         const totalRecebidas = chartData.reduce((acc, item) => acc + (item.quantidade || 0), 0);
         const mediaRecebidas = chartData.length > 0 ? Math.round(totalRecebidas / chartData.length) : 0;
         const maiorRecebimento = chartData.reduce((max, item) => item.quantidade > max ? item.quantidade : max, 0);
+        
+        // Calcular bancas únicas
+        const bancasUnicas = new Set();
+        chartData.forEach(item => {
+          if (item.bancas && item.bancas !== 'N/A') {
+            item.bancas.split(', ').forEach(banca => bancasUnicas.add(banca.trim()));
+          }
+        });
+        
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
             <div className="p-4 bg-green-50 rounded-lg border border-green-200 hover:shadow-sm transition-all dark:bg-green-950/50 dark:border-green-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
               <p className="text-sm text-green-700 dark:text-green-300">Total de Peças Recebidas</p>
               <p className="text-xl font-bold text-green-800 dark:text-green-200">{totalRecebidas} unid.</p>
@@ -218,6 +273,14 @@ export function ReportChart({ type, dateRange }: ReportChartProps) {
             <div className="p-4 bg-purple-50 rounded-lg border border-purple-200 hover:shadow-sm transition-all dark:bg-purple-950/50 dark:border-purple-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
               <p className="text-sm text-purple-700 dark:text-purple-300">Maior Recebimento</p>
               <p className="text-xl font-bold text-purple-800 dark:text-purple-200">{maiorRecebimento} unid.</p>
+            </div>
+            <div className="p-4 bg-teal-50 rounded-lg border border-teal-200 hover:shadow-sm transition-all dark:bg-teal-950/50 dark:border-teal-800/50 dark:hover:shadow-md dark:hover:shadow-black/10">
+              <p className="text-sm text-teal-700 dark:text-teal-300">Bancas Envolvidas</p>
+              <p className="text-lg font-bold text-teal-800 dark:text-teal-200">{bancasUnicas.size}</p>
+              <p className="text-xs text-teal-600 dark:text-teal-400 mt-1">
+                {Array.from(bancasUnicas).slice(0, 3).join(', ')}
+                {bancasUnicas.size > 3 && '...'}
+              </p>
             </div>
           </div>
         );

@@ -330,6 +330,10 @@ export default function Fichas() {
   const handleAddFicha = () => {
     setBancaSearchQuery("");
     setProdutoSearchQuery("");
+    setNovaFicha(prev => ({
+      ...prev,
+      banca: ""
+    }));
     setIsNovaFichaDialogOpen(true);
   };
   
@@ -1311,6 +1315,8 @@ export default function Fichas() {
                             value={bancaSearchQuery}
                             onChange={(e) => setBancaSearchQuery(e.target.value)}
                             className="h-8 bg-background border-border text-foreground"
+                            autoFocus
+                            onKeyDown={e => e.stopPropagation()}
                           />
                         </div>
                         {filteredBancas.map((banca) => (
@@ -1561,6 +1567,8 @@ export default function Fichas() {
                           value={bancaSearchQuery}
                           onChange={(e) => setBancaSearchQuery(e.target.value)}
                           className="h-8 bg-background border-border text-foreground"
+                          autoFocus
+                          onKeyDown={e => e.stopPropagation()}
                         />
                       </div>
                       {filteredBancas.map((banca) => (

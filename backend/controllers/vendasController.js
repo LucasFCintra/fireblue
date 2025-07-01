@@ -22,7 +22,7 @@ class VendasController {
       const resultado = await Vendas.create(venda)
       if (resultado) {
         res.status(200).json({
-          message: "Venda inserida com sucesso",
+          message: "Venda inserida com sucesso", 
           data: resultado
         })
       } else {

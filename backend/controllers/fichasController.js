@@ -149,9 +149,18 @@ class FichasController {
   async getRecebidosUltimosMeses(req, res) {
     try {
       const { dataInicio, dataFim } = req.query;
+      
+     // console.log('FichasController - getRecebidosUltimosMeses - Query params:', req.query);
+     // console.log('FichasController - getRecebidosUltimosMeses - dataInicio:', dataInicio);
+     // console.log('FichasController - getRecebidosUltimosMeses - dataFim:', dataFim);
+      
       const data = await Fichas.getRecebidosUltimosMeses(5, dataInicio, dataFim);
+      
+      //console.log('FichasController - getRecebidosUltimosMeses - Resultado:', data);
+      
       res.json(data);
     } catch (error) {
+      console.error('FichasController - getRecebidosUltimosMeses - Erro:', error);
       res.status(500).json({ error: 'Erro ao buscar dados dos últimos meses' });
     }
   }
@@ -170,9 +179,18 @@ class FichasController {
   async getPerdidasUltimosMeses(req, res) {
     try {
       const { dataInicio, dataFim } = req.query;
+      
+     // console.log('FichasController - getPerdidasUltimosMeses - Query params:', req.query);
+   //   console.log('FichasController - getPerdidasUltimosMeses - dataInicio:', dataInicio);
+     // console.log('FichasController - getPerdidasUltimosMeses - dataFim:', dataFim);
+      
       const data = await Fichas.getPerdidasUltimosMeses(5, dataInicio, dataFim);
+      
+    //  console.log('FichasController - getPerdidasUltimosMeses - Resultado:', data);
+      
       res.json(data);
     } catch (error) {
+      console.error('FichasController - getPerdidasUltimosMeses - Erro:', error);
       res.status(500).json({ error: 'Erro ao buscar peças perdidas dos últimos meses' });
     }
   }
@@ -180,10 +198,89 @@ class FichasController {
   async getCortadasUltimosMeses(req, res) {
     try {
       const { dataInicio, dataFim } = req.query;
+      
+      //console.log('FichasController - getCortadasUltimosMeses - Query params:', req.query);
+     // console.log('FichasController - getCortadasUltimosMeses - dataInicio:', dataInicio);
+      //console.log('FichasController - getCortadasUltimosMeses - dataFim:', dataFim);
+      
       const data = await Fichas.getCortadasUltimosMeses(5, dataInicio, dataFim);
+      
+      //console.log('FichasController - getCortadasUltimosMeses - Resultado:', data);
+      
       res.json(data);
     } catch (error) {
+      console.error('FichasController - getCortadasUltimosMeses - Erro:', error);
       res.status(500).json({ error: 'Erro ao buscar peças cortadas dos últimos meses' });
+    }
+  }
+
+  async getDadosConsolidadosPeriodo(req, res) {
+    try {
+      const { dataInicio, dataFim } = req.query;
+      
+     /* console.log('FichasController - getDadosConsolidadosPeriodo - Query params:', req.query);
+      console.log('FichasController - getDadosConsolidadosPeriodo - dataInicio:', dataInicio);
+      console.log('FichasController - getDadosConsolidadosPeriodo - dataFim:', dataFim);
+      */
+      const data = await Fichas.getDadosConsolidadosPeriodo(dataInicio, dataFim);
+      
+     // console.log('FichasController - getDadosConsolidadosPeriodo - Resultado:', data);
+      
+      res.json(data);
+    } catch (error) {
+      console.error('FichasController - getDadosConsolidadosPeriodo - Erro:', error);
+      res.status(500).json({ error: 'Erro ao buscar dados consolidados do período' });
+    }
+  }
+
+  async getRecebidosDetalhadosPorBanca(req, res) {
+    try {
+      const { dataInicio, dataFim } = req.query;
+      
+    //  console.log('FichasController - getRecebidosDetalhadosPorBanca - Query params:', req.query);
+      
+      const data = await Fichas.getRecebidosDetalhadosPorBanca(dataInicio, dataFim);
+      
+     // console.log('FichasController - getRecebidosDetalhadosPorBanca - Resultado:', data);
+      
+      res.json(data);
+    } catch (error) {
+      console.error('FichasController - getRecebidosDetalhadosPorBanca - Erro:', error);
+      res.status(500).json({ error: 'Erro ao buscar dados detalhados de peças recebidas por banca' });
+    }
+  }
+
+  async getPerdidasDetalhadasPorBanca(req, res) {
+    try {
+      const { dataInicio, dataFim } = req.query;
+      
+     // console.log('FichasController - getPerdidasDetalhadasPorBanca - Query params:', req.query);
+      
+      const data = await Fichas.getPerdidasDetalhadasPorBanca(dataInicio, dataFim);
+      
+    //  console.log('FichasController - getPerdidasDetalhadasPorBanca - Resultado:', data);
+      
+      res.json(data);
+    } catch (error) {
+      console.error('FichasController - getPerdidasDetalhadasPorBanca - Erro:', error);
+      res.status(500).json({ error: 'Erro ao buscar dados detalhados de peças perdidas por banca' });
+    }
+  }
+
+  async getCortadasDetalhadasPorBanca(req, res) {
+    try {
+      const { dataInicio, dataFim } = req.query;
+      
+     // console.log('FichasController - getCortadasDetalhadasPorBanca - Query params:', req.query);
+      
+      const data = await Fichas.getCortadasDetalhadasPorBanca(dataInicio, dataFim);
+      
+      //console.log('FichasController - getCortadasDetalhadasPorBanca - Resultado:', data);
+      
+      res.json(data);
+    } catch (error) {
+      console.error('FichasController - getCortadasDetalhadasPorBanca - Erro:', error);
+      res.status(500).json({ error: 'Erro ao buscar dados detalhados de peças cortadas por banca' });
     }
   }
 }
