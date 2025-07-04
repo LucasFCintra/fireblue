@@ -201,37 +201,89 @@ class FechamentosModel {
    */
   async buscarBancasComMovimentacao(dataInicio, dataFim) {
     try {
-      // Teste para verificar se o campo chave_pix existe
-      const teste = await knex('terceiros').select('*').limit(1);
-      console.log('Estrutura da tabela terceiros:', Object.keys(teste[0] || {}));
+      console.log('[DEBUG] Buscando bancas com movimentação entre:', dataInicio, 'e', dataFim);
       
-      const bancas = await knex('movimentacoes_fichas as mf')
+      // Primeiro, buscar todas as movimentações de retorno/conclusão no período
+      const movimentacoes = await knex('movimentacoes_fichas as mf')
         .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
-        .leftJoin('terceiros as t', 't.nome', 'f.banca')
-        .where('mf.data', '>=', dataInicio)
-        .andWhere('mf.data', '<=', dataFim)
+        .whereRaw('DATE(mf.data) >= ?', [dataInicio])
+        .andWhereRaw('DATE(mf.data) <= ?', [dataFim])
         .andWhere(function() {
           this.where('mf.tipo', 'Retorno')
               .orWhere('mf.tipo', 'Conclusão');
         })
-        .groupBy('t.idTerceiro')
         .select([
-          't.idTerceiro as idTerceiro',
-          't.nome as nome',
-          't.cnpj',
-          't.email',
-          't.telefone',
-          't.endereco',
-          't.cidade',
-          't.estado',
-          't.cep',
-          't.complemento',
-          't.numero',
-          't.chave_pix'
+          'f.banca as nome_banca',
+          'mf.ficha_id',
+          'mf.quantidade',
+          'mf.data'
         ]);
       
-      console.log('Bancas únicas encontradas:', bancas.length);
-      console.log('Dados das bancas:', JSON.stringify(bancas, null, 2));
+      console.log('[DEBUG] Movimentações encontradas:', movimentacoes.length);
+      
+      // Extrair bancas únicas das movimentações
+      const bancasUnicas = [...new Set(movimentacoes.map(m => m.nome_banca))].filter(banca => banca);
+      
+      console.log('[DEBUG] Bancas únicas encontradas:', bancasUnicas);
+      
+      if (bancasUnicas.length === 0) {
+        console.log('[DEBUG] Nenhuma banca encontrada');
+        return [];
+      }
+      
+      // Buscar dados completos das bancas na tabela terceiros usando TRIM para comparação
+      const bancas = [];
+      
+      for (const nomeBanca of bancasUnicas) {
+        // Tentar encontrar o terceiro correspondente usando TRIM
+        const terceiro = await knex('terceiros')
+          .whereRaw('TRIM(nome) = ?', [nomeBanca.trim()])
+          .orWhereRaw('TRIM(nome) = ?', [nomeBanca])
+          .orWhere('nome', nomeBanca.trim())
+          .orWhere('nome', nomeBanca)
+          .select([
+            'idTerceiro as idTerceiro',
+            'nome as nome',
+            'cnpj',
+            'email',
+            'telefone',
+            'endereco',
+            'cidade',
+            'estado',
+            'cep',
+            'complemento',
+            'numero',
+            'chave_pix'
+          ])
+          .first();
+        
+        if (terceiro) {
+          console.log(`[DEBUG] Terceiro encontrado para "${nomeBanca}": ID ${terceiro.idTerceiro}`);
+          bancas.push(terceiro);
+        } else {
+          console.log(`[DEBUG] Terceiro NÃO encontrado para "${nomeBanca}"`);
+          
+          // Criar um registro temporário para bancas não cadastradas
+          bancas.push({
+            idTerceiro: `temp_${bancas.length + 1}`,
+            nome: nomeBanca.trim(),
+            cnpj: null,
+            email: null,
+            telefone: null,
+            endereco: null,
+            cidade: null,
+            estado: null,
+            cep: null,
+            complemento: null,
+            numero: null,
+            chave_pix: null
+          });
+        }
+      }
+      
+      console.log('[DEBUG] Dados das bancas encontradas:', bancas.length);
+      console.log('[DEBUG] Dados das bancas:', JSON.stringify(bancas, null, 2));
+      
       return bancas;
     } catch (err) {
       console.error('Erro ao buscar bancas com movimentação:', err);
@@ -249,13 +301,17 @@ class FechamentosModel {
       // Buscar movimentações de retorno da banca específica no período
       const movimentacoes = await knex('movimentacoes_fichas as mf')
         .leftJoin('fichas as f', 'f.id', 'mf.ficha_id')
-        .leftJoin('produtos as p', 'p.id', 'f.produto_id')
-        .where('f.banca', banca.nome)
+        .where(function() {
+          // Buscar por nome exato ou com trim
+          this.where('f.banca', banca.nome)
+              .orWhereRaw('TRIM(f.banca) = ?', [banca.nome.trim()]);
+        })
         .where(function() {
           this.where('mf.tipo', 'Retorno')
               .orWhere('mf.tipo', 'Conclusão');
         })
-        .whereBetween('mf.data', [dataInicio, dataFim])
+        .whereRaw('DATE(mf.data) >= ?', [dataInicio])
+        .andWhereRaw('DATE(mf.data) <= ?', [dataFim])
         .select([
           'mf.id as movimentacao_id',
           'mf.ficha_id',
@@ -264,8 +320,7 @@ class FechamentosModel {
           'f.codigo as codigo_ficha',
           'f.produto',
           'f.data_entrada',
-          'f.status',
-          knex.raw('COALESCE(p.valor_unitario, 0) as valor_unitario')
+          'f.status'
         ]);
       
       console.log(`Movimentações encontradas para ${banca.nome}:`, movimentacoes.length);
@@ -280,9 +335,46 @@ class FechamentosModel {
       let valorTotal = 0;
       const itens = [];
       
+      // Buscar todos os produtos únicos de uma vez
+      const produtosUnicos = [...new Set(movimentacoes.map(m => m.produto))].filter(produto => produto);
+      const produtosPrecificados = {};
+      
+      // Valor padrão por peça
+      const valorPadrao = 3.50;
+      
+      // Buscar preços dos produtos
+      if (produtosUnicos.length > 0) {
+        try {
+          const produtos = await knex('produtos')
+            .whereIn('nome', produtosUnicos)
+            .orWhere(function() {
+              produtosUnicos.forEach(produto => {
+                this.orWhere('nome', 'LIKE', `%${produto}%`);
+              });
+            })
+            .select(['nome', 'codigo', 'preco_venda', 'preco_custo']);
+          
+          // Criar mapa de preços
+          produtos.forEach(produto => {
+            const valorUnitario = parseFloat(produto.preco_venda) || parseFloat(produto.preco_custo) || valorPadrao;
+            produtosPrecificados[produto.nome] = valorUnitario;
+            
+            // Também mapear por correspondência parcial
+            produtosUnicos.forEach(produtoMovimentacao => {
+              if (produto.nome.toLowerCase().includes(produtoMovimentacao.toLowerCase()) || 
+                  produtoMovimentacao.toLowerCase().includes(produto.nome.toLowerCase())) {
+                produtosPrecificados[produtoMovimentacao] = valorUnitario;
+              }
+            });
+          });
+        } catch (err) {
+          console.log(`[DEBUG] Erro ao buscar produtos:`, err.message);
+        }
+      }
+
       for (const mov of movimentacoes) {
         const quantidade = parseInt(mov.quantidade_movimentada) || 0;
-        const valorUnitario = parseFloat(mov.valor_unitario) || 0;
+        const valorUnitario = produtosPrecificados[mov.produto] || valorPadrao;
         const valorTotalItem = quantidade * valorUnitario;
         
         totalPecas += quantidade;
@@ -298,8 +390,7 @@ class FechamentosModel {
           quantidade: quantidade,
           valor_unitario: valorUnitario,
           valor_total: valorTotalItem,
-          data_entrada: mov.data_entrada,
-        //  data_movimentacao: mov.data_movimentacao
+          data_entrada: mov.data_entrada
         };
         
         itens.push(item);
@@ -367,6 +458,7 @@ class FechamentosModel {
           ...item,
           fechamento_banca_id: fechamentoBancaId
         }));
+        console.log('itensComFechamentoId: '+JSON.stringify(itensComFechamentoId))
         await knex('fechamentos_itens').insert(itensComFechamentoId);
       }
       
