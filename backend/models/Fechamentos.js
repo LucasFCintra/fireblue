@@ -337,35 +337,25 @@ class FechamentosModel {
       
       // Buscar todos os produtos únicos de uma vez
       const produtosUnicos = [...new Set(movimentacoes.map(m => m.produto))].filter(produto => produto);
+      const produtosUnicosNormalizados = produtosUnicos.map(p => p.trim().toLowerCase());
       const produtosPrecificados = {};
-      
       // Valor padrão por peça
       const valorPadrao = 3.50;
-      
       // Buscar preços dos produtos
       if (produtosUnicos.length > 0) {
         try {
           const produtos = await knex('produtos')
-            .whereIn('nome', produtosUnicos)
-            .orWhere(function() {
-              produtosUnicos.forEach(produto => {
-                this.orWhere('nome', 'LIKE', `%${produto}%`);
-              });
-            })
-            .select(['nome', 'codigo', 'preco_venda', 'preco_custo']);
-          
+            .whereIn(
+              knex.raw('LOWER(TRIM(nome_produto))'),
+              produtosUnicosNormalizados
+            )
+            .select(['nome_produto', 'valor_unitario']);
           // Criar mapa de preços
           produtos.forEach(produto => {
-            const valorUnitario = parseFloat(produto.preco_venda) || parseFloat(produto.preco_custo) || valorPadrao;
-            produtosPrecificados[produto.nome] = valorUnitario;
-            
-            // Também mapear por correspondência parcial
-            produtosUnicos.forEach(produtoMovimentacao => {
-              if (produto.nome.toLowerCase().includes(produtoMovimentacao.toLowerCase()) || 
-                  produtoMovimentacao.toLowerCase().includes(produto.nome.toLowerCase())) {
-                produtosPrecificados[produtoMovimentacao] = valorUnitario;
-              }
-            });
+            const nomeNormalizado = produto.nome_produto.trim().toLowerCase();
+            const valorUnitario = parseFloat(produto.valor_unitario);
+            produtosPrecificados[nomeNormalizado] = valorUnitario;
+            console.log('valorUnitario: '+valorUnitario+ ' | ' + produto.nome_produto)
           });
         } catch (err) {
           console.log(`[DEBUG] Erro ao buscar produtos:`, err.message);
@@ -374,7 +364,12 @@ class FechamentosModel {
 
       for (const mov of movimentacoes) {
         const quantidade = parseInt(mov.quantidade_movimentada) || 0;
-        const valorUnitario = produtosPrecificados[mov.produto] || valorPadrao;
+        const nomeMovNormalizado = mov.produto.trim().toLowerCase();
+        let valorUnitario = produtosPrecificados[nomeMovNormalizado];
+        if (!valorUnitario) {
+          console.log(`[DEBUG] Produto não encontrado para precificação: "${mov.produto}". Usando valor padrão.`);
+          valorUnitario = valorPadrao;
+        }
         const valorTotalItem = quantidade * valorUnitario;
         
         totalPecas += quantidade;

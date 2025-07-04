@@ -40,19 +40,28 @@ export function obterBancasComFichasNoPeriodo(
 }
 
 /**
- * Calcula o valor a ser pago para cada ficha
+ * Calcula o valor a ser pago para cada ficha usando o valor unitário do produto
  */
-export function calcularValorFichas(
+export async function calcularValorFichas(
   fichas: Ficha[],
   banca: Banca
-): FichaFechamento[] {
+): Promise<FichaFechamento[]> {
+  // Buscar todos os produtos necessários de uma vez
+  const { produtosService } = await import("@/services/produtosService");
+  // Buscar todos os nomes de produtos únicos das fichas
+  const produtoNomes = [...new Set(fichas.map(f => f.produto))];
+  const produtos: Record<string, any> = {};
+  const todosProdutos = await produtosService.listarProdutos();
+  produtoNomes.forEach(nome => {
+    produtos[nome] = todosProdutos.find((p: any) => p.nome_produto === nome) || null;
+  });
   return fichas
     .filter(ficha => ficha.banca === banca.nome)
     .map(ficha => {
-      // Usa o valor padrão da banca por peça ou um valor fixo se não estiver definido
-      const valorUnitario = banca.valorPorPeca || 5.0;
+      // Busca o valor unitário do produto pelo nome, se não encontrar usa o valor padrão da banca ou 5.0
+      const produto = produtos[ficha.produto];
+      const valorUnitario = produto?.valor_unitario ?? banca.valorPorPeca ?? 5.0;
       const valorTotal = valorUnitario * ficha.quantidade;
-      
       return {
         ...ficha,
         valorUnitario,
@@ -64,14 +73,14 @@ export function calcularValorFichas(
 /**
  * Gera o fechamento para uma banca específica
  */
-export function gerarFechamentoBanca(
+export async function gerarFechamentoBanca(
   banca: Banca,
   fichas: Ficha[],
   dataInicio: Date,
   dataFim: Date
-): FechamentoBanca {
+): Promise<FechamentoBanca> {
   // Calcula as fichas com valores para esta banca
-  const fichasFechamento = calcularValorFichas(
+  const fichasFechamento = await calcularValorFichas(
     fichas.filter(ficha => ficha.banca === banca.nome),
     banca
   );
