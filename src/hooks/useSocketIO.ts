@@ -45,10 +45,10 @@ const getServerUrl = () => {
   // Se o IP estiver armazenado no localStorage, use-o em vez do valor padrão
   const storedServerIp = localStorage.getItem('serverIp');
   
-  // Se o hostname for 192.168.100.134, use 192.168.100.134
+  // Se o hostname for 192.168.100.129, use 192.168.100.129
   const hostname = window.location.hostname;
-  if (hostname === '192.168.100.134' || hostname === '127.0.0.1') {
-    return `http://192.168.100.134:8687`;
+  if (hostname === '192.168.100.129' || hostname === '127.0.0.1') {
+    return `http://192.168.100.129:8687`;
   }
   
   // Se houver um IP armazenado, use-o

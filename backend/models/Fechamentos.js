@@ -560,7 +560,7 @@ class FechamentosModel {
   async listarFechamentos() {
     try {
       const fechamentos = await knex('fechamentos_semanais')
-        .where({ status: 'pago' }) // Apenas fechamentos pagos no histórico
+        .where({ status: 'aberto' }) // Apenas fechamentos pagos no histórico
         .orderBy('data_criacao', 'desc');
       
       return fechamentos;

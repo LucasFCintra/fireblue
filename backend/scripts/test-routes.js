@@ -3,7 +3,7 @@ const http = require('http');
 function testRoute(path) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: '192.168.100.134',
+      hostname: '192.168.100.129',
       port: 8687,
       path: path,
       method: 'GET'

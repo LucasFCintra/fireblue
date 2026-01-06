@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 
-const API_URL = 'http://192.168.100.134:8687/api';
+const API_URL = 'http://192.168.100.129:8687/api';
 
 export type Ficha = {
   id: number;

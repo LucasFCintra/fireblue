@@ -20,7 +20,7 @@ export interface Terceiro {
   chave_pix?: string;
 }
 
-const api = 'http://192.168.100.134:8687';
+const api = 'http://192.168.100.129:8687';
 
 export function useTerceiros() {
   const [terceiros, setTerceiros] = useState<Terceiro[]>([]);

@@ -7,7 +7,7 @@ import { formatDateBR, getCurrentWeekRange, getWeekString, parseDate } from "@/u
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const API_URL = 'http://192.168.100.134:8687/api';
+const API_URL = 'http://192.168.100.129:8687/api';
 
 /**
  * Filtra as fichas recebidas no período especificado
@@ -212,7 +212,7 @@ export async function listarFechamentosHistoricos(): Promise<RelatorioSemanal[]>
     const fechamentos = response.data;
     // Filtrar apenas fechamentos pagos
     return fechamentos
-      .filter((fechamento: any) => fechamento.status === 'pago')
+      .filter((fechamento: any) => fechamento.status === 'aberto')
       .map((fechamento: any) => ({
         id: fechamento.id,
         semana: fechamento.semana,

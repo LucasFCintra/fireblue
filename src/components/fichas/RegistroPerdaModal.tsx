@@ -112,7 +112,7 @@ export function RegistroPerdaModal({
       }
       
       // Registrar a perda como uma movimentação do tipo "Perda"
-      await axios.post(`http://192.168.100.134:8687/api/fichas/${ficha.id}/movimentacao`, {
+      await axios.post(`http://192.168.100.129:8687/api/fichas/${ficha.id}/movimentacao`, {
         tipo: 'Perda',
         quantidade: quantidadePerdidaNum,
         descricao: observacoes.trim(),

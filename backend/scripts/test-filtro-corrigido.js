@@ -6,7 +6,7 @@ async function testFiltroCorrigido() {
 
     // Teste 1: Semana atual (30/06 a 07/07)
     console.log('1. Testando semana atual (30/06 a 07/07)...');
-    const response1 = await axios.get('http://192.168.100.134:8687/api/fichas/dados-consolidados', {
+    const response1 = await axios.get('http://192.168.100.129:8687/api/fichas/dados-consolidados', {
       params: {
         dataInicio: '2025-06-30',
         dataFim: '2025-07-07'
@@ -18,13 +18,13 @@ async function testFiltroCorrigido() {
     // Teste 2: Comparar com dados dos gráficos
     console.log('2. Comparando com dados dos gráficos (semana atual)...');
     const [cortadas, recebidas, perdidas] = await Promise.all([
-      axios.get('http://192.168.100.134:8687/api/fichas/cortadas/ultimos-meses', {
+      axios.get('http://192.168.100.129:8687/api/fichas/cortadas/ultimos-meses', {
         params: { dataInicio: '2025-06-30', dataFim: '2025-07-07' }
       }),
-      axios.get('http://192.168.100.134:8687/api/fichas/recebidos/ultimos-meses', {
+      axios.get('http://192.168.100.129:8687/api/fichas/recebidos/ultimos-meses', {
         params: { dataInicio: '2025-06-30', dataFim: '2025-07-07' }
       }),
-      axios.get('http://192.168.100.134:8687/api/fichas/perdidas/ultimos-meses', {
+      axios.get('http://192.168.100.129:8687/api/fichas/perdidas/ultimos-meses', {
         params: { dataInicio: '2025-06-30', dataFim: '2025-07-07' }
       })
     ]);
@@ -47,7 +47,7 @@ async function testFiltroCorrigido() {
 
     // Teste 3: Período diferente (últimos 7 dias)
     console.log('3. Testando últimos 7 dias (23/06 a 30/06)...');
-    const response3 = await axios.get('http://192.168.100.134:8687/api/fichas/dados-consolidados', {
+    const response3 = await axios.get('http://192.168.100.129:8687/api/fichas/dados-consolidados', {
       params: {
         dataInicio: '2025-06-23',
         dataFim: '2025-06-30'

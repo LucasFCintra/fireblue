@@ -37,7 +37,7 @@ import { io } from 'socket.io-client';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 
-const API_URL = 'http://192.168.100.134:8687/api';
+const API_URL = 'http://192.168.100.129:8687/api';
 
 export default function MateriaPrima() {
   const [isLoading, setIsLoading] = useState(false);
@@ -900,7 +900,7 @@ export default function MateriaPrima() {
   
   // Configurar Socket.IO
   useEffect(() => {
-    const newSocket = io('http://192.168.100.134:8687');
+    const newSocket = io('http://192.168.100.129:8687');
     setSocket(newSocket);
 
     // Escutar eventos de atualização

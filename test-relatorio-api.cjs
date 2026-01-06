@@ -24,7 +24,7 @@ async function testRelatorioAPI() {
     // Teste 1: Dados consolidados
     console.log('1. Testando dados consolidados...');
     try {
-      const response1 = await axios.get('http://192.168.100.134:8687/api/fichas/dados-consolidados', {
+      const response1 = await axios.get('http://192.168.100.129:8687/api/fichas/dados-consolidados', {
         params: { dataInicio, dataFim }
       });
       console.log('✅ Dados consolidados:', response1.data);
@@ -36,7 +36,7 @@ async function testRelatorioAPI() {
     // Teste 2: Peças cortadas
     console.log('2. Testando peças cortadas...');
     try {
-      const response2 = await axios.get('http://192.168.100.134:8687/api/fichas/cortadas/ultimos-meses', {
+      const response2 = await axios.get('http://192.168.100.129:8687/api/fichas/cortadas/ultimos-meses', {
         params: { dataInicio, dataFim }
       });
       console.log('✅ Peças cortadas:', response2.data);
@@ -48,7 +48,7 @@ async function testRelatorioAPI() {
     // Teste 3: Peças recebidas
     console.log('3. Testando peças recebidas...');
     try {
-      const response3 = await axios.get('http://192.168.100.134:8687/api/fichas/recebidos/ultimos-meses', {
+      const response3 = await axios.get('http://192.168.100.129:8687/api/fichas/recebidos/ultimos-meses', {
         params: { dataInicio, dataFim }
       });
       console.log('✅ Peças recebidas:', response3.data);
@@ -60,7 +60,7 @@ async function testRelatorioAPI() {
     // Teste 4: Peças perdidas
     console.log('4. Testando peças perdidas...');
     try {
-      const response4 = await axios.get('http://192.168.100.134:8687/api/fichas/perdidas/ultimos-meses', {
+      const response4 = await axios.get('http://192.168.100.129:8687/api/fichas/perdidas/ultimos-meses', {
         params: { dataInicio, dataFim }
       });
       console.log('✅ Peças perdidas:', response4.data);

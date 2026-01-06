@@ -126,7 +126,7 @@ export default function Fichas() {
       
       // Para cada ficha concluída, buscar as movimentações de perda
       for (const ficha of fichas.filter(f => f.status === "concluido")) {
-        const response = await fetch(`http://192.168.100.134:8687/api/movimentacoes-fichas/${ficha.id}`);
+        const response = await fetch(`http://192.168.100.129:8687/api/movimentacoes-fichas/${ficha.id}`);
         const movimentacoes = await response.json();
         
         // Somar todas as perdas da ficha
@@ -152,7 +152,7 @@ export default function Fichas() {
       setFilteredData(fichas);
       
       // Carregar resumo de status
-      const response = await fetch('http://192.168.100.134:8687/api/fichas/summary/status');
+      const response = await fetch('http://192.168.100.129:8687/api/fichas/summary/status');
       const summary = await response.json();
       setStatusSummary(summary);
       
@@ -640,15 +640,15 @@ export default function Fichas() {
       let fichas;
       
       if (status === "em_producao") {
-        const response = await fetch('http://192.168.100.134:8687/api/fichas');
+        const response = await fetch('http://192.168.100.129:8687/api/fichas');
         const todasFichas = await response.json();
         fichas = todasFichas.filter(f => f.status === "em_producao");
       } else if (status === "recebido_parcialmente") {
-        const response = await fetch('http://192.168.100.134:8687/api/fichas');
+        const response = await fetch('http://192.168.100.129:8687/api/fichas');
         const todasFichas = await response.json();
         fichas = todasFichas.filter(f => f.status === "em_producao" && f.quantidade_recebida > 0);
       } else {
-        const response = await fetch(`http://192.168.100.134:8687/api/fichas/list/${status}`);
+        const response = await fetch(`http://192.168.100.129:8687/api/fichas/list/${status}`);
         fichas = await response.json();
       }
       
@@ -719,7 +719,7 @@ export default function Fichas() {
       setFilteredData(novaLista);
       
       // Atualizar o resumo de status
-      const response = await fetch('http://192.168.100.134:8687/api/fichas/summary/status');
+      const response = await fetch('http://192.168.100.129:8687/api/fichas/summary/status');
       const summary = await response.json();
       setStatusSummary(summary);
       

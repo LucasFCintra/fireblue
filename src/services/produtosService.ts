@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.100.134:8687/api';
+const API_URL = 'http://192.168.100.129:8687/api';
 
 export interface Produto {
   id: string;

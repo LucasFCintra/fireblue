@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-const API_BASE_URL = 'http://192.168.100.134:8687/api';
+const API_BASE_URL = 'http://192.168.100.129:8687/api';
 
 async function testarRegistroPerdas() {
   try {
